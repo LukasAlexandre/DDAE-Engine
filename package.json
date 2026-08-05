@@ -1,6 +1,6 @@
 {
   "name": "ddae-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DDAE Engine — Document-Driven AI Engineering Engine. A CLI that scaffolds a document-driven workflow and AI agent rules into any project.",
   "type": "module",
   "bin": {
@@ -12,13 +12,15 @@
     "bin",
     "src",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "start": "node bin/ddae-engine.js"
+    "start": "node bin/ddae-engine.js",
+    "test": "node --test"
   },
   "keywords": [
     "ddae-engine",

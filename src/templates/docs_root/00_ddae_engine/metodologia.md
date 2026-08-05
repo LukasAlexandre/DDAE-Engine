@@ -61,11 +61,18 @@ Todo bloco encerra com uma sugestão de commit semântico (`feat`, `fix`, `docs`
 
 ## 9. Padrão de Sessões
 
-Uma sessão é um agrupamento temático de blocos (ex.: `session_05_auth_security`). As 10 sessões base criadas por `ddae-engine init` são um ponto de partida, não um limite — `ddae-engine session create "<nome>"` numera a próxima automaticamente (`session_11`, `session_12`, ...).
+Uma sessão é um trabalho real do projeto (ex.: `session_01_autenticacao`), não uma categoria genérica de ciclo de vida. `ddae-engine init` **não cria nenhuma sessão** — `Docs/05_sessions/` começa vazia, com apenas um `README.md`. A primeira sessão real criada com `ddae-engine session create "<nome>"` é sempre `session_01`; a numeração conta apenas sessões reais existentes (diretórios `session_NN_<slug>`), ignorando lacunas propositais, arquivos soltos e módulos internos.
+
+### Sessão vs. Módulo
+
+Não confunda os dois níveis da hierarquia:
+
+- **Sessão** — unidade real de trabalho, numerada (`session_01_autenticacao`, `session_02_dashboard`). Criada sob demanda.
+- **Módulo** — categoria interna que organiza o conteúdo de uma sessão (`01_intake`, `05_blocks`, `09_validation`, ...). Sempre as mesmas 13, geradas automaticamente dentro de cada sessão criada. Nunca contadas como sessão, nunca existem soltas em `Docs/05_sessions/`.
 
 ## 10. Padrão de Blocos
 
-Um bloco é a menor unidade de execução com escopo fechado. Veja `Docs/00_ddae_engine/folder_schema.md` para a estrutura interna de uma sessão e `src/templates/block/bloco_template.md` (no CLI) para a estrutura de um bloco.
+Um bloco é a menor unidade de execução com escopo fechado, dentro do módulo `05_blocks/` de uma sessão. Veja `Docs/00_ddae_engine/folder_schema.md` para a estrutura interna de uma sessão e `src/templates/block/bloco_template.md` (no CLI) para a estrutura de um bloco.
 
 ## 11. Padrão de Prompts
 

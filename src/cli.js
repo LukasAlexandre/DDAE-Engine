@@ -35,9 +35,9 @@ Options:
 Examples:
   npx ddae-engine init
   npx ddae-engine session create "dashboard admin"
-  npx ddae-engine block create "login administrativo" --session session_11_dashboard_admin
-  npx ddae-engine prompt create --block bloco_01_login_administrativo --session session_11_dashboard_admin
-  npx ddae-engine feedback create --block bloco_01_login_administrativo --session session_11_dashboard_admin
+  npx ddae-engine block create "login administrativo" --session session_01_dashboard_admin
+  npx ddae-engine prompt create --block bloco_01_login_administrativo --session session_01_dashboard_admin
+  npx ddae-engine feedback create --block bloco_01_login_administrativo --session session_01_dashboard_admin
   npx ddae-engine validate
   npx ddae-engine audit
 `;

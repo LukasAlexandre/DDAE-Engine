@@ -3,6 +3,13 @@ import path from 'node:path';
 import { scanNamingIssues } from '../utils/naming.js';
 import { auditQualityGates } from '../utils/quality-gates.js';
 import { getMarkdownSection, hasFilledListItem, readMarkdownFile } from '../utils/markdown-checks.js';
+import {
+  listSessionDirs,
+  listNonConformingDirs,
+  listSessionModules,
+  parseSessionFolderName,
+  detectLegacyBaseSessions,
+} from '../utils/session.js';
 
 const MAIN_SUBFOLDERS = [
   '00_ddae_engine',
@@ -16,22 +23,6 @@ const MAIN_SUBFOLDERS = [
   '08_deploy',
   '09_observability',
   '99_archive',
-];
-
-const SESSION_SUBFOLDERS = [
-  '01_intake',
-  '02_analysis',
-  '03_ideas',
-  '04_planning',
-  '05_blocks',
-  '06_prompts',
-  '07_bugs',
-  '08_feedbacks',
-  '09_validation',
-  '10_tests',
-  '11_security',
-  '12_performance',
-  '13_release',
 ];
 
 const ROOT_FILES = ['CLAUDE.md', 'AGENTS.md', '.cursorrules'];
@@ -62,23 +53,72 @@ function auditPendencies(feedbackPath, label, errors, warnings, pendencies) {
   }
 }
 
-function auditSessions(sessionsDir, errors, warnings, pendencies) {
+/**
+ * Classifies a single real session as: vazia (no blocks yet), em andamento
+ * (has blocks, closure not filled in), or concluída (09_validation has a
+ * filled closure document). This is a diagnostic label, not a hard gate.
+ */
+function classifySession(sessionDir, blocks, validations) {
+  if (blocks.length === 0) {
+    return 'vazia';
+  }
+  const closurePath = path.join(sessionDir, '09_validation', 'fechamento_sessao.md');
+  if (validations.length > 0 && fs.existsSync(closurePath)) {
+    const read = readMarkdownFile(closurePath);
+    const statusSection = read.ok ? getMarkdownSection(read.content, '1. Status', '##') : '';
+    if (/^[-*]\s*\[[xX]\]/m.test(statusSection)) {
+      return 'concluída';
+    }
+  }
+  return 'em andamento';
+}
+
+function auditSessions(sessionsDir, errors, warnings, suggestions, pendencies, sessionSummaries) {
   if (!fs.existsSync(sessionsDir)) {
     return;
   }
-  for (const sessionName of fs.readdirSync(sessionsDir)) {
-    const sessionDir = path.join(sessionsDir, sessionName);
-    if (!fs.statSync(sessionDir).isDirectory()) {
-      continue;
+
+  const sessionModules = listSessionModules();
+  const sessionNames = listSessionDirs(sessionsDir);
+
+  for (const nonConforming of listNonConformingDirs(sessionsDir)) {
+    suggestions.push(`Pasta fora do padrão de sessão (esperado session_NN_nome): Docs/05_sessions/${nonConforming}`);
+  }
+
+  const byNumber = new Map();
+  for (const name of sessionNames) {
+    const { number } = parseSessionFolderName(name);
+    const key = Number(number);
+    if (!byNumber.has(key)) {
+      byNumber.set(key, []);
     }
+    byNumber.get(key).push(name);
+  }
+  for (const [number, names] of byNumber) {
+    if (names.length > 1) {
+      errors.push(`Numeração de sessão duplicada (número ${number}): ${names.join(', ')}`);
+    }
+  }
+
+  const legacySessions = detectLegacyBaseSessions(sessionsDir);
+  if (legacySessions.length > 0) {
+    warnings.push(
+      `Estrutura de sessões legada detectada (${legacySessions.length} pasta(s) do antigo scaffold automático `
+      + `session_01..10): ${legacySessions.join(', ')}. O modelo atual não pré-cria sessões — nenhum conteúdo foi `
+      + 'removido automaticamente. Revise manualmente antes de renumerar, consolidar ou remover.',
+    );
+  }
+
+  for (const sessionName of sessionNames) {
+    const sessionDir = path.join(sessionsDir, sessionName);
 
     if (!fs.existsSync(path.join(sessionDir, 'README.md'))) {
       warnings.push(`Sessão sem README: Docs/05_sessions/${sessionName}`);
     }
 
-    for (const subfolder of SESSION_SUBFOLDERS) {
-      if (!fs.existsSync(path.join(sessionDir, subfolder))) {
-        warnings.push(`Sessão sem estrutura interna padrão (falta ${subfolder}): Docs/05_sessions/${sessionName}`);
+    for (const moduleName of sessionModules) {
+      if (!fs.existsSync(path.join(sessionDir, moduleName))) {
+        warnings.push(`Sessão sem módulo obrigatório (falta ${moduleName}): Docs/05_sessions/${sessionName}`);
       }
     }
 
@@ -115,6 +155,13 @@ function auditSessions(sessionsDir, errors, warnings, pendencies) {
     if (fs.existsSync(path.join(sessionDir, '09_validation')) && validations.length === 0) {
       warnings.push(`Sessão sem validação preenchida: Docs/05_sessions/${sessionName}/09_validation`);
     }
+
+    sessionSummaries.push({
+      name: sessionName,
+      status: classifySession(sessionDir, blocks, validations),
+      blocks: blocks.length,
+      blocksSemFeedback: blocks.filter((block) => !feedbacks.includes(block)).length,
+    });
   }
 }
 
@@ -123,6 +170,7 @@ export async function auditCommand({ dir }) {
   const warnings = [];
   const suggestions = [];
   const pendencies = [];
+  const sessionSummaries = [];
   const docsDir = path.join(dir, 'Docs');
 
   if (!fs.existsSync(docsDir)) {
@@ -157,7 +205,11 @@ export async function auditCommand({ dir }) {
     }
   }
 
-  auditSessions(path.join(docsDir, '05_sessions'), errors, warnings, pendencies);
+  const sessionsDir = path.join(docsDir, '05_sessions');
+  if (!fs.existsSync(path.join(sessionsDir, 'README.md'))) {
+    warnings.push('Arquivo ausente: Docs/05_sessions/README.md');
+  }
+  auditSessions(sessionsDir, errors, warnings, suggestions, pendencies, sessionSummaries);
 
   const naming = scanNamingIssues(docsDir);
   errors.push(...naming.errors);
@@ -167,6 +219,7 @@ export async function auditCommand({ dir }) {
 
   console.log('DDAE Engine Audit Report\n');
   console.log(`Status: ${status}`);
+  console.log(`Sessions found: ${sessionSummaries.length}`);
   console.log(`Warnings: ${warnings.length}`);
   console.log(`Errors: ${errors.length}`);
   console.log(`Suggestions: ${suggestions.length}`);
@@ -174,6 +227,16 @@ export async function auditCommand({ dir }) {
   console.log('\nQuality Gates:');
   for (const gate of gatesAudit.gates) {
     console.log(`  - Gate: ${gate.gate} - ${gate.state} (${gate.status})`);
+  }
+
+  console.log('\nSessions:');
+  if (sessionSummaries.length === 0) {
+    console.log('  - Nenhuma sessão criada ainda.');
+  } else {
+    for (const session of sessionSummaries) {
+      const feedbackNote = session.blocksSemFeedback > 0 ? `, ${session.blocksSemFeedback} sem feedback` : '';
+      console.log(`  - ${session.name}: ${session.status} (${session.blocks} bloco(s)${feedbackNote})`);
+    }
   }
 
   console.log('\nPendências:');

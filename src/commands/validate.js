@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { scanNamingIssues } from '../utils/naming.js';
 import { validateRequiredQualityGates } from '../utils/quality-gates.js';
+import { listSessionDirs, listSessionModules, parseSessionFolderName } from '../utils/session.js';
 
 const MAIN_SUBFOLDERS = [
   '00_ddae_engine',
@@ -19,11 +20,50 @@ const MAIN_SUBFOLDERS = [
 
 const ROOT_FILES = ['CLAUDE.md', 'AGENTS.md', '.cursorrules', 'ddae-engine.config.json'];
 
+/**
+ * Validates the sessions found under Docs/05_sessions/: no duplicate session
+ * numbers, and each real session has all 13 internal modules present. Having
+ * zero sessions is valid — a freshly initialized project has none yet.
+ */
+function validateSessions(sessionsDir, errors, warnings) {
+  if (!fs.existsSync(path.join(sessionsDir, 'README.md'))) {
+    errors.push('Arquivo ausente: Docs/05_sessions/README.md');
+  }
+
+  const sessions = listSessionDirs(sessionsDir);
+  const byNumber = new Map();
+  for (const name of sessions) {
+    const { number } = parseSessionFolderName(name);
+    const key = Number(number);
+    if (!byNumber.has(key)) {
+      byNumber.set(key, []);
+    }
+    byNumber.get(key).push(name);
+  }
+  for (const [number, names] of byNumber) {
+    if (names.length > 1) {
+      errors.push(`Numeração de sessão duplicada (número ${number}): ${names.join(', ')}`);
+    }
+  }
+
+  const modules = listSessionModules();
+  for (const name of sessions) {
+    for (const moduleName of modules) {
+      if (!fs.existsSync(path.join(sessionsDir, name, moduleName))) {
+        warnings.push(`Sessão sem módulo obrigatório (${moduleName}): Docs/05_sessions/${name}`);
+      }
+    }
+  }
+
+  return sessions.length;
+}
+
 export async function validateCommand({ dir }) {
   const errors = [];
   const warnings = [];
   const qualityGateErrors = [];
   let qualityGateStatus = 'SKIPPED';
+  let sessionsFound = 0;
   const docsDir = path.join(dir, 'Docs');
 
   if (!fs.existsSync(docsDir)) {
@@ -46,14 +86,7 @@ export async function validateCommand({ dir }) {
 
     const sessionsDir = path.join(docsDir, '05_sessions');
     if (fs.existsSync(sessionsDir)) {
-      const sessionNumbers = fs.readdirSync(sessionsDir)
-        .map((name) => name.match(/^session_(\d+)_/)?.[1])
-        .filter(Boolean);
-      for (let i = 1; i <= 10; i += 1) {
-        if (!sessionNumbers.includes(String(i).padStart(2, '0'))) {
-          warnings.push(`Sessão base ausente: session_${String(i).padStart(2, '0')}_* em Docs/05_sessions/`);
-        }
-      }
+      sessionsFound = validateSessions(sessionsDir, errors, warnings);
     }
 
     const naming = scanNamingIssues(docsDir);
@@ -71,6 +104,7 @@ export async function validateCommand({ dir }) {
 
   console.log('DDAE Engine Validation Report\n');
   console.log(`Status: ${status}`);
+  console.log(`Sessions found: ${sessionsFound}`);
   console.log(`Warnings: ${warnings.length}`);
   console.log(`Errors: ${errors.length}`);
   console.log(`[DDAE Engine validate] Quality gates: ${qualityGateStatus}`);

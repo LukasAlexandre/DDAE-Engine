@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { copyDir, copyFile, writeJson } from '../utils/fs-helpers.js';
-import { BASE_SESSIONS, scaffoldSession, sessionFolderName } from '../utils/session.js';
 import { projectNameOf, currentDate, renderTemplate } from '../utils/text.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -27,11 +26,10 @@ export async function initCommand({ dir, force }) {
     transform: docTransform,
   });
 
-  const sessionsDir = path.join(docsDir, '05_sessions');
-  for (const session of BASE_SESSIONS) {
-    const sessionDir = path.join(sessionsDir, sessionFolderName(session.number, session.slug));
-    scaffoldSession(sessionDir, { ...session, projectName, currentDate: today }, { force, created, skipped });
-  }
+  // Docs/05_sessions/README.md comes from templates/docs_root/05_sessions/ via
+  // the copyDir call above. No sessions are pre-created here: a session is a
+  // real unit of work, created on demand with `ddae-engine session create`,
+  // starting at session_01.
 
   copyFile(
     path.join(TEMPLATES_DIR, 'agents', 'CLAUDE.md'),

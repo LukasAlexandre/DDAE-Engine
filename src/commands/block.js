@@ -2,15 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nextSequence, writeText } from '../utils/fs-helpers.js';
+import { parseSessionFolderName } from '../utils/session.js';
 import { slugify, pad2, renderTemplate, projectNameOf, currentDate } from '../utils/text.js';
 
-/**
- * Splits a `session_NN_some_slug` folder name into its number and slug.
- */
-export function parseSessionFolderName(session) {
-  const match = session.match(/^session_(\d+)_(.+)$/);
-  return match ? { number: match[1], slug: match[2] } : { number: undefined, slug: undefined };
-}
+export { parseSessionFolderName };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BLOCK_TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'block', 'bloco_template.md');

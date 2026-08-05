@@ -28,17 +28,7 @@ your-project/
 │   ├── 02_architecture/        # base architecture, stack, decisions, risks
 │   ├── 03_contracts/           # frontend/backend, database, auth, env, deploy contracts
 │   ├── 04_governance/          # code/commit/branch conventions, risk matrix, decisions log
-│   ├── 05_sessions/            # one folder per session (see below)
-│   │   ├── session_01_project_foundation/
-│   │   ├── session_02_architecture_contracts/
-│   │   ├── session_03_design_system/
-│   │   ├── session_04_core_features/
-│   │   ├── session_05_auth_security/
-│   │   ├── session_06_tests_quality/
-│   │   ├── session_07_performance/
-│   │   ├── session_08_deploy_release/
-│   │   ├── session_09_observability/
-│   │   └── session_10_final_audit/
+│   ├── 05_sessions/            # empty on init except for README.md — sessions are created on demand (see below)
 │   ├── 06_quality_gates/        # architecture/security/tests/performance/design/deploy/final_audit gates
 │   ├── 07_design_system/        # visual identity, tokens, components, responsiveness, accessibility
 │   ├── 08_deploy/               # local/homolog/production deploy notes, troubleshooting
@@ -50,9 +40,16 @@ your-project/
 └── ddae-engine.config.json
 ```
 
-> The 10 sessions above are a **base starting point, not a limit**. Create as many additional sessions as your project needs with `ddae-engine session create`.
+`init` does **not** pre-create any sessions — `Docs/05_sessions/` starts with only a `README.md` explaining the model. A session is a real unit of work, created on demand:
 
-Each session contains the same internal structure: `01_intake`, `02_analysis`, `03_ideas`, `04_planning`, `05_blocks`, `06_prompts`, `07_bugs`, `08_feedbacks`, `09_validation`, `10_tests`, `11_security`, `12_performance`, `13_release`, plus a root `README.md`.
+```bash
+ddae-engine session create "autenticacao"
+# -> Docs/05_sessions/session_01_autenticacao/
+```
+
+The first session created in any project is always `session_01`; the next is `session_02`, and so on — numbering counts only real sessions, never the 13 internal modules or any file/folder outside the `session_NN_<slug>` naming convention. Gaps are preserved: if `session_01` and `session_03` exist, the next one created is `session_04`, not `session_02`.
+
+Each session contains the same internal module structure: `01_intake`, `02_analysis`, `03_ideas`, `04_planning`, `05_blocks`, `06_prompts`, `07_bugs`, `08_feedbacks`, `09_validation`, `10_tests`, `11_security`, `12_performance`, `13_release`, plus a root `README.md`. These 13 modules are categories *inside* a session, not sessions themselves — they never affect session numbering and are never treated as sessions by `validate`/`audit`.
 
 Existing files are never overwritten unless you pass `--force`.
 
@@ -101,28 +98,28 @@ Create a new session (auto-numbered, name converted to snake_case):
 
 ```bash
 npx ddae-engine session create "dashboard admin"
-# -> Docs/05_sessions/session_11_dashboard_admin/
+# -> Docs/05_sessions/session_01_dashboard_admin/  (session_02, session_03, ... for the next ones)
 ```
 
 Create the next block inside that session:
 
 ```bash
-npx ddae-engine block create "login administrativo" --session session_11_dashboard_admin
-# -> Docs/05_sessions/session_11_dashboard_admin/05_blocks/bloco_01_login_administrativo.md
+npx ddae-engine block create "login administrativo" --session session_01_dashboard_admin
+# -> Docs/05_sessions/session_01_dashboard_admin/05_blocks/bloco_01_login_administrativo.md
 ```
 
 Generate the prompt for that block:
 
 ```bash
-npx ddae-engine prompt create --block bloco_01_login_administrativo --session session_11_dashboard_admin
-# -> Docs/05_sessions/session_11_dashboard_admin/06_prompts/prompt_bloco_01_login_administrativo.md
+npx ddae-engine prompt create --block bloco_01_login_administrativo --session session_01_dashboard_admin
+# -> Docs/05_sessions/session_01_dashboard_admin/06_prompts/prompt_bloco_01_login_administrativo.md
 ```
 
 Generate the feedback doc once the block is implemented:
 
 ```bash
-npx ddae-engine feedback create --block bloco_01_login_administrativo --session session_11_dashboard_admin
-# -> Docs/05_sessions/session_11_dashboard_admin/08_feedbacks/feedback_bloco_01_login_administrativo.md
+npx ddae-engine feedback create --block bloco_01_login_administrativo --session session_01_dashboard_admin
+# -> Docs/05_sessions/session_01_dashboard_admin/08_feedbacks/feedback_bloco_01_login_administrativo.md
 ```
 
 Check that the `Docs/` structure is compliant, including required quality gates and their minimum fields (exit code `0` if OK, `1` if failed):

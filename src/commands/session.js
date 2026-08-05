@@ -1,6 +1,5 @@
 import path from 'node:path';
-import { nextSequence } from '../utils/fs-helpers.js';
-import { scaffoldSession, sessionFolderName } from '../utils/session.js';
+import { nextSessionNumber, scaffoldSession, sessionFolderName, listSessionModules } from '../utils/session.js';
 import { slugify, pad2, projectNameOf, currentDate } from '../utils/text.js';
 
 export async function sessionCreateCommand({ name, dir, force }) {
@@ -9,7 +8,7 @@ export async function sessionCreateCommand({ name, dir, force }) {
   }
 
   const sessionsDir = path.join(dir, 'Docs', '05_sessions');
-  const number = pad2(nextSequence(sessionsDir, 'session'));
+  const number = pad2(nextSessionNumber(sessionsDir));
   const slug = slugify(name);
   const folderName = sessionFolderName(number, slug);
   const sessionDir = path.join(sessionsDir, folderName);
@@ -28,5 +27,6 @@ export async function sessionCreateCommand({ name, dir, force }) {
   }
 
   console.log(`Created session: Docs/05_sessions/${folderName}`);
-  console.log(`  ${created.length} file(s) created${skipped.length > 0 ? `, ${skipped.length} skipped` : ''}`);
+  console.log(`  Modules created: ${listSessionModules().length}`);
+  console.log(`  Files created: ${created.length}${skipped.length > 0 ? ` (${skipped.length} skipped)` : ''}`);
 }

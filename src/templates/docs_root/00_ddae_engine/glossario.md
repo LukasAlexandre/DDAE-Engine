@@ -7,7 +7,8 @@
 | Termo | Significado |
 |---|---|
 | **DDAE Engine** | Document-Driven AI Engineering Engine — metodologia onde documentos versionados são a fonte da verdade, e o código implementa o que eles descrevem. |
-| **Sessão** | Agrupamento temático de blocos (ex.: autenticação, performance). Pasta em `Docs/05_sessions/session_NN_<nome>/`. |
+| **Sessão** | Trabalho real do projeto (ex.: autenticação, dashboard). Pasta em `Docs/05_sessions/session_NN_<nome>/`, criada sob demanda com `ddae-engine session create` — nunca pré-criada pelo `init`. A primeira sessão de um projeto é sempre `session_01`. |
+| **Módulo** | Categoria interna que organiza o conteúdo de uma sessão (ex.: `05_blocks`, `09_validation`). Sempre as mesmas 13 pastas, geradas automaticamente dentro de cada sessão. Não é uma sessão e nunca é contado na numeração de sessões. |
 | **Bloco** | Unidade de execução com escopo fechado, critérios de aceite e fechamento documentado. Arquivo em `05_blocks/bloco_NN_<nome>.md`. |
 | **Prompt** | Instrução executável gerada a partir de um bloco, pronta para ser usada por um agente de IA. Arquivo em `06_prompts/prompt_<bloco>.md`. |
 | **Feedback** | Registro do que foi de fato implementado em um bloco: arquivos alterados, decisões, problemas, pendências. Arquivo em `08_feedbacks/feedback_<bloco>.md`. |

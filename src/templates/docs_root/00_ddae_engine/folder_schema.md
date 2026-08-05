@@ -48,11 +48,18 @@ Docs/05_sessions/session_NN_<nome>/
 └── 13_release/           Changelog e release notes gerados pela sessão.
 ```
 
-As 10 sessões base (`session_01` a `session_10`) cobrem o ciclo de vida típico de um projeto (fundação, arquitetura, design system, features, segurança, qualidade, performance, deploy, observabilidade, auditoria final) — mas são apenas um ponto de partida. `ddae-engine session create "<nome>"` continua a numeração a partir de `session_11`.
+`Docs/05_sessions/` começa **vazia** logo após `ddae-engine init` — contém apenas um `README.md`. Nenhuma sessão é pré-criada. A primeira sessão real de qualquer projeto é sempre `session_01`, criada com `ddae-engine session create "<nome>"`; a segunda é `session_02`, e assim por diante. A numeração conta somente diretórios que casam com `session_NN_<slug>` diretamente dentro de `05_sessions/` — nunca os módulos internos (`01_intake`, `05_blocks`, etc.), que só existem dentro de uma sessão já criada e nunca são contados como sessão.
+
+Sessão e módulo são conceitos diferentes:
+
+| | O que é | Onde vive | Numerado? |
+|---|---|---|---|
+| **Sessão** | Trabalho real do projeto | `Docs/05_sessions/session_NN_<slug>/` | Sim — `session_01`, `session_02`, ... |
+| **Módulo** | Categoria interna de organização | Dentro de cada sessão | Não — sempre as mesmas 13 pastas fixas |
 
 ## 3. Convenções de Nomenclatura
 
-- **snake_case** para todo arquivo e pasta gerado pela DDAE Engine: `requisitos_funcionais.md`, `session_11_dashboard_admin`, `bloco_01_login_administrativo.md`.
+- **snake_case** para todo arquivo e pasta gerado pela DDAE Engine: `requisitos_funcionais.md`, `session_01_dashboard_admin`, `bloco_01_login_administrativo.md`.
 - **Sem acentos.** "Configuração" → `configuracao`. Acentos são removidos automaticamente pelo CLI ao gerar nomes (`slugify`), e `ddae-engine validate` reporta como erro qualquer nome acentuado encontrado manualmente.
 - **Sem espaços.** Espaços em nomes de arquivo/pasta são sempre convertidos para `_` pelo CLI; se aparecerem em nomes criados manualmente, `ddae-engine validate` reporta como erro.
 - **Numeração com 2 dígitos, zero-padded.** `session_01`, não `session_1`; `bloco_01`, não `bloco_1`. Isso mantém a ordenação alfabética e numérica consistentes.
