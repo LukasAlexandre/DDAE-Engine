@@ -17,12 +17,14 @@ Correção do modelo de sessões e módulos internos. Registrado em `docs/sessio
 - `ddae-engine validate` aceita projetos ainda sem nenhuma sessão como válidos, e passa a reportar `Sessions found: N`.
 - `ddae-engine audit` passa a distinguir sessão de módulo, reportar `Sessions found: N`, e classificar cada sessão como `vazia`, `em andamento` ou `concluída`.
 - Metadados do pacote (`repository`, `homepage`, `bugs`) e o remote Git local corrigidos para apontar para o repositório atual (`github.com/LukasAlexandre/DDAE-Engine`), refletindo a renomeação já efetivada do lado do GitHub. Registrado em `docs/sessions/session_11_estabilizacao_ci_e_release_0_2_0/`.
+- Suporte oficial de Node.js redefinido para `>=22` (era `>=18`). Node 18 e 20 estão end-of-life e saem da política oficial; Node 22 continua LTS mantido, Node 24 é a referência principal, Node 26 é validado em CI como linha Current.
 
 ### Added
 
 - 29 testes automatizados com `node:test` (`npm test`), sem dependências novas.
 - Detecção não destrutiva de projetos com o layout legado de 10 sessões pré-criadas (`ddae-engine audit` emite um warning; nada é apagado ou renumerado automaticamente).
 - `Docs/05_sessions/README.md` — novo documento gerado pelo `init`, explicando o modelo sessão vs. módulo dentro do próprio projeto scaffolded.
+- CI multiplataforma (GitHub Actions) cobrindo Ubuntu (Node 22/24/26), Windows (Node 24) e macOS (Node 24) — workflow adicionado nesta versão; validação remota ainda pendente da primeira execução real no GitHub.
 
 ### Compatibility
 

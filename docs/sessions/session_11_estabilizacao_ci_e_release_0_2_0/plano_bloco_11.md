@@ -51,37 +51,49 @@ Preparar a publicação segura e verificável de `ddae-engine@0.2.0`: identidade
 
 **Objetivo:** criar o primeiro workflow de CI do projeto.
 
-**Correção aplicada ao plano inicial:** a proposta original ("Node 18 + LTS atual + 24.x", SO Ubuntu+Windows obrigatórios, macOS opcional) foi substituída por:
-- **Suporte Node oficial do projeto:** `engines.node: ">=24"` em `package.json` (era `">=18"`) — mudança de compatibilidade, registrada no `CHANGELOG.md` da versão `0.2.0`.
-- **Matriz de CI:** Ubuntu/Node 24, Ubuntu/Node 26, Windows/Node 24, macOS/Node 24 — 4 jobs fixos, não uma matriz cartesiana completa.
+**Correção aplicada ao plano inicial (rodada 1):** "Node 18 + LTS atual + 24.x", Ubuntu+Windows obrigatórios/macOS opcional.
+
+**Correção aplicada ao plano inicial (rodada 2, revisão do usuário sobre a rodada 1):** ~~`engines.node: ">=24"`, matriz de 4 jobs (Ubuntu/24, Ubuntu/26, Windows/24, macOS/24)~~ — **superada** pela decisão final abaixo, porque excluir Node 22 (ainda LTS mantido) sem ganho técnico comprovado era desnecessariamente restritivo.
+
+**Decisão final implementada:**
+- **Suporte Node oficial do projeto:** `engines.node: ">=22"` em `package.json` (era `">=18"`) — mudança de compatibilidade, registrada no `CHANGELOG.md` da versão `0.2.0` e no `README.md` (nova seção "Requirements").
+- **Matriz de CI (5 jobs):** Ubuntu/Node 22, Ubuntu/Node 24, Ubuntu/Node 26, Windows/Node 24, macOS/Node 24.
+- **Passos do workflow, por job:** checkout (`actions/checkout@v7`) → setup-node (`actions/setup-node@v7`, `package-manager-cache: false`) → imprimir `node --version`/`npm --version` → `npm test` → `node bin/ddae-engine.js --version` → `node bin/ddae-engine.js --help` → `npm pack --dry-run` → `node scripts/ci/verify-clean-tree.mjs` (verificação multiplataforma de que nada ficou sujo no checkout).
+- **Sem smoke test de `init`/`session create`/etc. neste bloco:** decisão explícita — esse fluxo de sessão real pertence ao Bloco 04 (distribuição via tarball instalado), não ao Bloco 02, para manter a delimitação entre "o CLI funciona a partir do checkout" (Bloco 02) e "o pacote instalado funciona de forma independente" (Bloco 04).
+- **Sem `package-lock.json`:** decisão mantida — a CI roda `npm test`/`npm pack --dry-run` diretamente, sem `npm ci`.
+- **Segurança do workflow:** `permissions: contents: read` (workflow inteiro, sem escrita); sem secrets; sem `NODE_AUTH_TOKEN`; sem `registry-url`; gatilho `pull_request` (não `pull_request_target`); sem passo de publicação; `concurrency` com `cancel-in-progress` por ref; `fail-fast: false`; `timeout-minutes: 10` por job.
 
 **Escopo:**
-- `.github/workflows/ci.yml` (ou nome equivalente).
-- Atualização de `package.json.engines` para `>=24`.
-- Passos do workflow: checkout → setup-node (matriz) → `npm test` → `node bin/ddae-engine.js --version`/`--help` → `npm pack --dry-run` → smoke test em diretório temporário do runner (`init` → `session create` ×2 → `block create` → `prompt create` → `feedback create` → `validate` → `audit`) → verificação de ausência de artefatos residuais.
-- **Sem `package-lock.json`:** decisão explícita de não criar lockfile artificial enquanto o projeto não tiver dependências reais; a CI roda `npm test`/`npm pack --dry-run` diretamente, sem `npm ci`.
+- `.github/workflows/ci.yml`.
+- `scripts/ci/verify-clean-tree.mjs` (novo, zero dependências — usa `execFileSync('git', ['status', '--porcelain'])`).
+- `package.json.engines` → `>=22`.
+- `README.md` → seção "Requirements".
+- `CHANGELOG.md` → entrada `0.2.0` atualizada (política Node + CI adicionada, sem declarar aprovação remota).
 
-**Fora de escopo:** publicação automática; tags; releases; provenance.
+**Fora de escopo:** publicação automática; tags; releases; provenance; `package:check`/`release:check`/`prepublishOnly` (Bloco 03); smoke test do tarball instalado (Bloco 04).
 
-**Arquivos previstos:** `.github/workflows/*.yml` (novo); `package.json` (`engines`).
+**Arquivos previstos:** `.github/workflows/ci.yml` (novo), `scripts/ci/verify-clean-tree.mjs` (novo), `package.json` (`engines`), `README.md`, `CHANGELOG.md`, documentação da Session 11.
 
 **Dependências:** Bloco 01 concluído (testar já com a identidade correta).
 
-**Riscos:** primeira vez que o projeto roda em Node 24/26 formalmente fora do ambiente de desenvolvimento local — mitigado pelo próprio propósito do bloco (é exatamente essa validação que falta).
+**Riscos:** primeira vez que o projeto roda em Node 22/26 formalmente, e primeira vez que roda dentro de um runner GitHub Actions (Windows/macOS incluídos) — mitigado pelo próprio propósito do bloco, mas **a validação real só ocorre após commit + push**; tudo o que foi verificado até aqui é local (Node 24 no Windows).
 
 **Critérios de aceite:**
-- [ ] `engines.node` = `">=24"`.
-- [ ] Workflow executa nos 4 jobs da matriz.
-- [ ] Falha de teste bloqueia o workflow (testado com quebra proposital revertida antes do commit final).
-- [ ] Nenhum artefato residual após a execução em qualquer job.
+- [x] `engines.node` = `">=22"`.
+- [x] Workflow sintaticamente válido (validado localmente) e com exatamente 5 combinações na matriz.
+- [x] Nenhum secret, `NODE_AUTH_TOKEN`, `registry-url` ou passo de publicação no workflow.
+- [x] `permissions: contents: read` no nível do workflow.
+- [ ] Workflow executa e passa nos 5 jobs no GitHub — **pendente de execução remota**.
+- [ ] Falha de teste bloqueia o workflow — **pendente de verificação remota** (não testado propositalmente nesta rodada).
+- [ ] Nenhum artefato residual após a execução em qualquer job — **pendente de verificação remota** (script criado e testado localmente, mas não dentro de um runner real).
 
-**Testes:** o próprio workflow.
+**Testes:** o próprio workflow, quando executado no GitHub; localmente, `scripts/ci/verify-clean-tree.mjs` foi exercitado manualmente (detectou corretamente um working tree sujo durante o desenvolvimento deste bloco).
 
-**Evidência:** log/link de execução do GitHub Actions.
+**Evidência:** log/link de execução do GitHub Actions — a obter após commit + push.
 
-**Rollback:** remover o arquivo de workflow; reverter `engines.node` para `>=18` se necessário — sem efeito colateral em publicação (nada publicado ainda).
+**Rollback:** remover `.github/workflows/ci.yml` e `scripts/ci/verify-clean-tree.mjs`; reverter `engines.node` para `>=18` se necessário — sem efeito colateral em publicação (nada publicado ainda).
 
-**Definição de pronto:** workflow verde nos 4 jobs, contra o commit já com a identidade regularizada.
+**Definição de pronto:** workflow verde nos 5 jobs no GitHub, contra o commit já com a identidade regularizada. **Não atingida nesta rodada** — falta commit, push e a primeira execução remota.
 
 ---
 

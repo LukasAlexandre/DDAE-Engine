@@ -8,6 +8,10 @@ DDAE Engine is a lightweight methodology and CLI for keeping AI coding agents al
 
 AI agents are good at writing code and bad at remembering *why* it was written that way. Without a persistent, structured record of intent, every session re-derives context from scratch — and drifts a little further from the original design each time. DDAE Engine fixes this by giving agents (and humans) a conventional set of documents to read before changing anything, and to update as part of every change.
 
+## Requirements
+
+- Node.js 22 or later (`engines.node` in `package.json`: `>=22`). Node 24 is the recommended baseline; Node 26 (Current) is validated in CI to catch regressions before it becomes LTS. Node 18 and 20 are end-of-life and no longer supported.
+
 ## Quick start
 
 After the npm publication is completed, use:
