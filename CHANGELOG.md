@@ -16,10 +16,11 @@ Correção do modelo de sessões e módulos internos. Registrado em `docs/sessio
 - A numeração de sessões considera somente diretórios que casam estritamente com `^session_(\d+)_([a-z0-9_]+)$` diretamente sob `Docs/05_sessions/` — arquivos, módulos e nomes fora do padrão nunca interferem.
 - `ddae-engine validate` aceita projetos ainda sem nenhuma sessão como válidos, e passa a reportar `Sessions found: N`.
 - `ddae-engine audit` passa a distinguir sessão de módulo, reportar `Sessions found: N`, e classificar cada sessão como `vazia`, `em andamento` ou `concluída`.
+- Metadados do pacote (`repository`, `homepage`, `bugs`) e o remote Git local corrigidos para apontar para o repositório atual (`github.com/LukasAlexandre/DDAE-Engine`), refletindo a renomeação já efetivada do lado do GitHub. Registrado em `docs/sessions/session_11_estabilizacao_ci_e_release_0_2_0/`.
 
 ### Added
 
-- 26 testes automatizados com `node:test` (`npm test`), sem dependências novas.
+- 29 testes automatizados com `node:test` (`npm test`), sem dependências novas.
 - Detecção não destrutiva de projetos com o layout legado de 10 sessões pré-criadas (`ddae-engine audit` emite um warning; nada é apagado ou renumerado automaticamente).
 - `Docs/05_sessions/README.md` — novo documento gerado pelo `init`, explicando o modelo sessão vs. módulo dentro do próprio projeto scaffolded.
 

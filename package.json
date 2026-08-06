@@ -34,11 +34,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LukasAlexandre/DDAD.git"
+    "url": "git+https://github.com/LukasAlexandre/DDAE-Engine.git"
   },
-  "homepage": "https://github.com/LukasAlexandre/DDAD",
+  "homepage": "https://github.com/LukasAlexandre/DDAE-Engine",
   "bugs": {
-    "url": "https://github.com/LukasAlexandre/DDAD/issues"
+    "url": "https://github.com/LukasAlexandre/DDAE-Engine/issues"
   },
   "license": "MIT"
 }
