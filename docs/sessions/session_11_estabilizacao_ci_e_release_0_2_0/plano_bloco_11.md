@@ -101,49 +101,73 @@ Preparar a publicação segura e verificável de `ddae-engine@0.2.0`: identidade
 
 **Objetivo:** impedir publicação com testes falhando, pacote incompleto ou versão inconsistente.
 
-**Correção aplicada ao plano inicial:** `prepublishOnly: "npm test"` (proposta inicial) foi substituído por uma cadeia de scripts mais completa, já que `prepublishOnly` só roda em `npm publish`, não como validação geral de empacotamento:
+**Correção aplicada ao plano inicial (rodada 1):** `prepublishOnly: "npm test"` — substituído porque `prepublishOnly` só roda em `npm publish`, não valida o empacotamento por si só.
+
+**Correção aplicada ao plano inicial (rodada 2, revisão do usuário sobre a rodada 1):** ~~`release:check = npm test && npm run package:check && npm run smoke`, com `scripts/smoke-distribution.mjs` criado já neste bloco~~ — **superada**: `smoke` pertence ao Bloco 04 (instalação real do tarball), não a este. Misturar os dois quebraria a delimitação entre "roda a partir do checkout" (Bloco 03) e "o pacote instalado funciona de forma independente" (Bloco 04).
+
+**Decisão final implementada:**
 
 ```json
 {
   "scripts": {
     "test": "node --test",
-    "smoke": "node scripts/smoke-distribution.mjs",
-    "package:check": "node scripts/verify-package.mjs",
-    "release:check": "npm test && npm run package:check && npm run smoke",
+    "package:check": "node scripts/release/verify-package.mjs",
+    "release:check": "npm test && npm run package:check",
     "prepublishOnly": "npm run release:check"
   }
 }
 ```
 
-Não será usado `prepack` para disparar `npm pack` a partir de um lifecycle script, para evitar recursão entre scripts do próprio ciclo de vida do npm.
+```text
+npm publish
+    ↓
+prepublishOnly
+    ↓
+npm run release:check
+    ├── npm test
+    └── npm run package:check
+```
+
+Não foi usado `prepack` para disparar `npm pack` a partir de um lifecycle script, para evitar recursão entre scripts do próprio ciclo de vida do npm.
+
+**`scripts/release/verify-package.mjs`** (não `scripts/verify-package.mjs` — colocado em subpasta `release/` para simetria com `scripts/ci/` e para já sinalizar que `scripts/` terá mais de uma categoria): zero dependências externas; roda `npm pack --dry-run --json` via `child_process` (usa `execSync` com um comando literal estático — não `execFileSync` com array de args + `shell:true`, que dispara o aviso de depreciação `DEP0190` do Node; `execFileSync` puro sem shell falha no Windows porque `npm` ali é o shim `npm.cmd`, que Node não consegue `spawn` diretamente); parseia a lista real de arquivos do pacote; expõe funções puras (`checkMetadata`, `checkRepositoryIdentity`, `checkRequiredFiles`, `checkForbiddenFiles`) testáveis sem tocar o filesystem ou o repositório real.
+
+**Versão travada nesta release:** `EXPECTED_VERSION = '0.2.0'` no topo do script — precisa ser atualizada manualmente a cada nova release; se esquecida, `package:check` falha com mensagem clara em vez de publicar silenciosamente a versão errada.
+
+**`release:tag-check` — decisão de NÃO implementar agora:** a verificação `package.json.version` ↔ tag Git não foi criada neste bloco. Nenhuma tag existe até o Bloco 05, então qualquer verificação desse tipo hoje seria não-testável honestamente (sempre "sem tag" ⇒ trivialmente falha ou trivialmente ignorada). Fica planejada como gate independente, ativado só no Bloco 05.
 
 **Escopo:**
-- `scripts/verify-package.mjs` (novo, zero dependências) — valida que `files` do `package.json` corresponde ao esperado, que `CHANGELOG.md`/`README.md`/`LICENSE` estão presentes no pacote, que `test/` está ausente.
-- `scripts/smoke-distribution.mjs` (novo) — pode ser reaproveitado/expandido no Bloco 04, ou este bloco cria a base e o Bloco 04 a exercita de ponta a ponta.
-- `package.json`: scripts `smoke`, `package:check`, `release:check`, `prepublishOnly`.
-- Documentação de rollback via `npm deprecate` (não é possível despublicar após ~72h no registro npm).
-- Script simples de verificação versão↔tag (comparar `package.json.version` com `git describe --tags`).
+- `scripts/release/verify-package.mjs` (novo, zero dependências).
+- `package.json`: scripts `package:check`, `release:check`, `prepublishOnly` (sem `smoke`, sem `release:tag-check`).
+- `.github/workflows/ci.yml`: hardening (SHA pinning de `actions/checkout`/`actions/setup-node`, `persist-credentials: false`) + novo step `npm run package:check` em todos os jobs.
+- `test/package-check.test.js` (novo).
+- Documentação de rollback via `npm deprecate` (não é possível despublicar após ~72h no registro npm) — preparação para o Bloco 05, não exercitada aqui.
 
-**Fora de escopo:** publicação real; criação de tag; `npm publish --provenance`.
+**Fora de escopo:** `smoke`/`scripts/smoke-distribution.mjs`/`test/pack-smoke.test.js` (Bloco 04); `release:tag-check` (Bloco 05); publicação real; criação de tag; `npm publish --provenance`.
 
-**Arquivos previstos:** `package.json`, `scripts/verify-package.mjs`, `scripts/smoke-distribution.mjs`.
+**Arquivos previstos:** `package.json`, `scripts/release/verify-package.mjs`, `.github/workflows/ci.yml`, `test/package-check.test.js`, `CHANGELOG.md`, documentação da Session 11.
 
-**Dependências:** Bloco 02 (CI já deve estar rodando os mesmos checks antes de confiar no gate local).
+**Dependências:** Bloco 02 concluído (CI já valida com a matriz completa; hardening desta etapa se aplica sobre um workflow já comprovadamente funcional).
 
-**Riscos:** excesso de automação tornando a publicação frágil — mitigado mantendo tudo em Node puro, sem framework de release, consistente com a filosofia zero-dependência do projeto.
+**Riscos:** excesso de automação tornando a publicação frágil — mitigado mantendo tudo em Node puro, sem framework de release, consistente com a filosofia zero-dependência do projeto. Risco específico encontrado e corrigido durante a implementação: `execFileSync('npm', [...])` falha no Windows (ENOENT/EINVAL) por causa do shim `npm.cmd` — resolvido com `execSync` de um comando literal.
 
 **Critérios de aceite:**
-- [ ] `npm run release:check` executa os três sub-scripts em sequência e falha se qualquer um falhar.
-- [ ] `npm publish --dry-run` dispara `prepublishOnly` → `release:check` (testado e revertido com quebra proposital).
-- [ ] Rollback/depreciação documentado antes de qualquer publicação real.
+- [x] `npm run package:check` passa contra o pacote real.
+- [x] `npm run release:check` executa `test` + `package:check` em sequência.
+- [x] `npm publish --dry-run` dispara `prepublishOnly` → `release:check` → `npm test` + `package:check` (confirmado no log real, sem publicação).
+- [x] Falha de cada regra (`checkMetadata`, `checkRepositoryIdentity`, `checkRequiredFiles`, `checkForbiddenFiles`) comprovada via teste automatizado com dado sintético, sem editar arquivos reais do repositório.
+- [x] CI roda `npm run package:check` em todos os jobs.
+- [x] `actions/checkout`/`actions/setup-node` fixadas por SHA verificado via `gh api`; `persist-credentials: false` aplicado.
+- [x] Rollback via `npm deprecate` documentado (não exercitado — nada foi publicado).
+- [ ] Validação remota da CI com o hardening aplicado — **pendente**, só ocorre após commit + push (fora desta rodada de implementação local).
 
-**Testes:** quebra proposital de cada sub-script + reversão.
+**Testes:** `test/package-check.test.js` — 8 testes cobrindo o caso real (`package:check` contra o projeto atual) e cada regra individualmente contra dados sintéticos (funções puras).
 
-**Evidência:** log de uma execução de `release:check` falhando de propósito.
+**Evidência:** saída real de `npm run package:check`, `npm run release:check`, `npm publish --dry-run` (mostrando o lifecycle completo disparando), `npm test` com 37/37.
 
-**Rollback:** remover os scripts novos — não afeta nada já publicado.
+**Rollback:** remover `scripts/release/verify-package.mjs` e os 3 scripts novos de `package.json`; reverter os SHAs do workflow para as tags móveis `@v7` se necessário — nada disso afeta publicação, pois nada foi publicado.
 
-**Definição de pronto:** gate funcional e documentado, sem publicação real executada.
+**Definição de pronto:** gate funcional e testado localmente; commit e push ainda pendentes de revisão explícita (este bloco não commita, por instrução).
 
 ---
 
@@ -153,13 +177,15 @@ Não será usado `prepack` para disparar `npm pack` a partir de um lifecycle scr
 
 **Escopo:**
 - `npm pack` real (não dry-run) em diretório temporário → instalação isolada do `.tgz` → execução do binário instalado (`--version`, `--help`, `init`, `session create` ×2, `block create`, `prompt create`, `feedback create`, `validate`, `audit`) → limpeza completa dos artefatos.
+- `scripts/release/smoke-distribution.mjs` (novo — **não** criado no Bloco 03, por decisão explícita de manter os blocos separados) + script `"smoke"` em `package.json`.
+- `release:check` expandido para `npm test && npm run package:check && npm run smoke`.
 - Confirmar que `CHANGELOG.md` está presente no pacote extraído e `test/` está ausente.
 - Confirmar que nenhuma referência a `DDAD` sobrevive no pacote final (depende do Bloco 01 já estar mesclado).
 - `test/pack-smoke.test.js` (novo, `node:test`) automatizando o que hoje é só manual.
 
 **Fora de escopo:** publicação, tag, release.
 
-**Arquivos previstos:** `test/pack-smoke.test.js`; reaproveita `scripts/smoke-distribution.mjs` do Bloco 03.
+**Arquivos previstos:** `test/pack-smoke.test.js`, `scripts/release/smoke-distribution.mjs` (ambos novos neste bloco), `package.json` (script `smoke` + `release:check` expandido).
 
 **Dependências:** Blocos 01–03.
 

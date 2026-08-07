@@ -48,7 +48,7 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 |---|---|---|
 | 01 — Regularização da identidade oficial | Corrigir `repository`/`homepage`/`bugs` e o remote local; preservar histórico | Concluído / Aprovado |
 | 02 — Fundação de CI multiplataforma | GitHub Actions: Ubuntu (Node 22/24/26), Windows (Node 24), macOS (Node 24) | Concluído / Aprovado — 5/5 jobs verdes (run `31158674593`) |
-| 03 — Proteção de empacotamento e publicação | `package:check`, `smoke`, `release:check`, `prepublishOnly` | Não iniciado |
+| 03 — Proteção de empacotamento e publicação | `package:check`, `release:check` (`test`+`package:check`), `prepublishOnly`; hardening de CI | Implementado localmente, aguardando revisão/commit |
 | 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Não iniciado |
 | 05 — Tag, release e publicação controlada | Somente com nova autorização humana | Não iniciado |
 
@@ -58,7 +58,7 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 2. ~~Suporte Node oficial: `>=24`~~ — **superado no Bloco 02** por `>=22`: Node 22 continua LTS mantido (não faz sentido excluí-lo sem ganho técnico comprovado), Node 24 é a referência principal, Node 26 (Current) é validado em CI para antecipar regressões antes de virar LTS. Node 18/20 saem por estarem EOL.
 3. ~~Matriz de CI: Ubuntu/Node 24, Ubuntu/Node 26, Windows/Node 24, macOS/Node 24 (4 jobs)~~ — **superada no Bloco 02** por 5 jobs: Ubuntu/Node 22, Ubuntu/Node 24, Ubuntu/Node 26, Windows/Node 24, macOS/Node 24.
 4. Nenhum `package-lock.json` será criado artificialmente enquanto o projeto não tiver dependências reais.
-5. `prepublishOnly` chamará `release:check` (que agrega `npm test` + `package:check` + `smoke`), não apenas `npm test`.
+5. ~~`prepublishOnly` chamará `release:check` (que agrega `npm test` + `package:check` + `smoke`)~~ — **corrigido no Bloco 03**: `release:check` = `npm test` + `package:check` apenas. `smoke` (instalação do tarball) é adicionado ao `release:check` somente no Bloco 04, para não misturar a validação "roda a partir do checkout" (Bloco 03) com "o pacote instalado funciona de forma independente" (Bloco 04).
 6. A tag `v0.1.0` retroativa **não será criada** nesta sessão.
 7. A publicação continua manual — sem automação de `npm publish`.
 8. O Bloco 05 exige autorização humana separada da autorização geral desta sessão.
@@ -87,11 +87,44 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 
 **Segurança:** workflow com `permissions: contents: read` (sem escrita), sem secrets, sem `NODE_AUTH_TOKEN`, sem `registry-url`, sem passo de publicação, gatilho `pull_request` (não `pull_request_target`), `package-manager-cache: false` (cache desabilitado explicitamente).
 
+## Bloco 03 — Detalhes
+
+**Cadeia de proteção implementada:**
+
+```text
+npm publish
+    ↓
+prepublishOnly
+    ↓
+npm run release:check
+    ├── npm test
+    └── npm run package:check
+```
+
+**`package:check` (`scripts/release/verify-package.mjs`):** roda `npm pack --dry-run --json` (a lista real de arquivos que seriam publicados, não uma suposição baseada em `package.json.files`) e valida: metadados essenciais (`name`, `version` — travada em `0.2.0` para este ciclo de release via `EXPECTED_VERSION`, `engines.node`, `bin.ddae-engine` apontando para arquivo existente), identidade de repositório (`repository`/`homepage`/`bugs` apontando para `DDAE-Engine`), presença de arquivos obrigatórios (`package.json`, `README.md`, `LICENSE`, `CHANGELOG.md`, `bin/ddae-engine.js`, mais uma amostra representativa de `src/cli.js`/`src/commands/`/`src/utils/`/`src/templates/`), e ausência de arquivos proibidos (`test/`, `.github/`, `docs/sessions/`, `feedback/`, `scripts/ci/`, `scripts/release/`, `node_modules/`, `.git/`, `*.tgz`, `.env`, padrões de segredo). Zero dependências novas.
+
+**Decisão de escopo — sem `smoke` ainda:** `release:check` nesta etapa é só `npm test` + `package:check`. A instalação real do tarball (`scripts/smoke-distribution.mjs`, `test/pack-smoke.test.js`) pertence ao Bloco 04 — não implementada aqui, por decisão explícita de não misturar os dois blocos.
+
+**Decisão de escopo — sem `release:tag-check` ainda:** a verificação `package.json.version` ↔ tag Git não foi implementada neste bloco, porque nenhuma tag existe até o Bloco 05. Fica planejada como gate separado (`release:tag-check`), a ativar só quando a tag `v0.2.0` existir de fato — evita complexidade prematura sobre algo que não pode ser testado honestamente agora.
+
+**Hardening de CI aplicado:**
+- `actions/checkout` fixada por SHA: `3d3c42e5aac5ba805825da76410c181273ba90b1` (equivalente a `v7.0.1`).
+- `actions/setup-node` fixada por SHA: `820762786026740c76f36085b0efc47a31fe5020` (equivalente a `v7.0.0`).
+- SHAs resolvidos via `gh api repos/actions/{checkout,setup-node}/git/refs/tags/<versão>` e cruzados contra a versão específica mais recente de cada `v7.x` — não inventados.
+- `persist-credentials: false` adicionado ao `actions/checkout`.
+- `permissions: contents: read` preservado; `package-manager-cache: false` preservado; nenhum secret, `NODE_AUTH_TOKEN`, `registry-url` ou passo de publicação adicionado.
+- CI passa a rodar `npm run package:check` em todos os jobs (mesma validação de pacote que o `prepublishOnly` usará), sem rodar `release:check`/`npm publish --dry-run` completos em todo job — mantém a CI rápida.
+
+**Rollback documentado (ainda não exercitado):** caso uma publicação futura se prove problemática, o mecanismo correto é `npm deprecate ddae-engine@<versão> "<mensagem>"` — o registro npm não permite "despublicar" após ~72h. Nenhuma publicação real ocorreu nesta sessão; este parágrafo é preparação para o Bloco 05.
+
+**`npm publish` real continua proibido neste bloco** — apenas `npm publish --dry-run` foi executado, confirmando que `prepublishOnly` → `release:check` → `npm test` + `package:check` disparam corretamente antes de qualquer tentativa de publicação.
+
 ## Riscos
 
-- Ausência de teste real em Node 24/26 até agora (ambiente de desenvolvimento usado nas Sessions 10 foi Node v24.15.0, mas nunca testado contra Node 26 nem contra `engines` `>=24` formalmente).
+- ~~Ausência de teste real em Node 24/26~~ — **resolvido no Bloco 02**: CI remota confirmou 5/5 jobs verdes em Ubuntu (22/24/26), Windows (24) e macOS (24).
 - Custo de runners macOS no GitHub Actions (aceito conscientemente pela natureza fortemente dependente de filesystem/paths do projeto).
 - Repetição do histórico de bloqueio de nome no `npm publish` (risco residual baixo — o nome `ddae-engine` já está registrado na mesma conta).
+- `EXPECTED_VERSION` em `verify-package.mjs` é travada manualmente em `"0.2.0"` — precisa ser atualizada a cada nova release; se esquecida, `package:check` passará a falhar com uma mensagem clara (não silenciosamente), o que é o comportamento pretendido.
 
 ## Critérios Globais da Sessão
 
@@ -103,11 +136,11 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 
 ## Condição para Publicação
 
-`npm publish` de `0.2.0` só pode ocorrer depois que: identidade regularizada (Bloco 01) + CI verde (Bloco 02) + `release:check` aprovado (Bloco 03) + smoke test do tarball instalado aprovado (Bloco 04) + autorização humana explícita para o Bloco 05.
+`npm publish` de `0.2.0` só pode ocorrer depois que: identidade regularizada (Bloco 01) + CI verde (Bloco 02) + `release:check` (`test`+`package:check`) aprovado e travado via `prepublishOnly` (Bloco 03) + `release:check` expandido com `smoke` do tarball instalado aprovado (Bloco 04) + autorização humana explícita para o Bloco 05.
 
 ## Status Atual
 
-Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7`) — CI validada remotamente com 5/5 jobs verdes. Blocos 03–05: não iniciados.
+Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: implementado localmente, aguardando revisão e commit. Blocos 04–05: não iniciados.
 
 ## Nota Operacional — Infraestrutura de CI (Bloco 02)
 

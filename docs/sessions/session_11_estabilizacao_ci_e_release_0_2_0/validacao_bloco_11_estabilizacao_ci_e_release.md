@@ -6,7 +6,7 @@ Documento vivo, atualizado ao final de cada bloco.
 
 - [x] Bloco 01 — Regularização da identidade oficial — Aprovado, commitado (`cad98a8`) e enviado a `origin/main`
 - [x] Bloco 02 — Fundação de CI multiplataforma — Aprovado, commitado (`1f873e7`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes (run `31158674593`)
-- [ ] Bloco 03 — Proteção de empacotamento e publicação — Não iniciado
+- [~] Bloco 03 — Proteção de empacotamento e publicação — Implementado e validado localmente; commit/push e validação remota pendentes
 - [ ] Bloco 04 — Smoke tests da distribuição 0.2.0 — Não iniciado
 - [ ] Bloco 05 — Tag, release e publicação controlada — Não iniciado
 
@@ -72,6 +72,33 @@ Aprovado. Validação remota completa com evidência real de sucesso nas 5 combi
 
 ---
 
-## 8. Blocos 03–05
+## 8. Bloco 03 — Critérios de Aceite
+
+- [x] `npm run package:check` passa contra o pacote real (`scripts/release/verify-package.mjs`).
+- [x] `npm run release:check` = `npm test && npm run package:check` (sem `smoke` — deferido ao Bloco 04).
+- [x] `npm publish --dry-run` dispara `prepublishOnly` → `release:check` → `npm test` (37/37) + `package:check` (OK) — confirmado no log real.
+- [x] Nenhuma publicação real ocorreu; `npm view ddae-engine version` continua `0.1.0`.
+- [x] Cada regra de `package:check` (metadados, identidade de repositório, arquivos obrigatórios, arquivos proibidos) comprovada com falha via teste automatizado contra dado sintético — nenhum arquivo real do repositório foi editado/restaurado para demonstrar falha.
+- [x] `release:tag-check` deliberadamente **não** implementado — decisão documentada, não uma omissão.
+- [x] CI (`ci.yml`) roda `npm run package:check` em todos os jobs, sem duplicar `release:check`/`npm publish --dry-run` em cada job.
+- [x] `actions/checkout` e `actions/setup-node` fixadas por SHA de commit (não tag móvel), verificados via `gh api repos/actions/{checkout,setup-node}/git/refs/tags/<versão>`.
+- [x] `persist-credentials: false` no `actions/checkout`.
+- [x] `permissions: contents: read`, `package-manager-cache: false`, sem secrets/`NODE_AUTH_TOKEN`/`registry-url`/passo de publicação — preservados.
+- [x] Zero dependências novas; sem `package-lock.json`.
+- [ ] Validação remota da CI com o hardening aplicado — **pendente**, só ocorre após commit + push (fora do escopo desta etapa, que não commita).
+
+## 9. Bloco 03 — Evidências
+
+`npm test`: 37/37 (29 anteriores + 8 novos em `test/package-check.test.js`). `npm run package:check`: `[DDAE package:check] OK`, 93 arquivos inspecionados. `npm run release:check`: aprovado. `npm publish --dry-run`: log confirma `prepublishOnly` → `release:check` → `npm test` → `package:check` → simulação de publicação (`+ ddae-engine@0.2.0`, sem publicação real). `npm view ddae-engine version` pós-dry-run: `0.1.0` (inalterado). Nenhum `.tgz`, `node_modules/` ou `package-lock.json` residual. SHAs de `actions/checkout@v7.0.1` (`3d3c42e5aac5ba805825da76410c181273ba90b1`) e `actions/setup-node@v7.0.0` (`820762786026740c76f36085b0efc47a31fe5020`) resolvidos e cruzados via `gh api` antes de fixar no workflow.
+
+Problema técnico encontrado e corrigido durante a implementação: `execFileSync('npm', [...])` falha no Windows (`ENOENT` sem shim, depois `EINVAL` com `npm.cmd` direto); `execFileSync` com `shell: true` + array de args funciona mas emite `DEP0190` (depreciação do Node); solução final: `execSync` com um comando literal estático (`'npm pack --dry-run --json'`), sem interpolação, sem aviso, portável.
+
+## 10. Bloco 03 — Decisão
+
+Implementação e validação local aprovadas. **Commit, push e validação remota pendentes** — por instrução explícita, este bloco não commita; aguarda revisão do diff.
+
+---
+
+## 11. Blocos 04–05
 
 A preencher conforme cada bloco for executado e liberado pelo usuário.

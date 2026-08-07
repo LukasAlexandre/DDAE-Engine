@@ -20,7 +20,10 @@
   },
   "scripts": {
     "start": "node bin/ddae-engine.js",
-    "test": "node --test"
+    "test": "node --test",
+    "package:check": "node scripts/release/verify-package.mjs",
+    "release:check": "npm test && npm run package:check",
+    "prepublishOnly": "npm run release:check"
   },
   "keywords": [
     "ddae-engine",
