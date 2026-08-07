@@ -6,7 +6,7 @@ Documento vivo, atualizado ao final de cada bloco.
 
 - [x] Bloco 01 — Regularização da identidade oficial — Aprovado, commitado (`cad98a8`) e enviado a `origin/main`
 - [x] Bloco 02 — Fundação de CI multiplataforma — Aprovado, commitado (`1f873e7`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes (run `31158674593`)
-- [~] Bloco 03 — Proteção de empacotamento e publicação — Implementado e validado localmente; commit/push e validação remota pendentes
+- [x] Bloco 03 — Proteção de empacotamento e publicação — Aprovado, commitado (`22f6599`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes, incluindo `package:check` (run `31164734911`)
 - [ ] Bloco 04 — Smoke tests da distribuição 0.2.0 — Não iniciado
 - [ ] Bloco 05 — Tag, release e publicação controlada — Não iniciado
 
@@ -85,17 +85,26 @@ Aprovado. Validação remota completa com evidência real de sucesso nas 5 combi
 - [x] `persist-credentials: false` no `actions/checkout`.
 - [x] `permissions: contents: read`, `package-manager-cache: false`, sem secrets/`NODE_AUTH_TOKEN`/`registry-url`/passo de publicação — preservados.
 - [x] Zero dependências novas; sem `package-lock.json`.
-- [ ] Validação remota da CI com o hardening aplicado — **pendente**, só ocorre após commit + push (fora do escopo desta etapa, que não commita).
+- [x] Validação remota da CI com o hardening aplicado — confirmado (run `31164734911`, conclusion `success`, 5/5 jobs, `headSha` = `22f6599`).
 
 ## 9. Bloco 03 — Evidências
 
-`npm test`: 37/37 (29 anteriores + 8 novos em `test/package-check.test.js`). `npm run package:check`: `[DDAE package:check] OK`, 93 arquivos inspecionados. `npm run release:check`: aprovado. `npm publish --dry-run`: log confirma `prepublishOnly` → `release:check` → `npm test` → `package:check` → simulação de publicação (`+ ddae-engine@0.2.0`, sem publicação real). `npm view ddae-engine version` pós-dry-run: `0.1.0` (inalterado). Nenhum `.tgz`, `node_modules/` ou `package-lock.json` residual. SHAs de `actions/checkout@v7.0.1` (`3d3c42e5aac5ba805825da76410c181273ba90b1`) e `actions/setup-node@v7.0.0` (`820762786026740c76f36085b0efc47a31fe5020`) resolvidos e cruzados via `gh api` antes de fixar no workflow.
+**Local:** `npm test`: 37/37 (29 anteriores + 8 novos em `test/package-check.test.js`). `npm run package:check`: `[DDAE package:check] OK`, 93 arquivos inspecionados. `npm run release:check`: aprovado. `npm publish --dry-run`: log confirma `prepublishOnly` → `release:check` → `npm test` → `package:check` → simulação de publicação (`+ ddae-engine@0.2.0`, sem publicação real). `npm view ddae-engine version` pós-dry-run: `0.1.0` (inalterado). Nenhum `.tgz`, `node_modules/` ou `package-lock.json` residual. SHAs de `actions/checkout@v7.0.1` (`3d3c42e5aac5ba805825da76410c181273ba90b1`) e `actions/setup-node@v7.0.0` (`820762786026740c76f36085b0efc47a31fe5020`) resolvidos e cruzados via `gh api` antes de fixar no workflow.
 
 Problema técnico encontrado e corrigido durante a implementação: `execFileSync('npm', [...])` falha no Windows (`ENOENT` sem shim, depois `EINVAL` com `npm.cmd` direto); `execFileSync` com `shell: true` + array de args funciona mas emite `DEP0190` (depreciação do Node); solução final: `execSync` com um comando literal estático (`'npm pack --dry-run --json'`), sem interpolação, sem aviso, portável.
 
+**Remoto (commit `22f6599`, push `ac5c2f1..22f6599`):** run `31164734911` (evento `push`, `headSha` = `22f6599`) — conclusão `success`, **5/5 jobs verdes**, disparado sem atraso desta vez (diferente do Bloco 02, cujo primeiro push levou ~9 min):
+- `ubuntu-latest / Node 22`: success — todos os 10 steps aplicativos, incluindo `Verify package contents (package:check)`, com sucesso.
+- `ubuntu-latest / Node 24`: success.
+- `ubuntu-latest / Node 26`: success.
+- `windows-latest / Node 24`: success — confirma que a correção Windows (`execSync` em vez de `execFileSync`+`npm.cmd`) funciona em runner real, não só na máquina de desenvolvimento local.
+- `macos-latest / Node 24`: success.
+
+URL: https://github.com/LukasAlexandre/DDAE-Engine/actions/runs/31164734911
+
 ## 10. Bloco 03 — Decisão
 
-Implementação e validação local aprovadas. **Commit, push e validação remota pendentes** — por instrução explícita, este bloco não commita; aguarda revisão do diff.
+Aprovado. Implementação, validação local e validação remota completas — 5/5 jobs verdes com `package:check` executando com sucesso nos 3 sistemas operacionais e nas 3 versões de Node da matriz.
 
 ---
 
