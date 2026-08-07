@@ -5,7 +5,7 @@ Documento vivo, atualizado ao final de cada bloco.
 ## 1. Status por Bloco
 
 - [x] Bloco 01 — Regularização da identidade oficial — Aprovado, commitado (`cad98a8`) e enviado a `origin/main`
-- [~] Bloco 02 — Fundação de CI multiplataforma — Implementado localmente, aguardando commit/push e validação remota
+- [x] Bloco 02 — Fundação de CI multiplataforma — Aprovado, commitado (`1f873e7`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes (run `31158674593`)
 - [ ] Bloco 03 — Proteção de empacotamento e publicação — Não iniciado
 - [ ] Bloco 04 — Smoke tests da distribuição 0.2.0 — Não iniciado
 - [ ] Bloco 05 — Tag, release e publicação controlada — Não iniciado
@@ -48,17 +48,27 @@ O Bloco 01 está aprovado, commitado e integrado a `main`.
 - [x] Gatilho `pull_request` (não `pull_request_target`).
 - [x] `package-manager-cache: false` (input real, confirmado na fonte de `actions/setup-node`).
 - [x] `fail-fast: false`, `timeout-minutes: 10` por job, `concurrency` com `cancel-in-progress`.
-- [x] `README.md` e `CHANGELOG.md` atualizados com a nova política Node — sem declarar CI aprovada.
-- [ ] Workflow executa e passa nos 5 jobs no GitHub — **pendente de execução remota**.
-- [ ] Verificação de árvore limpa (`scripts/ci/verify-clean-tree.mjs`) validada dentro de um runner real — **pendente**; localmente o script foi exercitado e detectou corretamente um estado sujo durante o desenvolvimento.
+- [x] `README.md` e `CHANGELOG.md` atualizados com a nova política Node.
+- [x] Workflow executa e passa nos 5 jobs no GitHub — confirmado (run `31158674593`, conclusion `success`).
+- [x] Verificação de árvore limpa (`scripts/ci/verify-clean-tree.mjs`) validada dentro de runners reais — passou em todos os 5 jobs (Ubuntu 22/24/26, Windows 24, macOS 24).
 
 ## 6. Bloco 02 — Evidências
 
-`npm test` local: 29/29. `node bin/ddae-engine.js --version`: `0.2.0`. `npm pack --dry-run`: aprovado, 93 arquivos. YAML validado via `npx js-yaml` (estrutura JSON resultante conferida linha a linha). `actions/checkout@v7` e `actions/setup-node@v7` confirmados existentes via `gh api repos/actions/{checkout,setup-node}/tags`. Input `package-manager-cache` confirmado real via `gh api repos/actions/setup-node/contents/action.yml`.
+**Local:** `npm test`: 29/29. `node bin/ddae-engine.js --version`: `0.2.0`. `npm pack --dry-run`: aprovado, 93 arquivos. YAML validado via `npx js-yaml`. `actions/checkout@v7`/`actions/setup-node@v7` confirmados existentes via `gh api`. Input `package-manager-cache` confirmado real via `gh api repos/actions/setup-node/contents/action.yml`.
+
+**Remoto (commit `1f873e7`, push `cad98a8..1f873e7`):**
+- Primeira execução (`push`, run `31125606640`): disparou com ~9 min de atraso (comportamento do GitHub para o commit que introduz o próprio workflow, não um defeito nosso). 2/5 jobs passaram de fato (`windows-latest/24` em 30s, `ubuntu-latest/22` em 13s); 3/5 falharam com `"The job was not acquired by Runner of type hosted even after multiple attempts"` — erro de infraestrutura do GitHub, não relacionado ao código/YAML.
+- Tentativa de re-run dos falhos (`gh run rerun --failed`) ficou presa 13+ horas em estado `queued` com zero jobs atribuídos, e a própria API recusou cancelamento (`"Cannot cancel a workflow re-run that has not yet queued"`) — confirma problema de infraestrutura do GitHub. Esse run ficou órfão (não foi possível limpá-lo via API mesmo após a infraestrutura normalizar) — artefato cosmético, sem efeito funcional (branch não é protegida, nenhum check obrigatório configurado).
+- Execução nova e independente (`workflow_dispatch`, run `31158674593`): **5/5 jobs com sucesso real**, todos concluídos em 7–32 segundos:
+  - `ubuntu-latest / Node 24`: success
+  - `ubuntu-latest / Node 26`: success
+  - `ubuntu-latest / Node 22`: success
+  - `windows-latest / Node 24`: success
+  - `macos-latest / Node 24`: success
 
 ## 7. Bloco 02 — Decisão
 
-Implementação local aprovada. **Validação remota pendente** — o bloco só pode ser considerado totalmente aprovado após commit, push e a primeira execução verde dos 5 jobs no GitHub Actions.
+Aprovado. Validação remota completa com evidência real de sucesso nas 5 combinações de SO/Node da matriz — não apenas pela existência do YAML.
 
 ---
 

@@ -47,7 +47,7 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 | Bloco | Objetivo | Status |
 |---|---|---|
 | 01 — Regularização da identidade oficial | Corrigir `repository`/`homepage`/`bugs` e o remote local; preservar histórico | Concluído / Aprovado |
-| 02 — Fundação de CI multiplataforma | GitHub Actions: Ubuntu (Node 22/24/26), Windows (Node 24), macOS (Node 24) | Implementado localmente, aguardando validação remota |
+| 02 — Fundação de CI multiplataforma | GitHub Actions: Ubuntu (Node 22/24/26), Windows (Node 24), macOS (Node 24) | Concluído / Aprovado — 5/5 jobs verdes (run `31158674593`) |
 | 03 — Proteção de empacotamento e publicação | `package:check`, `smoke`, `release:check`, `prepublishOnly` | Não iniciado |
 | 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Não iniciado |
 | 05 — Tag, release e publicação controlada | Somente com nova autorização humana | Não iniciado |
@@ -107,4 +107,8 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 
 ## Status Atual
 
-Em andamento. Bloco 01: concluído/aprovado. Bloco 02: implementado localmente, aguardando validação remota (commit, push e primeira execução da CI no GitHub). Blocos 03–05: não iniciados.
+Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7`) — CI validada remotamente com 5/5 jobs verdes. Blocos 03–05: não iniciados.
+
+## Nota Operacional — Infraestrutura de CI (Bloco 02)
+
+A primeira execução da CI (disparada pelo `push` do commit `1f873e7`) sofreu instabilidade de infraestrutura do GitHub, não relacionada ao workflow: disparo com ~9 min de atraso, e 3 dos 5 jobs falharam com `"runner not acquired"`. Uma tentativa de re-run dos jobs falhos ficou presa 13+ horas em estado quebrado. Uma execução nova e independente (`workflow_dispatch`, run `31158674593`) confirmou os 5/5 jobs verdes pouco depois, indicando que o problema era transitório do lado do GitHub. Detalhes completos em `validacao_bloco_11_estabilizacao_ci_e_release.md`, seção 6.
