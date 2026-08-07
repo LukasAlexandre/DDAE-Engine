@@ -210,7 +210,7 @@ Não foi usado `prepack` para disparar `npm pack` a partir de um lifecycle scrip
 - [x] `release:check` roda o smoke exatamente uma vez (não duplicado entre `npm test` e `npm run smoke`).
 - [x] `npm publish --dry-run` real, com o smoke incluído na cadeia, aprovado após a correção do `npm_config_dry_run`.
 - [x] CI (`ci.yml`) com `npm run smoke` nos 5 jobs, sintaxe validada localmente.
-- [ ] Validação remota da CI com o smoke incluído — **pendente**, só ocorre após commit + push.
+- [x] Validação remota da CI com o smoke incluído — confirmada (commit `308083e`, run `31204194590`, 5/5 jobs, smoke real em Ubuntu 22/24/26, Windows 24 e macOS 24).
 
 **Testes:** `test/pack-smoke.test.js` — usa `runDistributionSmoke()` exportado; roda o smoke pesado só com opt-in explícito (`DDAE_RUN_SMOKE_TEST=1`), para não duplicá-lo dentro de `release:check` (que já roda `npm run smoke` como step próprio). `npm test` padrão: 37 aprovados + 1 skip (o smoke pesado). Com opt-in: 38/38.
 
@@ -218,7 +218,7 @@ Não foi usado `prepack` para disparar `npm pack` a partir de um lifecycle scrip
 
 **Rollback:** remover `scripts/release/smoke-distribution.mjs`, `test/pack-smoke.test.js`, o script `smoke` e a expansão de `release:check` em `package.json`, e o step de CI — nada foi publicado, nenhum efeito colateral fora do temporário.
 
-**Definição de pronto:** smoke aprovado localmente (feito) + validação remota da CI nos 5 ambientes (pendente de commit/push).
+**Definição de pronto:** smoke aprovado localmente e validado remotamente nos 5 ambientes (commit `308083e`, run `31204194590`) — atingida.
 
 ---
 

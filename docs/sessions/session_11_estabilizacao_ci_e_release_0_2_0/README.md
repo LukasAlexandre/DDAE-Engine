@@ -49,7 +49,7 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 | 01 — Regularização da identidade oficial | Corrigir `repository`/`homepage`/`bugs` e o remote local; preservar histórico | Concluído / Aprovado |
 | 02 — Fundação de CI multiplataforma | GitHub Actions: Ubuntu (Node 22/24/26), Windows (Node 24), macOS (Node 24) | Concluído / Aprovado — 5/5 jobs verdes (run `31158674593`) |
 | 03 — Proteção de empacotamento e publicação | `package:check`, `release:check` (`test`+`package:check`), `prepublishOnly`; hardening de CI | Concluído / Aprovado — commit `22f6599`, 5/5 jobs verdes (run `31164734911`) |
-| 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Implementado e validado localmente, aguardando revisão/commit e validação CI remota |
+| 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Concluído / Aprovado — commit `308083e`, 5/5 jobs verdes incluindo o smoke real (run `31204194590`) |
 | 05 — Tag, release e publicação controlada | Somente com nova autorização humana | Não iniciado |
 
 ## Decisões Aprovadas (revisão do usuário sobre o planejamento inicial)
@@ -158,11 +158,15 @@ npm run release:check
 
 ## Status Atual
 
-Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: concluído/aprovado (`22f6599` + `a020db0`) — CI validada remotamente com 5/5 jobs verdes, incluindo `package:check` rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31164734911`). Bloco 04: implementado e validado localmente (smoke real de ponta a ponta aprovado, incluindo dentro de `npm publish --dry-run`), aguardando revisão/commit e validação CI remota. Bloco 05: não iniciado.
+Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: concluído/aprovado (`22f6599` + `a020db0`) — CI validada remotamente com 5/5 jobs verdes, incluindo `package:check` rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31164734911`). Bloco 04: concluído/aprovado (`308083e`) — CI validada remotamente com 5/5 jobs verdes, incluindo o step "Distribution smoke (real tarball + isolated install)" rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31204194590`). Bloco 05: não iniciado.
 
 ## Nota Operacional — Validação Remota do Bloco 03
 
 Run `31164734911` (evento `push`, `headSha` = `22f6599`, commit `chore(release): add package validation and publish gate`): conclusão `success`, 5/5 jobs. Cada job executou o step "Verify package contents (package:check)" com sucesso, comprovando que a correção Windows do `verify-package.mjs` (uso de `execSync` com comando literal, em vez de `execFileSync` com `npm.cmd`) funciona de fato em um runner `windows-latest` real, não apenas na máquina de desenvolvimento local. URL: https://github.com/LukasAlexandre/DDAE-Engine/actions/runs/31164734911.
+
+## Nota Operacional — Validação Remota do Bloco 04
+
+Run `31204194590` (evento `push`, `headSha` = `308083e`, commit `test(release): add isolated distribution smoke validation`): conclusão `success`, 5/5 jobs, todos concluídos em menos de um minuto cada. O step "Distribution smoke (real tarball + isolated install)" — que empacota um tarball real, instala-o isoladamente e roda a jornada completa do CLI contra o binário instalado — passou nos 5 ambientes (`ubuntu-latest`/22, `ubuntu-latest`/24, `ubuntu-latest`/26, `windows-latest`/24, `macos-latest`/24). Isso comprova que a estratégia de invocação portável do npm (`process.env.npm_execpath` + `process.execPath`, sem shell) funciona de fato em runners reais nos três sistemas operacionais, não apenas na máquina de desenvolvimento Windows local. URL: https://github.com/LukasAlexandre/DDAE-Engine/actions/runs/31204194590.
 
 ## Nota Operacional — Infraestrutura de CI (Bloco 02)
 

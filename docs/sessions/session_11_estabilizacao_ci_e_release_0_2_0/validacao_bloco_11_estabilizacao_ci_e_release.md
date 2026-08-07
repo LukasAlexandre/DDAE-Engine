@@ -7,7 +7,7 @@ Documento vivo, atualizado ao final de cada bloco.
 - [x] Bloco 01 — Regularização da identidade oficial — Aprovado, commitado (`cad98a8`) e enviado a `origin/main`
 - [x] Bloco 02 — Fundação de CI multiplataforma — Aprovado, commitado (`1f873e7`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes (run `31158674593`)
 - [x] Bloco 03 — Proteção de empacotamento e publicação — Aprovado, commitado (`22f6599`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes, incluindo `package:check` (run `31164734911`)
-- [~] Bloco 04 — Smoke tests da distribuição 0.2.0 — Implementado e validado localmente (incluindo dentro de `npm publish --dry-run`); commit/push e validação CI remota pendentes
+- [x] Bloco 04 — Smoke tests da distribuição 0.2.0 — Aprovado, commitado (`308083e`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes, incluindo o smoke real (run `31204194590`)
 - [ ] Bloco 05 — Tag, release e publicação controlada — Não iniciado
 
 ---
@@ -125,21 +125,30 @@ Aprovado. Implementação, validação local e validação remota completas — 
 - [x] `release:check` executa o smoke exatamente uma vez (não duplicado entre `npm test` e `npm run smoke`).
 - [x] `npm publish --dry-run` real aprovado com o smoke incluído na cadeia, após correção do bug `npm_config_dry_run`.
 - [x] CI atualizada com `npm run smoke` nos 5 jobs; YAML validado localmente.
-- [ ] Validação remota da CI com o smoke — **pendente**, só ocorre após commit + push.
+- [x] Validação remota da CI com o smoke — confirmado (run `31204194590`, conclusion `success`, 5/5 jobs, smoke real em todos).
 
 ## 12. Bloco 04 — Evidências
 
 **Local:** primeira execução de `npm run smoke` falhou por um bug real meu (assertiva de `--help` esperava o texto errado — "DDAE Engine" em vez de "ddae-engine — Document-Driven..."), corrigido e reexecutado com sucesso: todas as 19 etapas nomeadas `OK` (Tarball, Package install, Installed binary, Package contents, Repository independence, CLI --version, CLI --help, Fresh init, Zero sessions, Session 01, Session 02, 13 modules, Block flow, Prompt flow, Feedback flow, Validate, Audit, Legacy detection, Cleanup).
 
-Segundo bug real encontrado: `npm publish --dry-run` → `prepublishOnly` → `release:check` → `npm run smoke` falhava com "tarball não encontrado", porque `npm_config_dry_run=true` do processo pai vazava para o `npm pack` aninhado via herança padrão de `process.env`, fazendo-o rodar em dry-run silencioso. Diagnosticado despejando `npm_config_*` do ambiente durante a chamada nested (confirmado `npm_config_dry_run: "true"`), corrigido com `cleanNpmEnv()` removendo todas as chaves `npm_config_*` antes de invocar `npm pack`/`npm install` aninhados. Reexecutado `npm publish --dry-run` real após a correção: `[DDAE smoke] OK`, cadeia completa (`prepublishOnly` → `release:check` → `test` 38/38 (1 skip por padrão) → `package:check` OK → `smoke` OK) confirmada no log, sem publicação real.
+Segundo bug real encontrado: `npm publish --dry-run` → `prepublishOnly` → `release:check` → `npm run smoke` falhava com "tarball não encontrado", porque `npm_config_dry_run=true` do processo pai vazava para o `npm pack` aninhado via herança padrão de `process.env`, fazendo-o rodar em dry-run silencioso. Diagnosticado despejando `npm_config_*` do ambiente durante a chamada nested (confirmado `npm_config_dry_run: "true"`), corrigido com `cleanNpmEnv()` removendo todas as chaves `npm_config_*` antes de invocar `npm pack`/`npm install` aninhados. Reexecutado `npm publish --dry-run` real após a correção: `[DDAE smoke] OK`, cadeia completa (`prepublishOnly` → `release:check` → `test` (37 aprovados + 1 skip por padrão) → `package:check` OK → `smoke` OK) confirmada no log, sem publicação real.
 
-`npm test` padrão (sem opt-in): 37 aprovados + 1 skip (`test/pack-smoke.test.js`, esperado). Com `DDAE_RUN_SMOKE_TEST=1 npm test`: 38/38.
+`npm test` padrão (sem opt-in): 37 aprovados + 1 skip (`test/pack-smoke.test.js`, esperado — 38 testes descobertos no total). Com `DDAE_RUN_SMOKE_TEST=1 npm test`: 38/38 executados.
 
 Verificação final de poluição: nenhum `.tgz`, `node_modules/`, `package-lock.json` ou diretório temporário residual na raiz do projeto após qualquer execução.
 
+**Remoto (commit `308083e`, push `a020db0..308083e`):** run `31204194590` (evento `push`, `headSha` = `308083e`) — conclusão `success`, **5/5 jobs verdes**, todos concluídos em menos de um minuto:
+- `ubuntu-latest / Node 22`: success — todos os 11 steps, incluindo "Distribution smoke (real tarball + isolated install)".
+- `ubuntu-latest / Node 24`: success.
+- `ubuntu-latest / Node 26`: success.
+- `windows-latest / Node 24`: success — confirma a estratégia `npm_execpath`/`process.execPath` funcionando em runner Windows real, não só na máquina de desenvolvimento local.
+- `macos-latest / Node 24`: success — primeira validação real da instalação isolada em macOS.
+
+URL: https://github.com/LukasAlexandre/DDAE-Engine/actions/runs/31204194590
+
 ## 13. Bloco 04 — Decisão
 
-Implementação e validação local aprovadas, incluindo o caso de uso real (`npm publish --dry-run` disparando a cadeia completa). **Commit, push e validação CI remota pendentes.**
+Aprovado. Implementação, validação local e validação remota completas — 5/5 jobs verdes com o smoke real de instalação (tarball → install isolado → CLI instalado → jornada completa) executando com sucesso nas 3 versões de Node e nos 3 sistemas operacionais da matriz, inclusive dentro do fluxo real de `npm publish --dry-run`.
 
 ---
 
