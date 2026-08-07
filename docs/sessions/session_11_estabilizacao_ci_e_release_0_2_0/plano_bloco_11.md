@@ -185,21 +185,40 @@ Não foi usado `prepack` para disparar `npm pack` a partir de um lifecycle scrip
 
 **Fora de escopo:** publicação, tag, release.
 
-**Arquivos previstos:** `test/pack-smoke.test.js`, `scripts/release/smoke-distribution.mjs` (ambos novos neste bloco), `package.json` (script `smoke` + `release:check` expandido).
+**Arquivos previstos:** `test/pack-smoke.test.js`, `scripts/release/smoke-distribution.mjs` (ambos novos neste bloco), `package.json` (script `smoke` + `release:check` expandido), `.github/workflows/ci.yml` (novo step `npm run smoke` nos 5 jobs), `CHANGELOG.md`, documentação da Session 11.
 
 **Dependências:** Blocos 01–03.
 
-**Riscos:** instalação global pode poluir o ambiente do runner/máquina local — mitigado usando `--prefix <diretório temporário>` em vez de `-g` real.
+**Riscos:**
+- Instalação global poluindo o ambiente — mitigado usando `--prefix <diretório temporário>` em vez de `-g` real, com `--ignore-scripts --no-audit --no-fund --no-save --offline`.
+- **Risco real encontrado durante a implementação:** `npm_config_dry_run=true`, herdado do processo pai quando o smoke roda dentro de `npm publish --dry-run` (via `prepublishOnly` → `release:check`), contaminava o `npm pack` aninhado, fazendo-o rodar em modo dry-run silencioso (retornava JSON de sucesso sem escrever o tarball). Corrigido filtrando todas as variáveis `npm_config_*` herdadas antes de qualquer invocação npm aninhada (`cleanNpmEnv()`).
 
-**Critérios de aceite:** os 15 itens da Fase 5 da auditoria inicial, todos verificados (zero sessões, `session_01`/`02`, 13 módulos, `validate`/`audit`, detecção de legado, instalação pelo tarball, diretório isolado, binário resolvido corretamente, independência do checkout local, `CHANGELOG.md` presente, `test/` ausente, nenhuma referência a `DDAD`).
+**Critérios de aceite:**
+- [x] `npm pack` real (não dry-run) gera tarball em diretório temporário fora do checkout.
+- [x] `npm install --prefix <tmp>` instala exatamente esse tarball, isoladamente.
+- [x] Binário instalado resolvido e executado via `node <caminho-instalado>/bin/ddae-engine.js` — nunca o `bin/ddae-engine.js` do checkout.
+- [x] Shim de PATH (`node_modules/.bin/ddae-engine`) confirmado como criado pela instalação.
+- [x] `--version`/`--help` contra o binário instalado.
+- [x] `init` em consumer vazio → zero sessões confirmadas.
+- [x] `session_01`/`session_02` reais.
+- [x] 13 módulos canônicos confirmados (via `listSessionModules()` do checkout, usado só como dado de referência, não para executar o CLI).
+- [x] `block create`/`prompt create`/`feedback create` completos.
+- [x] `validate`/`audit` finais confirmando 2 sessões.
+- [x] Detecção de layout legado em consumer separado, sem exclusão/renumeração.
+- [x] Conteúdo do pacote instalado validado (obrigatórios presentes, proibidos ausentes, nenhuma referência operacional a `DDAD` — buscando a URL, não a palavra genérica, para não gerar falso positivo com a nota histórica do README).
+- [x] Independência do checkout comprovada via `fs.realpathSync` em tarball, pacote instalado e diretórios de consumo.
+- [x] `release:check` roda o smoke exatamente uma vez (não duplicado entre `npm test` e `npm run smoke`).
+- [x] `npm publish --dry-run` real, com o smoke incluído na cadeia, aprovado após a correção do `npm_config_dry_run`.
+- [x] CI (`ci.yml`) com `npm run smoke` nos 5 jobs, sintaxe validada localmente.
+- [ ] Validação remota da CI com o smoke incluído — **pendente**, só ocorre após commit + push.
 
-**Testes:** novo teste automatizado cobrindo instalação real do tarball.
+**Testes:** `test/pack-smoke.test.js` — usa `runDistributionSmoke()` exportado; roda o smoke pesado só com opt-in explícito (`DDAE_RUN_SMOKE_TEST=1`), para não duplicá-lo dentro de `release:check` (que já roda `npm run smoke` como step próprio). `npm test` padrão: 37 aprovados + 1 skip (o smoke pesado). Com opt-in: 38/38.
 
-**Evidência:** log da instalação + saída dos comandos contra o binário instalado.
+**Evidência:** saída completa de `npm run smoke` (todas as etapas nomeadas OK), `npm run release:check`, e `npm publish --dry-run` mostrando o lifecycle completo, incluindo `[DDAE smoke] OK`.
 
-**Rollback:** não aplicável — bloco é só validação.
+**Rollback:** remover `scripts/release/smoke-distribution.mjs`, `test/pack-smoke.test.js`, o script `smoke` e a expansão de `release:check` em `package.json`, e o step de CI — nada foi publicado, nenhum efeito colateral fora do temporário.
 
-**Definição de pronto:** todos os 15 itens verificados, idealmente incorporados à CI do Bloco 02.
+**Definição de pronto:** smoke aprovado localmente (feito) + validação remota da CI nos 5 ambientes (pendente de commit/push).
 
 ---
 

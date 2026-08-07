@@ -49,7 +49,7 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 | 01 — Regularização da identidade oficial | Corrigir `repository`/`homepage`/`bugs` e o remote local; preservar histórico | Concluído / Aprovado |
 | 02 — Fundação de CI multiplataforma | GitHub Actions: Ubuntu (Node 22/24/26), Windows (Node 24), macOS (Node 24) | Concluído / Aprovado — 5/5 jobs verdes (run `31158674593`) |
 | 03 — Proteção de empacotamento e publicação | `package:check`, `release:check` (`test`+`package:check`), `prepublishOnly`; hardening de CI | Concluído / Aprovado — commit `22f6599`, 5/5 jobs verdes (run `31164734911`) |
-| 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Não iniciado |
+| 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Implementado e validado localmente, aguardando revisão/commit e validação CI remota |
 | 05 — Tag, release e publicação controlada | Somente com nova autorização humana | Não iniciado |
 
 ## Decisões Aprovadas (revisão do usuário sobre o planejamento inicial)
@@ -119,6 +119,24 @@ npm run release:check
 
 **`npm publish` real continua proibido neste bloco** — apenas `npm publish --dry-run` foi executado, confirmando que `prepublishOnly` → `release:check` → `npm test` + `package:check` disparam corretamente antes de qualquer tentativa de publicação.
 
+## Bloco 04 — Detalhes
+
+**Jornada provada:** repositório → `npm pack` **real** (não dry-run) → `.tgz` em diretório temporário fora do checkout → `npm install --prefix <tmp> --ignore-scripts --no-audit --no-fund --no-save --offline <tarball>` em diretório isolado → resolução do `ddae-engine` instalado sob `<tmp>/install/node_modules/ddae-engine` → execução do binário **instalado** (nunca `bin/ddae-engine.js` do checkout) → `--version`/`--help` → `init` em consumer vazio → confirmação de zero sessões → `session_01`/`session_02` → 13 módulos canônicos → `block create`/`prompt create`/`feedback create` → `validate`/`audit` → detecção de layout legado em um segundo consumer isolado → limpeza total.
+
+**`scripts/release/smoke-distribution.mjs`:** zero dependências externas; exporta `runDistributionSmoke()` (função pura testável, usada tanto pelo runner CLI quanto por `test/pack-smoke.test.js`); usa `os.tmpdir()`/`fs.mkdtempSync` (nunca um caminho fixo); verifica por `fs.realpathSync` que tarball, pacote instalado e diretórios de consumo estão fora de `PROJECT_ROOT` antes de prosseguir; limpa tudo em `finally`, com sucesso ou falha.
+
+**Invocação portável do npm (Etapa 4):** usa `process.env.npm_execpath` (variável que o próprio npm define em qualquer processo que ele mesmo dispara — `npm run smoke`, `npm test`, `npm publish`) + `execFileSync(process.execPath, [npmExecPath, ...args])`. Isso invoca o `node` diretamente sobre o arquivo JS real do npm, sem shell e sem o shim `npm.cmd` do Windows — mais robusto que a solução do Bloco 03 (que funciona, mas exige `execSync` com string literal, inadequado aqui porque os argumentos de `smoke` incluem caminhos temporários dinâmicos, que no Windows podem conter espaços). Se `npm_execpath` não estiver disponível (script chamado fora de qualquer `npm run`/`npm test`), o script falha com uma mensagem clara em vez de tentar um fallback frágil.
+
+**Bug real encontrado e corrigido durante a implementação:** rodar `npm publish --dry-run` (que dispara `prepublishOnly` → `release:check` → `smoke`) fazia o `smoke` falhar com "tarball não encontrado" — porque o `npm publish --dry-run` pai define `npm_config_dry_run=true` no ambiente, e essa variável é herdada pelo `npm pack` aninhado disparado por `runNpm()`, fazendo-o *também* rodar em modo dry-run silenciosamente (retorna JSON de sucesso, mas nunca escreve o arquivo). Corrigido filtrando todas as variáveis `npm_config_*` herdadas antes de invocar comandos npm aninhados (`cleanNpmEnv()`). Confirmado via `npm publish --dry-run` real após a correção: `[DDAE smoke] OK`.
+
+**Resolução do binário instalado:** o script confirma que o shim de PATH (`node_modules/.bin/ddae-engine[.cmd/.ps1]`) foi criado pela instalação (prova de que o link do `bin` funcionou), mas **executa o CLI invocando `node <caminho-resolvido>/bin/ddae-engine.js` diretamente**, não através do shim — decisão deliberada: rodar shims `.cmd`/`.ps1` de forma portável exigiria shell no Windows, exatamente a fragilidade already corrigida no Bloco 03. Isso ainda prova a independência do checkout: o arquivo executado é o que `npm install` copiou do tarball real para dentro de `node_modules/ddae-engine/`, verificado por `realpath` como estando fora de `PROJECT_ROOT`.
+
+**Topologia de testes (Etapa 16 — evitar duplicação em `release:check`):** `npm test` (`node --test`) descobre `test/pack-smoke.test.js`, mas o teste pesado (instalação real) fica `skip`ado por padrão — só roda com `DDAE_RUN_SMOKE_TEST=1 npm test`, opt-in do desenvolvedor, nunca embutido em nenhum script do `package.json` (evita sintaxe de variável de ambiente específica de shell/SO no `package.json`). O smoke real roda exatamente **uma vez** por `release:check`, através do step explícito `npm run smoke` — não duas.
+
+**`release:check` expandido:** `npm test && npm run package:check && npm run smoke`. `prepublishOnly` continua `npm run release:check`, agora protegendo também o smoke.
+
+**CI:** `npm run smoke` adicionado como step em todos os 5 jobs da matriz — a primeira vez que a instalação isolada do pacote real é validada em Ubuntu, Windows e macOS de verdade, não só localmente.
+
 ## Riscos
 
 - ~~Ausência de teste real em Node 24/26~~ — **resolvido no Bloco 02**: CI remota confirmou 5/5 jobs verdes em Ubuntu (22/24/26), Windows (24) e macOS (24).
@@ -136,11 +154,11 @@ npm run release:check
 
 ## Condição para Publicação
 
-`npm publish` de `0.2.0` só pode ocorrer depois que: identidade regularizada (Bloco 01) + CI verde (Bloco 02) + `release:check` (`test`+`package:check`) aprovado e travado via `prepublishOnly` (Bloco 03) + `release:check` expandido com `smoke` do tarball instalado aprovado (Bloco 04) + autorização humana explícita para o Bloco 05.
+`npm publish` de `0.2.0` só pode ocorrer depois que: identidade regularizada (Bloco 01) + CI verde (Bloco 02) + `release:check` (`test`+`package:check`) aprovado e travado via `prepublishOnly` (Bloco 03) + `release:check` expandido com `smoke` do tarball instalado aprovado local e remotamente (Bloco 04) + autorização humana explícita para o Bloco 05.
 
 ## Status Atual
 
-Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: concluído/aprovado (`22f6599`) — CI validada remotamente com 5/5 jobs verdes, incluindo `package:check` rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31164734911`). Blocos 04–05: não iniciados.
+Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: concluído/aprovado (`22f6599` + `a020db0`) — CI validada remotamente com 5/5 jobs verdes, incluindo `package:check` rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31164734911`). Bloco 04: implementado e validado localmente (smoke real de ponta a ponta aprovado, incluindo dentro de `npm publish --dry-run`), aguardando revisão/commit e validação CI remota. Bloco 05: não iniciado.
 
 ## Nota Operacional — Validação Remota do Bloco 03
 

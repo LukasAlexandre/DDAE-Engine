@@ -26,8 +26,9 @@ Correção do modelo de sessões e módulos internos. Registrado em `docs/sessio
 - `Docs/05_sessions/README.md` — novo documento gerado pelo `init`, explicando o modelo sessão vs. módulo dentro do próprio projeto scaffolded.
 - CI multiplataforma (GitHub Actions) cobrindo Ubuntu (Node 22/24/26), Windows (Node 24) e macOS (Node 24) — validada remotamente com 5/5 jobs aprovados.
 - `npm run package:check` (`scripts/release/verify-package.mjs`): valida metadados essenciais (`name`, `version`, `engines.node`, `bin`), identidade de repositório, presença de arquivos obrigatórios (`README.md`, `LICENSE`, `CHANGELOG.md`, `bin/ddae-engine.js`) e ausência de arquivos proibidos (`test/`, `.github/`, `docs/sessions/`, segredos) no conteúdo real do pacote (`npm pack --dry-run --json`), não apenas em `package.json.files`.
-- `npm run release:check` (`npm test && npm run package:check`) e `prepublishOnly` (`npm run release:check`) — `npm publish` passa a executar automaticamente testes e verificação do pacote antes de qualquer publicação real.
-- CI com hardening de supply chain: `actions/checkout` e `actions/setup-node` fixadas por SHA de commit imutável (não mais por tag móvel); `persist-credentials: false` no checkout.
+- `npm run release:check` (`npm test && npm run package:check && npm run smoke`) e `prepublishOnly` (`npm run release:check`) — `npm publish` passa a executar automaticamente testes, verificação do pacote e o smoke de distribuição antes de qualquer publicação real.
+- `npm run smoke` (`scripts/release/smoke-distribution.mjs`): empacota um tarball real (`npm pack`, não dry-run), instala-o isoladamente em um diretório temporário fora do checkout, e executa a jornada completa do CLI (`--version`, `--help`, `init`, `session create` ×2, `block create`, `prompt create`, `feedback create`, `validate`, `audit`, detecção de layout legado) contra o binário efetivamente instalado — provando que o artefato publicável funciona de forma independente do repositório de origem, não apenas do checkout local.
+- CI com hardening de supply chain: `actions/checkout` e `actions/setup-node` fixadas por SHA de commit imutável (não mais por tag móvel); `persist-credentials: false` no checkout; `npm run smoke` roda nos 5 ambientes da matriz.
 
 ### Compatibility
 
