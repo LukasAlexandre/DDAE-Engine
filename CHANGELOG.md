@@ -4,7 +4,7 @@ Todas as mudanças relevantes deste projeto são documentadas neste arquivo.
 
 O formato segue, livremente, [Keep a Changelog](https://keepachangelog.com/). O versionamento segue [SemVer](https://semver.org/); enquanto o pacote estiver em `0.x`, mudanças incompatíveis incrementam a versão `MINOR`.
 
-## [0.2.0] — 2026-08-05
+## [0.2.0] — 2026-08-07
 
 Correção do modelo de sessões e módulos internos. Registrado em `docs/sessions/session_10_correcao_modelo_sessoes/`.
 
@@ -29,6 +29,7 @@ Correção do modelo de sessões e módulos internos. Registrado em `docs/sessio
 - `npm run release:check` (`npm test && npm run package:check && npm run smoke`) e `prepublishOnly` (`npm run release:check`) — `npm publish` passa a executar automaticamente testes, verificação do pacote e o smoke de distribuição antes de qualquer publicação real.
 - `npm run smoke` (`scripts/release/smoke-distribution.mjs`): empacota um tarball real (`npm pack`, não dry-run), instala-o isoladamente em um diretório temporário fora do checkout, e executa a jornada completa do CLI (`--version`, `--help`, `init`, `session create` ×2, `block create`, `prompt create`, `feedback create`, `validate`, `audit`, detecção de layout legado) contra o binário efetivamente instalado — provando que o artefato publicável funciona de forma independente do repositório de origem, não apenas do checkout local.
 - CI com hardening de supply chain: `actions/checkout` e `actions/setup-node` fixadas por SHA de commit imutável (não mais por tag móvel); `persist-credentials: false` no checkout; `npm run smoke` roda nos 5 ambientes da matriz.
+- O pacote permanece sem dependências de runtime ou desenvolvimento (`dependencies` e `devDependencies` vazios), preservando a distribuição zero-dependency.
 
 ### Compatibility
 
