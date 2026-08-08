@@ -1,6 +1,6 @@
 # Deploy Produção
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Nenhum deploy em produção é feito sem passar pelo `Docs/06_quality_gates/deploy_gate.md`. Em caso de dúvida sobre segurança do deploy, pare e confirme com o usuário antes de prosseguir.
 

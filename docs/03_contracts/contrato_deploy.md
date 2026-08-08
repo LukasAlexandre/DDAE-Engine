@@ -1,6 +1,6 @@
 # Contrato de Deploy
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Detalhe operacional de execução de deploy vai em `Docs/08_deploy/`. Aqui o foco é o contrato: o que cada lado (código, infraestrutura, pipeline) garante ao outro.
 

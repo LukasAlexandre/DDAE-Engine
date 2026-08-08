@@ -1,6 +1,6 @@
 # Registro de Decisões
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Este registro cobre decisões de processo, governança e produto. Decisões puramente arquiteturais/técnicas têm registro dedicado em `Docs/02_architecture/decisoes_tecnicas.md` — se a decisão é sobre código/infra, prefira aquele documento; se é sobre processo, prioridade ou governança, use este.
 

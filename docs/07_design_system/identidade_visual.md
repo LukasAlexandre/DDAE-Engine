@@ -1,6 +1,6 @@
 # Identidade Visual
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Este documento existe para que um agente de IA gerando UI não "invente" cores, fontes ou logo — ele consulta aqui primeiro.
 

@@ -1,6 +1,6 @@
 # Requisitos Não Funcionais
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Requisitos não funcionais costumam ser ignorados até causarem um incidente. Preencha com limites concretos e mensuráveis, não com adjetivos ("rápido", "seguro").
 

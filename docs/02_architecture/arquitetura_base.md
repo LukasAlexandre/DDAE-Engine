@@ -1,6 +1,6 @@
 # Arquitetura Base
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Descreva a arquitetura como ela é (ou será), não como um diagrama idealizado. Se uma decisão aqui é cara de reverter, registre-a também em `decisoes_tecnicas.md`.
 

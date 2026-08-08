@@ -1,6 +1,6 @@
 # Contrato de Variáveis de Ambiente
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Nenhum valor real de segredo (chave de API, senha, connection string) deve aparecer neste arquivo — apenas nome, propósito e formato esperado.
 

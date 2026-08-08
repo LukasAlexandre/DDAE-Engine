@@ -1,6 +1,6 @@
 # Riscos Arquiteturais
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Riscos aqui são sobre a arquitetura em si (escalabilidade, manutenibilidade, acoplamento) — riscos de produto vão em `Docs/01_product/visao_produto.md`, riscos de segurança específicos vão em `Docs/06_quality_gates/security_gate.md`.
 

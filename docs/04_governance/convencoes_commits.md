@@ -1,6 +1,6 @@
 # Convenções de Commits
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Toda sugestão de commit semântico em feedbacks e prompts da DDAE Engine segue este padrão. Nenhum commit é feito sem confirmação explícita do usuário — ver `Docs/00_ddae_engine/regras_ddae_engine.md`, regra 6.
 

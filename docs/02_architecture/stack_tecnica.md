@@ -1,6 +1,6 @@
 # Stack Técnica
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Liste o que é usado de fato no projeto, com versão quando relevante — não um catálogo de tudo que poderia ser usado.
 

@@ -154,15 +154,15 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 ---
 
-### Bloco 04 — Self-Hosting Validation Proof
+### Bloco 04 — Self-Hosting Validation Proof + Project Identity Normalization
 
-**Objetivo:** provar que o próprio DDAE Engine reconhece o repositório como um projeto DDAE consumidor válido.
+**Objetivo:** provar que o próprio DDAE Engine reconhece o repositório como um projeto DDAE consumidor válido, e corrigir a pendência de identidade temporária identificada no Bloco 03.
 
-**Escopo:** `node node_modules/ddae-engine/bin/ddae-engine.js validate --dir .` e `... audit --dir .` (stable host), executados a partir da raiz do repositório. Nenhuma correção cosmética para "maquiar" o resultado — se houver erro estrutural, ele é diagnosticado e resolvido de forma justificada, não escondido.
+**Escopo:** `node node_modules/ddae-engine/bin/ddae-engine.js validate --dir .` e `... audit --dir .` (stable host) executados **antes** de qualquer edição, para evidência factual do estado bruto; localização de todas as ocorrências de `ddae-self-host-scaffold` no scaffold canônico (excluindo `docs/sessions/` legacy); normalização mecânica exclusiva do cabeçalho de identidade; `validate`/`audit` executados novamente **depois**, para comparação. Nenhuma correção cosmética para "maquiar" o resultado — se houver erro estrutural, ele é diagnosticado e resolvido de forma justificada, não escondido.
 
-**Fora de escopo:** qualquer nova capability de CLI.
+**Fora de escopo:** qualquer nova capability de CLI; qualquer alteração em `src/templates/` (mesmo que um bug real de template seja encontrado — registrado como pendência, não corrigido aqui).
 
-**Arquivos previstos:** nenhum arquivo de produto — apenas a evidência da execução na validação do bloco; possíveis ajustes pontuais em `Docs/` se `validate`/`audit` apontarem lacunas reais.
+**Arquivos previstos:** os 43 arquivos do scaffold canônico com o cabeçalho de identidade a corrigir; evidência dentro de `Docs/05_sessions/session_01_.../09_validation/fechamento_sessao.md`; validação da própria sessão legacy de transição.
 
 **Dependências:** Bloco 03 (precisa de ao menos uma sessão real para `Sessions found >= 1`).
 
@@ -170,10 +170,13 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 - `validate` reporta `Status: OK` ou, se `FAILED`, o motivo é diagnosticado e resolvido nesse mesmo bloco.
 - `audit` reconhece `session_01_ddae_self_hosting_bootstrap` como sessão real, não como módulo.
 - Warnings de conteúdo ainda não preenchido são aceitáveis; erros estruturais não.
+- Identidade temporária (`ddae-self-host-scaffold`) removida do scaffold canônico, preservada no histórico legacy.
 
-**Testes:** a própria execução de `validate`/`audit` é a evidência.
+**Testes:** a própria execução de `validate`/`audit` (antes e depois) é a evidência.
 
-**Definição de pronto:** `validate`/`audit` executados com sucesso estrutural contra o próprio repositório.
+**Definição de pronto:** `validate`/`audit` executados com sucesso estrutural contra o próprio repositório, identidade normalizada, gates verdes.
+
+**Resultado:** Bloco concluído. `validate`/`audit` idênticos antes/depois (`Status: OK`, 0 erros em ambos) — não havia erro estrutural a corrigir; a normalização foi puramente semântica. 43 arquivos corrigidos (diff de 43 linhas). Achado real não corrigido: bug de template-fonte em `glossario.md` (`{{PROJECT_NAME}}`/`{{CURRENT_DATE}}` renderizados em vez de documentados literalmente) — afeta todo `ddae-engine init`, registrado como pendência para sessão futura. Gates 67/65/0/2, `package:check` 95 arquivos, `[DDAE smoke] OK`. Detalhe completo em `validacao_bloco_04_self_host_validation.md`.
 
 ---
 

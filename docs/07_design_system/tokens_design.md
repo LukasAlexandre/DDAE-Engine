@@ -1,6 +1,6 @@
 # Tokens de Design
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Tokens são a fonte única da verdade para valores visuais. Se um valor não está aqui como token, ele não deveria estar hardcoded em um componente.
 

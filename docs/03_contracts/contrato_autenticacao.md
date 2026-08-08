@@ -1,6 +1,6 @@
 # Contrato de Autenticação
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Mudanças neste contrato afetam segurança diretamente. Qualquer alteração aqui deve passar pelo `Docs/06_quality_gates/security_gate.md` antes de ir para produção.
 

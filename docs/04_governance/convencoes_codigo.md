@@ -1,6 +1,6 @@
 # Convenções de Código
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Convenções aqui valem para humanos e agentes de IA igualmente. Um agente que gera código fora destas convenções deve ser corrigido no mesmo bloco, não "depois".
 

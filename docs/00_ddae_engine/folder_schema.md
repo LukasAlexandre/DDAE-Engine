@@ -1,6 +1,6 @@
 # Folder Schema
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 ## 1. Estrutura de Pastas
 

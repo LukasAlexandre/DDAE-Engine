@@ -1,6 +1,6 @@
 # Componentes de UI
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Antes de criar um componente novo, verifique aqui se um equivalente já existe. Duplicar componentes com variações pequenas é a forma mais comum de o design system degradar.
 

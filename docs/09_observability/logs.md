@@ -1,6 +1,6 @@
 # Logs
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Nenhum dado sensível (senha, token, dado pessoal não necessário) deve aparecer em log — ver `Docs/03_contracts/contrato_autenticacao.md`, regra 7.
 

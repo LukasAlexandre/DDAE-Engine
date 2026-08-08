@@ -1,6 +1,6 @@
 # Estrutura do Projeto
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Esta é a referência para "onde isso deveria morar?" — mantenha sincronizada com a estrutura real de pastas do repositório.
 

@@ -1,6 +1,6 @@
 # Troubleshooting
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Adicione uma entrada aqui sempre que um problema de deploy/operação levar mais de alguns minutos para ser diagnosticado — o objetivo é que a próxima ocorrência seja resolvida em segundos.
 

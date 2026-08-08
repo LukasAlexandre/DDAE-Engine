@@ -1,6 +1,6 @@
 # Acessibilidade
 
-> Projeto: ddae-self-host-scaffold · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-08
 
 > Acessibilidade é requisito, não melhoria opcional. Ver também `Docs/01_product/requisitos_nao_funcionais.md`, seção 5.
 

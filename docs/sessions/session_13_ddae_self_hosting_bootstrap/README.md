@@ -47,7 +47,7 @@ A tag `v0.2.0` continua imutável durante toda a Session 13.
 | 01.1 — Stable Host Contract Correction | Corrigir o modelo host/candidate do Bloco 01 (checkout único) para instalação real de `ddae-engine@0.2.0` como stable host efêmero | Concluído |
 | 02 — Stable Host Install + Collision Probe & Safe Scaffold Merge | Instalar o stable host; gerar scaffold em TEMP via stable host; matriz de colisão; merge seguro apenas dos paths `MISSING` | Concluído |
 | 03 — Canonical Self-Host Session Bootstrap | `session create` via stable host para a primeira sessão canônica de self-hosting | Concluído |
-| 04 — Stable Host Self-Validation Proof | `validate`/`audit` contra o próprio repositório, via stable host | Pendente |
+| 04 — Stable Host Self-Validation Proof | `validate`/`audit` contra o próprio repositório, via stable host | Concluído |
 | 05 — Package Isolation & Self-Hosting Documentation | Reconfirmar isolamento do pacote npm; documentar o contrato de execução self-host | Pendente |
 
 Ver `plano_bloco_13.md` para o detalhamento de cada bloco, `contrato_self_hosting_v1.md` para o contrato técnico completo (já corrigido no Checkpoint 01.1), `validacao_bloco_01_self_hosting_contract.md` para o registro histórico do Bloco 01 original, e `validacao_checkpoint_01_1_stable_host_correction.md` para a correção.
@@ -60,6 +60,10 @@ Bloco 01 concluído; Checkpoint 01.1 concluído (modelo corrigido para stable ho
 
 Bloco 03 concluído — `Docs/05_sessions/session_01_ddae_self_hosting_bootstrap/` criada exclusivamente pelo Stable Host (`session create`, 13 módulos, 21 arquivos), transição registrada dentro da própria sessão, roadmap oficial (`0.3.0` Context Compiler in development, `0.4.0` Obsidian Workspace / Project Brain planned) persistido em `Docs/01_product/visao_produto.md` e `proposta_solucao.md`. `docs/sessions/` permanece intocado. Isolamento de pacote reconfirmado (95 arquivos). Achado registrado: `PROJECT_NAME` incorreto (`ddae-self-host-scaffold`) em ~44 arquivos do scaffold herdado do diretório TEMP do Bloco 02 — corrigido apenas nos 2 arquivos editados neste bloco, correção mecânica dos demais fica pendente.
 
+## Status atual (Bloco 04)
+
+Bloco 04 concluído — `validate`/`audit` via Stable Host confirmados idênticos antes e depois da normalização (`Status: OK`, 0 erros em ambos), provando que não havia problema estrutural. 43 arquivos do scaffold canônico tiveram o cabeçalho de identidade (`> Projeto: ...`) normalizado de `ddae-self-host-scaffold` para `DDAE Engine`, mudança puramente textual (diff de 1 linha por arquivo). Achado real registrado, não corrigido neste bloco: `docs/00_ddae_engine/glossario.md` linha 28 tem um bug de template-fonte (`src/templates/`) que renderiza `{{PROJECT_NAME}}`/`{{CURRENT_DATE}}` em vez de documentá-los literalmente — afeta todo projeto que roda `ddae-engine init`, não é específico deste bootstrap, fica pendente para sessão futura dedicada.
+
 ## Próximos passos
 
-Bloco 04 — Self-Hosting Validation Proof: executar `validate`/`audit` via Stable Host contra o próprio repositório, provando reconhecimento estrutural de `session_01_ddae_self_hosting_bootstrap` sem erros estruturais.
+Bloco 05 — fechar formalmente o bootstrap self-host e preparar a criação de `session_02_context_compiler_0_3_0`, retomando o Context Compiler a partir do ponto em que a Session 12 legacy parou (Bloco 03 — DDAE State Collector).
