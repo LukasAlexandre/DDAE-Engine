@@ -46,7 +46,7 @@ A tag `v0.2.0` continua imutável durante toda a Session 13.
 | 01 — Self-Hosting Contract | Fechar o contrato: princípio de self-hosting, separação de planos de controle, estratégia de scaffold seguro, proteção de histórico, isolamento de pacote | Concluído |
 | 01.1 — Stable Host Contract Correction | Corrigir o modelo host/candidate do Bloco 01 (checkout único) para instalação real de `ddae-engine@0.2.0` como stable host efêmero | Concluído |
 | 02 — Stable Host Install + Collision Probe & Safe Scaffold Merge | Instalar o stable host; gerar scaffold em TEMP via stable host; matriz de colisão; merge seguro apenas dos paths `MISSING` | Concluído |
-| 03 — Canonical Self-Host Session Bootstrap | `session create` via stable host para a primeira sessão canônica de self-hosting | Pendente |
+| 03 — Canonical Self-Host Session Bootstrap | `session create` via stable host para a primeira sessão canônica de self-hosting | Concluído |
 | 04 — Stable Host Self-Validation Proof | `validate`/`audit` contra o próprio repositório, via stable host | Pendente |
 | 05 — Package Isolation & Self-Hosting Documentation | Reconfirmar isolamento do pacote npm; documentar o contrato de execução self-host | Pendente |
 
@@ -56,6 +56,10 @@ Ver `plano_bloco_13.md` para o detalhamento de cada bloco, `contrato_self_hostin
 
 Bloco 01 concluído; Checkpoint 01.1 concluído (modelo corrigido para stable host); Bloco 02 concluído — `ddae-engine@0.2.0` instalado como stable host efêmero (`node_modules/ddae-engine/`, nunca commitado), scaffold `Docs/` (50 arquivos) gerado exclusivamente pelo stable host e mesclado com segurança (0 `CONFLICT`, 0 `IDENTICAL`, 50 `MISSING` copiados), `docs/sessions/`/`feedback/` preservados intocados, isolamento de pacote reconfirmado (95 arquivos, zero vazamento). `package.json` permanece byte-a-byte inalterado (hash confirmado antes/depois) e a tag `v0.2.0` permanece imutável. Ainda não existe nenhuma sessão canônica real em `Docs/05_sessions/` (só `README.md`).
 
+## Status atual (Bloco 03)
+
+Bloco 03 concluído — `Docs/05_sessions/session_01_ddae_self_hosting_bootstrap/` criada exclusivamente pelo Stable Host (`session create`, 13 módulos, 21 arquivos), transição registrada dentro da própria sessão, roadmap oficial (`0.3.0` Context Compiler in development, `0.4.0` Obsidian Workspace / Project Brain planned) persistido em `Docs/01_product/visao_produto.md` e `proposta_solucao.md`. `docs/sessions/` permanece intocado. Isolamento de pacote reconfirmado (95 arquivos). Achado registrado: `PROJECT_NAME` incorreto (`ddae-self-host-scaffold`) em ~44 arquivos do scaffold herdado do diretório TEMP do Bloco 02 — corrigido apenas nos 2 arquivos editados neste bloco, correção mecânica dos demais fica pendente.
+
 ## Próximos passos
 
-Bloco 03 — Canonical Self-Host Session Bootstrap: `node node_modules/ddae-engine/bin/ddae-engine.js session create "DDAE self hosting bootstrap" --dir .` (stable host) para criar `Docs/05_sessions/session_01_ddae_self_hosting_bootstrap/`, documentando a transição dentro da própria sessão.
+Bloco 04 — Self-Hosting Validation Proof: executar `validate`/`audit` via Stable Host contra o próprio repositório, provando reconhecimento estrutural de `session_01_ddae_self_hosting_bootstrap` sem erros estruturais.

@@ -150,6 +150,8 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Definição de pronto:** sessão canônica criada, documentada, gates verdes.
 
+**Resultado:** Bloco concluído. `session_01_ddae_self_hosting_bootstrap` criada exclusivamente pelo Stable Host, 13 módulos, 21 arquivos. Roadmap oficial (`0.2.0` released, `0.3.0` in development, `0.4.0` planned) persistido em `Docs/01_product/`. `docs/sessions/` intocado. Gates 67/65/0/2, `package:check` 95 arquivos, `[DDAE smoke] OK`. Achado registrado (não corrigido neste bloco): `PROJECT_NAME` incorreto em ~44 arquivos do scaffold do Bloco 02. Detalhe completo em `validacao_bloco_03_canonical_self_host_session.md`.
+
 ---
 
 ### Bloco 04 — Self-Hosting Validation Proof
