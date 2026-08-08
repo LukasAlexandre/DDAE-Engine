@@ -28,6 +28,7 @@ const VALID_PKG = {
 const VALID_FILES = [
   'package.json', 'README.md', 'LICENSE', 'CHANGELOG.md', 'bin/ddae-engine.js',
   'src/cli.js', 'src/commands/init.js', 'src/utils/text.js', 'src/templates/session/README.md',
+  'src/context/git-context.js',
 ];
 
 test('package:check passes against the real, current package', () => {
