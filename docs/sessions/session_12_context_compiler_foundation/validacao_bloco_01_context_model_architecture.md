@@ -16,7 +16,7 @@ git rev-parse "v0.2.0^{}"
 2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9
 ```
 
-HEAD e `origin/main` idênticos, working tree limpo, tag `v0.2.0` apontando para o commit de fechamento documental da Session 11 (`2f4c19e`) — exatamente o estado esperado antes de iniciar a Session 12.
+HEAD e `origin/main` idênticos, working tree limpo, tag `v0.2.0` apontando para o Release Candidate final da versão 0.2.0 (`2f4c19e`), enquanto o fechamento documental da Session 11 ocorreu posteriormente em `ea1f406` — exatamente o estado esperado antes de iniciar a Session 12.
 
 ## Decisões tomadas neste bloco
 
