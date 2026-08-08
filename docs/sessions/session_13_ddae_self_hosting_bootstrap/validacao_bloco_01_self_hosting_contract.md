@@ -116,3 +116,7 @@ Executados após a criação dos documentos, antes do commit:
 ## Conclusão do bloco
 
 O contrato de self-hosting está fechado. A decisão de usar somente o checkout (sem instalar o pacote publicado) elimina um artefato desnecessário sem perda de proteção real hoje. O isolamento de pacote foi verificado como fato estrutural, não como política a confiar. A Session 12 está formalmente pausada, não fechada. O Bloco 02 pode iniciar com um contrato estável e uma estratégia de merge seguro já definida.
+
+## Nota de correção (Checkpoint 01.1)
+
+A decisão de host/candidate registrada acima ("usar somente o checkout") foi revista no Checkpoint 01.1, antes de qualquer implementação do Bloco 02 — ver `validacao_checkpoint_01_1_stable_host_correction.md`. Este documento permanece **inalterado** como registro histórico do que foi de fato decidido e por quê no Bloco 01; a decisão vigente a partir do Bloco 02 está em `contrato_self_hosting_v1.md`, Seção 3.

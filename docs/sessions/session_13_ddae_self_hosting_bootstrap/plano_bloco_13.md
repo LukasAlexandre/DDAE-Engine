@@ -6,7 +6,6 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 ## 2. Fora de Escopo (toda a sessão)
 
-- Instalação de `ddae-engine` publicado via `npm install` (ver `contrato_self_hosting_v1.md`, Seção 3 — decisão revisada em favor de usar somente `node bin/ddae-engine.js`).
 - Qualquer alteração em `src/`, `bin/`, `test/`, `scripts/`.
 - Migração, renumeração, exclusão ou conversão de `docs/sessions/`.
 - Retomada do Bloco 03 da Session 12 (Context Compiler) — a decisão de onde esse trabalho futuro será registrado é explicitamente adiada para um bloco desta sessão, não resolvida no Bloco 01.
@@ -15,16 +14,19 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 ## 3. Ordem e dependências
 
 ```text
-01 Self-Hosting Contract              (contrato — sem dependências)
+01 Self-Hosting Contract                        (contrato — sem dependências)
    │
    ▼
-02 Collision Probe & Safe Scaffold Merge   (depende de 01)
+01.1 Stable Host Contract Correction            (corrige a decisão host/candidate do 01)
    │
    ▼
-03 Canonical Self-Host Session Bootstrap   (depende de 02 — Docs/05_sessions/ precisa existir)
+02 Stable Host Install + Collision Probe & Safe Scaffold Merge   (depende de 01.1)
    │
    ▼
-04 Self-Hosting Validation Proof           (depende de 03 — precisa de ao menos uma sessão real)
+03 Canonical Self-Host Session Bootstrap        (depende de 02 — Docs/05_sessions/ precisa existir)
+   │
+   ▼
+04 Self-Hosting Validation Proof                (depende de 03 — precisa de ao menos uma sessão real)
    │
    ▼
 05 Package Isolation & Self-Hosting Documentation  (depende de 02–04)
@@ -36,7 +38,7 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Objetivo:** fechar o contrato completo do bootstrap de self-hosting antes de qualquer arquivo ser gerado em `Docs/`.
 
-**Escopo:** princípio de self-hosting, o que self-hosting não significa, modelo host/candidate (decisão revisada: usar apenas o checkout, sem instalar o pacote publicado), separação entre `docs/sessions/` (legacy) e `Docs/05_sessions/` (canônico), estratégia de scaffold seguro via matriz de colisão, proteção do histórico legado, isolamento de pacote (fato verificado via `npm pack --dry-run --json`, não apenas política), status de pausa da Session 12.
+**Escopo:** princípio de self-hosting, o que self-hosting não significa, modelo host/candidate (decisão original deste bloco: usar apenas o checkout, sem instalar o pacote publicado — **corrigida no Bloco 01.1**, ver abaixo), separação entre `docs/sessions/` (legacy) e `Docs/05_sessions/` (canônico), estratégia de scaffold seguro via matriz de colisão, proteção do histórico legado, isolamento de pacote (fato verificado via `npm pack --dry-run --json`, não apenas política), status de pausa da Session 12.
 
 **Fora de escopo:** qualquer geração de arquivo em `Docs/`; qualquer `session create`; qualquer instalação de pacote.
 
@@ -60,33 +62,68 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Definição de pronto:** os 4 documentos da Session 13 criados, `docs/sessions/session_12_.../README.md` atualizado apenas na seção de status, `git diff`/`git status` confirmando que nenhum outro arquivo foi alterado, `npm test`/`package:check`/`smoke` verdes contra o baseline, commit e push autorizados explicitamente pelo usuário para este bloco específico.
 
+**Correção posterior:** a decisão de host/candidate registrada neste bloco (checkout único) foi revista no Bloco 01.1, antes de qualquer implementação do Bloco 02. Este registro permanece inalterado como histórico do que foi decidido e por quê — ver `validacao_bloco_01_self_hosting_contract.md`.
+
 ---
 
-### Bloco 02 — Collision Probe & Safe Scaffold Merge
+### Bloco 01.1 — Stable Host Contract Correction
 
-**Objetivo:** gerar o scaffold `Docs/` no repositório real, sem sobrescrever nenhum arquivo já existente.
+**Objetivo:** corrigir a decisão de host/candidate do Bloco 01 antes de qualquer implementação do scaffold, sem reescrever o registro histórico do Bloco 01.
+
+**Escopo:** substituir o modelo "checkout único" por "stable host instalado localmente" em `contrato_self_hosting_v1.md` (Seção 3), `README.md` e `plano_bloco_13.md` (documentos vivos/prospectivos); preservar `validacao_bloco_01_self_hosting_contract.md` sem alteração de conteúdo (registro histórico do que foi decidido no Bloco 01); criar `validacao_checkpoint_01_1_stable_host_correction.md` documentando a correção e sua justificativa.
+
+**Motivo da correção:** usar apenas o checkout testaria "o DDAE executando seu próprio código corrente", não a propriedade que o self-hosting existe para demonstrar — uma release pública estável governando o desenvolvimento do candidate. Essa propriedade precisa existir antes de o candidate divergir do host, não ser introduzida só depois.
+
+**Fora de escopo:** qualquer instalação de pacote (isso é Bloco 02); qualquer geração de arquivo em `Docs/`.
+
+**Arquivos previstos:** `docs/sessions/session_13_.../{README.md,contrato_self_hosting_v1.md,plano_bloco_13.md,validacao_checkpoint_01_1_stable_host_correction.md}`.
+
+**Dependências:** Bloco 01.
+
+**Critérios de aceite:**
+- [x] Modelo host/candidate corrigido para stable host instalado localmente (`npm install --no-save`), com justificativa registrada.
+- [x] `validacao_bloco_01_self_hosting_contract.md` preservado sem reescrita — apenas os documentos vivos (contrato, README, plano) refletem a decisão corrigida.
+- [x] Commit anterior (`e6e074d`) preservado, sem amend, sem force.
+- [x] Zero implementação de instalação/scaffold neste checkpoint.
+
+**Testes:** não aplicável — bloco documental. Regressão confirmada via `npm test`/`package:check`/`smoke`.
+
+**Definição de pronto:** documentos corrigidos, `git diff`/`git status` confirmando que somente `docs/sessions/session_13_.../` foi alterado, gates verdes, commit e push autorizados explicitamente pelo usuário para este checkpoint específico.
+
+---
+
+### Bloco 02 — Stable Host Install + Collision Probe & Safe Scaffold Merge
+
+**Objetivo:** instalar `ddae-engine@0.2.0` como stable host efêmero e gerar o scaffold `Docs/` no repositório real usando exclusivamente esse stable host, sem sobrescrever nenhum arquivo já existente.
 
 **Escopo:**
-- Executar `node bin/ddae-engine.js init --dir <TEMP>` em um diretório temporário fora do checkout.
+- Calcular SHA-256 de `package.json` antes da instalação.
+- `npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund ddae-engine@0.2.0`.
+- Verificar fisicamente `node_modules/ddae-engine/package.json` (`name`, `version`, `bin`, `dependencies`) e `node node_modules/ddae-engine/bin/ddae-engine.js --version`/`--help`.
+- Confirmar SHA-256 de `package.json` inalterado, `package-lock.json` ausente, `dependencies`/`devDependencies` ainda `{}`.
+- Executar `node node_modules/ddae-engine/bin/ddae-engine.js init --dir <TEMP>` em um diretório temporário fora do checkout.
 - Construir a matriz de colisão: para cada path gerado, classificar como `MISSING` (não existe no repositório), `IDENTICAL` (existe e é byte-idêntico) ou `CONFLICT` (existe e diverge) — comparação de path case-insensitive.
 - Se não houver `CONFLICT`: copiar apenas os paths `MISSING` para o repositório real.
 - Se houver `CONFLICT`: listar cada um; nenhuma sobrescrita automática.
+- Confirmar via `npm pack --dry-run --json` que `node_modules/`, `package-lock.json` e o scaffold `Docs/`/`docs/` não aparecem no pacote.
 
 **Fora de escopo:** `session create` (Bloco 03); `validate`/`audit` contra o próprio repositório (Bloco 04).
 
-**Arquivos previstos:** `Docs/**` (novo, apenas paths `MISSING`), `docs/sessions/session_13_.../validacao_bloco_02_collision_probe.md` (novo).
+**Arquivos previstos:** `Docs/**` (novo, apenas paths `MISSING`), `docs/sessions/session_13_.../validacao_bloco_02_stable_host_collision_scaffold.md` (novo). `node_modules/ddae-engine/` é local/efêmero — nunca commitado (já coberto por `.gitignore`).
 
-**Dependências:** Bloco 01 (contrato e estratégia).
+**Dependências:** Bloco 01.1 (contrato corrigido e estratégia).
 
 **Critérios de aceite:**
+- Stable host instalado, verificado fisicamente, `package.json`/`package-lock.json`/`dependencies` comprovadamente inalterados (hash antes/depois).
 - Matriz de colisão completa produzida e revisada antes de qualquer cópia.
 - Nenhum arquivo já existente no repositório é sobrescrito.
-- `docs/sessions/` permanece byte-a-byte idêntico (diff vazio nesse path).
+- `docs/sessions/` e `feedback/` permanecem byte-a-byte idênticos (diff vazio nesses paths).
 - Total gerado / `MISSING` / `IDENTICAL` / `CONFLICT` registrados na validação.
+- Isolamento de pacote reconfirmado com o scaffold real já existente.
 
-**Testes:** `npm test`/`package:check`/`smoke` continuam verdes (nenhuma mudança de código).
+**Testes:** `npm test`/`package:check`/`smoke` continuam verdes (nenhuma mudança de código de produto).
 
-**Definição de pronto:** scaffold mesclado com segurança, matriz de colisão documentada, nenhuma sobrescrita, gates verdes.
+**Definição de pronto:** stable host instalado e comprovadamente isolado do package metadata, scaffold mesclado com segurança, matriz de colisão documentada, nenhuma sobrescrita, gates verdes.
 
 ---
 
@@ -94,7 +131,7 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Objetivo:** criar a primeira sessão canônica de self-hosting.
 
-**Escopo:** `node bin/ddae-engine.js session create "DDAE self hosting bootstrap" --dir .` → `Docs/05_sessions/session_01_ddae_self_hosting_bootstrap/`, com os 13 módulos oficiais. Documentar dentro dessa sessão a transição (objetivo, host/candidate, baseline de migração, planos de controle legacy vs. canônico, princípios).
+**Escopo:** `node node_modules/ddae-engine/bin/ddae-engine.js session create "DDAE self hosting bootstrap" --dir .` (stable host, nunca o candidate) → `Docs/05_sessions/session_01_ddae_self_hosting_bootstrap/`, com os 13 módulos oficiais. Documentar dentro dessa sessão a transição (objetivo, host/candidate, baseline de migração, planos de controle legacy vs. canônico, princípios).
 
 **Fora de escopo:** preencher o conteúdo funcional dos 13 módulos além do registro da transição — isso é trabalho de desenvolvimento contínuo, não deste bootstrap.
 
@@ -117,7 +154,7 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Objetivo:** provar que o próprio DDAE Engine reconhece o repositório como um projeto DDAE consumidor válido.
 
-**Escopo:** `node bin/ddae-engine.js validate --dir .` e `node bin/ddae-engine.js audit --dir .`, executados a partir da raiz do repositório. Nenhuma correção cosmética para "maquiar" o resultado — se houver erro estrutural, ele é diagnosticado e resolvido de forma justificada, não escondido.
+**Escopo:** `node node_modules/ddae-engine/bin/ddae-engine.js validate --dir .` e `... audit --dir .` (stable host), executados a partir da raiz do repositório. Nenhuma correção cosmética para "maquiar" o resultado — se houver erro estrutural, ele é diagnosticado e resolvido de forma justificada, não escondido.
 
 **Fora de escopo:** qualquer nova capability de CLI.
 
@@ -140,7 +177,7 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Objetivo:** reconfirmar isolamento de pacote com o scaffold real já existente, e documentar o contrato de execução self-host para uso contínuo.
 
-**Escopo:** `npm pack --dry-run --json` real (pós-scaffold) confirmando zero arquivos `Docs/`/`docs/` no pacote. Criar `Docs/00_ddae_engine/self_hosting.md` (ou path equivalente do scaffold oficial) documentando: comando de execução (`node bin/ddae-engine.js <comando>`), o que é self-hosting, o que não é, e a decisão de não instalar o pacote publicado (Seção 3 do contrato) com a condição explícita de quando revisitar essa decisão.
+**Escopo:** `npm pack --dry-run --json` real (pós-scaffold) confirmando zero arquivos `Docs/`/`docs/`/`node_modules/` no pacote. Criar `Docs/00_ddae_engine/self_hosting.md` (ou path equivalente do scaffold oficial) documentando: comando do stable host (`node node_modules/ddae-engine/bin/ddae-engine.js <comando>`) vs. comando do candidate (`node bin/ddae-engine.js <comando>`), o que é self-hosting, o que não é, e a condição explícita de quando o candidate deve passar a ser usado para self-hosting (quando uma release publicada mais nova já incluir as capabilities em desenvolvimento).
 
 **Fora de escopo:** qualquer ferramenta ou automação nova.
 

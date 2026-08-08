@@ -34,7 +34,6 @@ A tag `v0.2.0` continua imutável durante toda a Session 13.
 
 ## Fora de escopo
 
-- Instalação de `ddae-engine` publicado via npm (decisão revisada no Bloco 01 — ver `contrato_self_hosting_v1.md`, Seção 3).
 - Qualquer alteração em `src/`, `bin/`, `test/`, `scripts/`.
 - Migração, renumeração ou exclusão de `docs/sessions/`.
 - Retomada do Bloco 03 da Session 12 (Context Compiler) — decidida em bloco futuro desta sessão, não agora.
@@ -44,18 +43,19 @@ A tag `v0.2.0` continua imutável durante toda a Session 13.
 
 | Bloco | Objetivo | Status |
 |---|---|---|
-| 01 — Self-Hosting Contract | Fechar o contrato: princípio de self-hosting, modelo host/candidate revisado, separação de planos de controle, estratégia de scaffold seguro, proteção de histórico, isolamento de pacote | Concluído |
-| 02 — Collision Probe & Safe Scaffold Merge | Gerar scaffold em TEMP, matriz de colisão, merge seguro apenas dos paths `MISSING` | Pendente |
-| 03 — Canonical Self-Host Session Bootstrap | `ddae-engine session create` para a primeira sessão canônica de self-hosting | Pendente |
-| 04 — Self-Hosting Validation Proof | `ddae-engine validate`/`audit` contra o próprio repositório | Pendente |
+| 01 — Self-Hosting Contract | Fechar o contrato: princípio de self-hosting, separação de planos de controle, estratégia de scaffold seguro, proteção de histórico, isolamento de pacote | Concluído |
+| 01.1 — Stable Host Contract Correction | Corrigir o modelo host/candidate do Bloco 01 (checkout único) para instalação real de `ddae-engine@0.2.0` como stable host efêmero | Concluído |
+| 02 — Stable Host Install + Collision Probe & Safe Scaffold Merge | Instalar o stable host; gerar scaffold em TEMP via stable host; matriz de colisão; merge seguro apenas dos paths `MISSING` | Pendente |
+| 03 — Canonical Self-Host Session Bootstrap | `session create` via stable host para a primeira sessão canônica de self-hosting | Pendente |
+| 04 — Stable Host Self-Validation Proof | `validate`/`audit` contra o próprio repositório, via stable host | Pendente |
 | 05 — Package Isolation & Self-Hosting Documentation | Reconfirmar isolamento do pacote npm; documentar o contrato de execução self-host | Pendente |
 
-Ver `plano_bloco_13.md` para o detalhamento de cada bloco, `contrato_self_hosting_v1.md` para o contrato técnico completo, e `validacao_bloco_01_self_hosting_contract.md` para os critérios de aceite verificados do Bloco 01.
+Ver `plano_bloco_13.md` para o detalhamento de cada bloco, `contrato_self_hosting_v1.md` para o contrato técnico completo (já corrigido no Checkpoint 01.1), `validacao_bloco_01_self_hosting_contract.md` para o registro histórico do Bloco 01 original, e `validacao_checkpoint_01_1_stable_host_correction.md` para a correção.
 
 ## Status atual
 
-Bloco 01 concluído: contrato de self-hosting fechado. Nenhum arquivo foi criado em `Docs/`, nenhuma sessão canônica foi criada, nenhuma instalação de pacote foi feita. `package.json` e a tag `v0.2.0` permanecem inalterados.
+Bloco 01 concluído; Checkpoint 01.1 concluído — o modelo host/candidate foi corrigido de "checkout único" para "stable host `ddae-engine@0.2.0` instalado localmente e efemeramente via `npm install --no-save`". Nenhum arquivo foi criado em `Docs/`, nenhuma sessão canônica foi criada, nenhuma instalação de pacote foi feita ainda — isso é o Bloco 02. `package.json` e a tag `v0.2.0` permanecem inalterados.
 
 ## Próximos passos
 
-Bloco 02 — Collision Probe & Safe Scaffold Merge: gerar o scaffold completo em um diretório temporário fora do checkout via `node bin/ddae-engine.js init --dir <TEMP>`, construir a matriz de colisão contra o repositório real, e mesclar com segurança apenas os paths ausentes.
+Bloco 02 — Stable Host Install + Collision Probe & Safe Scaffold Merge: instalar `ddae-engine@0.2.0` via `npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund`, gerar o scaffold completo em um diretório temporário fora do checkout usando exclusivamente o stable host (`node node_modules/ddae-engine/bin/ddae-engine.js init --dir <TEMP>`), construir a matriz de colisão contra o repositório real, e mesclar com segurança apenas os paths ausentes.

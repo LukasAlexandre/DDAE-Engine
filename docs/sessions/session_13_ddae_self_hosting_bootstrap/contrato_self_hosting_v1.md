@@ -14,13 +14,56 @@ Até a Session 13, o desenvolvimento do próprio DDAE-Engine foi documentado em 
 - **Não é auto-modificação autônoma.** Nenhum bloco desta sessão gera código de produto (`src/`) automaticamente a partir de si mesmo; o scaffold afeta apenas documentação/governança (`Docs/`), nunca `src/`, `bin/`, `test/`, `scripts/`.
 - **Não é migração do histórico legado.** `docs/sessions/` (sessões 00–12) não é apagado, movido, renumerado ou convertido.
 
-## 3. Modelo Host/Candidate — decisão revisada
+## 3. Modelo Host/Candidate
 
-A proposta original considerava instalar `ddae-engine@0.2.0` publicado via `npm install --no-save` em `node_modules/`, para que um "host estável" governasse o desenvolvimento do "candidate" em desenvolvimento. Essa distinção foi **revisada** antes de qualquer implementação, pelo seguinte motivo verificável: o Bloco 02 da Session 12 não tocou `src/cli.js` nem nenhum comando (`init`, `session create`, `block create`, `prompt create`, `feedback create`, `validate`, `audit`) — apenas adicionou dois collectors (`src/context/git-context.js`, `src/context/project-context.js`) que não estão conectados a nenhuma interface. Consequência: `node bin/ddae-engine.js` (o checkout atual) e `ddae-engine@0.2.0` publicado no npm são **comportamentalmente idênticos** para todo comando usado neste bootstrap.
+**Nota de correção (Checkpoint 01.1):** o Bloco 01 desta sessão inicialmente decidiu usar somente o checkout (`node bin/ddae-engine.js`), sem instalar o pacote publicado, com base no fato verificável de que o Bloco 02 da Session 12 não alterou nenhum comando de CLI — checkout e `0.2.0` publicada eram comportamentalmente idênticos para `init`/`session create`/`validate`/`audit`. Essa decisão foi revista no Checkpoint 01.1: usar apenas o checkout provaria "o DDAE executando seu próprio código corrente", não a propriedade que este bootstrap existe para demonstrar — uma release pública estável governando o desenvolvimento do candidate. Essa propriedade precisa existir *antes* de o candidate divergir do host, não ser introduzida só depois que a divergência já tiver acontecido. O registro original da decisão permanece, sem alteração, em `validacao_bloco_01_self_hosting_contract.md`; esta seção reflete a decisão corrigida, vigente a partir do Bloco 02.
 
-**Decisão para a Session 13:** usar exclusivamente `node bin/ddae-engine.js` (o checkout do próprio repositório) para todas as ações de self-hosting. Nenhuma instalação via `npm install` do pacote publicado é realizada. Isso elimina um artefato extra (`node_modules/ddae-engine/`) e uma complexidade de execução (`node node_modules/ddae-engine/bin/ddae-engine.js` vs. `node bin/ddae-engine.js`) sem nenhuma perda de proteção real hoje.
+**STABLE HOST:** `ddae-engine@0.2.0`, instalado local e efemeramente via:
 
-**Quando essa decisão deve ser revisitada:** a partir do momento em que `context` for exposto no CLI do candidate (Bloco 08 da Session 12, ainda pausado) e ainda não estiver disponível na última versão publicada — nesse ponto, candidate e a última release pública deixam de ser comportamentalmente idênticos, e a distinção host/candidate volta a ter valor real. Essa revisão fica registrada como pendência explícita, não decidida agora.
+```bash
+npm install \
+  --no-save \
+  --package-lock=false \
+  --ignore-scripts \
+  --no-audit \
+  --no-fund \
+  ddae-engine@0.2.0
+```
+
+Local esperado: `node_modules/ddae-engine/`. Binário: `node node_modules/ddae-engine/bin/ddae-engine.js`.
+
+**CANDIDATE:** o checkout atual do repositório (`bin/`, `src/`, `test/`, `scripts/`). Binário: `node bin/ddae-engine.js`.
+
+```text
+ddae-engine@0.2.0 PUBLIC
+          │
+          ▼
+      STABLE HOST
+          │
+          │ governa
+          ▼
+   DDAE REPOSITORY
+          │
+          ▼
+       CANDIDATE
+          │
+          ▼
+    future 0.3.0
+```
+
+Todas as ações de self-hosting a partir do Bloco 02 (scaffold, criação da sessão canônica, `validate`/`audit` contra o próprio repositório) são executadas exclusivamente pelo **stable host**, nunca pelo candidate. Isso materializa a propriedade "release pública estável governa o desenvolvimento do candidate" — que usar apenas o checkout não provava, mesmo sendo, hoje, comportamentalmente equivalente.
+
+**Isolamento do host:** a instalação local do stable host nunca modifica `package.json.dependencies`, `devDependencies`, `optionalDependencies` ou `peerDependencies`, e nunca cria `package-lock.json`. `node_modules/` permanece ignorado pelo Git (já coberto pela primeira linha do `.gitignore` do repositório). O pacote publicado `ddae-engine` nunca depende de si mesmo — a instalação é efêmera, local, e não-persistida em nenhum manifesto.
+
+**Justificativa de por que o host estável é intencional, não circunstancial:**
+
+1. O self-host precisa provar que uma release pública real do DDAE consegue governar o desenvolvimento da próxima versão — não apenas que o binário do checkout funciona.
+2. O candidate pode ficar instável durante o desenvolvimento — é exatamente o que está em construção.
+3. O stable host fornece uma baseline operacional conhecida e já publicamente auditada (Session 11).
+4. Hoje `0.2.0` e o candidate são semelhantes no CLI, mas isso é circunstancial, não uma garantia de design.
+5. Quando `src/context/` e outras capabilities forem expostas no candidate (Bloco 08 da Session 12, ainda pausado), stable host e candidate passarão naturalmente a divergir.
+6. A distinção precisa existir *antes* dessa divergência, não ser introduzida depois dela.
+7. O modelo é equivalente a um bootstrap de compilador: a versão estável N governa a construção da versão candidata N+1.
 
 ## 4. Dois planos de controle distintos, não sobrepostos
 
@@ -46,7 +89,7 @@ No Windows (e no macOS com o volume padrão), `Docs/` e `docs/` resolvem para o 
 
 Nenhum scaffold é gerado neste bloco. A estratégia fica definida aqui para execução no Bloco 02:
 
-1. Gerar o scaffold completo (`ddae-engine init --dir <TEMP>`) em um diretório temporário **fora do checkout**, nunca diretamente na raiz do repositório.
+1. Gerar o scaffold completo usando o **stable host** (`node node_modules/ddae-engine/bin/ddae-engine.js init --dir <TEMP>`) em um diretório temporário **fora do checkout**, nunca diretamente na raiz do repositório.
 2. Construir uma matriz de colisão comparando cada path gerado contra o repositório real, com comparação de path **case-insensitive** (consequência direta da Seção 4): `MISSING` (não existe no repositório), `IDENTICAL` (existe e é byte-idêntico), `CONFLICT` (existe e o conteúdo diverge).
 3. Se não houver nenhum `CONFLICT`: copiar todos os paths `MISSING` para o repositório real. Paths `IDENTICAL` não precisam ser copiados novamente.
 4. Se houver `CONFLICT`: nenhuma substituição automática. Cada conflito é listado e decidido manualmente, nunca sobrescrito silenciosamente.
@@ -83,8 +126,7 @@ Nenhum outro conteúdo de `session_12_context_compiler_foundation/` é alterado 
 
 ## 9. Fora de escopo (todo o bootstrap de self-hosting)
 
-- Instalação de `ddae-engine` via `npm install` (Seção 3 — decisão revisada).
-- Geração de qualquer arquivo em `Docs/` (Bloco 02).
+- Geração de qualquer arquivo em `Docs/` fora do fluxo TEMP + matriz de colisão + merge seguro (Bloco 02).
 - `ddae-engine session create` (Bloco 03).
 - `ddae-engine validate`/`audit` contra o próprio repositório (Bloco 04).
 - Retomada do Bloco 03 da Session 12 (Context Compiler) — decisão sobre onde o desenvolvimento futuro do Context Compiler será registrado (dentro de `Docs/05_sessions/` ou continuando em `docs/sessions/`) fica para um bloco posterior desta sessão, não decidida agora.
@@ -97,7 +139,7 @@ Nenhum outro conteúdo de `session_12_context_compiler_foundation/` é alterado 
 - [ ] Scaffold gerado com segurança (matriz de colisão aplicada, nenhum `CONFLICT` sobrescrito automaticamente) — Bloco 02.
 - [ ] `docs/sessions/` preservado byte-a-byte — verificável em todos os blocos via diff vazio nesse caminho.
 - [ ] `Docs/05_sessions/session_01_...` criada como primeira sessão canônica de self-hosting — Bloco 03.
-- [ ] `ddae-engine validate --dir .`/`ddae-engine audit --dir .` executados contra o próprio repositório (via `node bin/ddae-engine.js`, conforme Seção 3) sem erros estruturais — Bloco 04.
+- [ ] `ddae-engine validate --dir .`/`ddae-engine audit --dir .` executados contra o próprio repositório via **stable host** (`node node_modules/ddae-engine/bin/ddae-engine.js`, conforme Seção 3 corrigida no Checkpoint 01.1) sem erros estruturais — Bloco 04.
 - [ ] `npm pack --dry-run --json` confirmado, após o scaffold existir, sem nenhum arquivo `Docs/`/`docs/` no pacote — Bloco 05 (reconfirmação, não apenas a análise prévia da Seção 7).
 - [ ] Zero dependências adicionadas; `package.json` inalterado.
 - [ ] `npm test`/`package:check`/`smoke` continuam verdes a cada bloco.
