@@ -98,7 +98,7 @@ Evolução prevista após esta sessão: Session 13 (Work Packets + Handoff), Ses
 |---|---|---|
 | 01 — Context Model & Architecture | Fechar o contrato: Manifest v1, determinismo, Source Model, Authority Model, budget, fingerprint, Git degradado, `.ddae`/ignore, segurança, staleness, CLI contract | Concluído |
 | 02 — Git + Project Collectors | Coletores determinísticos de estado Git e de projeto (stack, filesystem) | Concluído |
-| 03 — DDAE State Collector | Coletor de sessão atual, decisões, bugs, validação | Pendente |
+| 03 — DDAE State Collector | Coletor de sessão atual, decisões, bugs, validação | Não iniciado — sessão pausada |
 | 04 — Authority & Source Model | Implementação do modelo de autoridade por domínio e provenance | Pendente |
 | 05 — Relevance Engine v1 | Motor de relevância heurístico e determinístico | Pendente |
 | 06 — Context Manifest + Compiler | Orquestração dos coletores em `manifest.json` | Pendente |
@@ -113,8 +113,12 @@ Ver `plano_bloco_12.md` para o detalhamento de cada bloco, `contrato_context_man
 
 ## Status atual
 
-Bloco 01 concluído: contrato arquitetural fechado. Bloco 02 concluído: `src/context/git-context.js` e `src/context/project-context.js` implementados como os primeiros collectors reais — determinísticos, read-only, zero-dependency, com modo degradado quando Git não está disponível. `src/schemas/` ainda não existe no repositório. `package.json.version` e `EXPECTED_VERSION` permanecem em `0.2.0` deliberadamente — o bump para `0.3.0` só ocorre no Bloco 12.
+**PAUSADA APÓS O BLOCO 02.**
+
+Bloco 01: Aprovado. Checkpoint 01.1 (correção de proveniência do baseline): Aprovado. Bloco 02: Aprovado — `src/context/git-context.js` e `src/context/project-context.js` implementados como os primeiros collectors reais, determinísticos, read-only, zero-dependency, com modo degradado quando Git não está disponível. Bloco 03 (DDAE State Collector): **não iniciado**.
+
+Motivo da pausa: início do bootstrap de DDAE self-hosting (`session_13_ddae_self_hosting_bootstrap`), que estabelece `Docs/05_sessions/` como plano de controle canônico de self-hosting do próprio repositório, sem migrar ou alterar esta sessão. `src/schemas/` ainda não existe no repositório. `package.json.version` e `EXPECTED_VERSION` permanecem em `0.2.0`. Esta sessão **não é marcada como concluída** — permanece formalmente em andamento, pausada, até que a Session 13 decida (em seu Bloco 05) onde a continuação do Context Compiler será registrada.
 
 ## Próximos passos
 
-Bloco 03 — DDAE State Collector: implementar `src/context/ddae-context.js` (sessão atual, decisões, bugs, validações), reaproveitando `src/utils/session.js` sem duplicar sua lógica.
+Aguardando a Session 13 (`session_13_ddae_self_hosting_bootstrap`) definir onde a continuação desta sessão será registrada. Quando retomado, o Bloco 03 — DDAE State Collector continua sendo: implementar `src/context/ddae-context.js` (sessão atual, decisões, bugs, validações), reaproveitando `src/utils/session.js` sem duplicar sua lógica.
