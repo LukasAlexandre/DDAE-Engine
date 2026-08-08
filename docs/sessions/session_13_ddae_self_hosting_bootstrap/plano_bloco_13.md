@@ -125,6 +125,8 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 **Definição de pronto:** stable host instalado e comprovadamente isolado do package metadata, scaffold mesclado com segurança, matriz de colisão documentada, nenhuma sobrescrita, gates verdes.
 
+**Resultado:** Bloco concluído. `ddae-engine@0.2.0` instalado (`added 1 package in 765ms`), hash de `package.json` idêntico antes/depois, `package-lock.json` ausente, `dependencies`/`devDependencies` `{}`. Matriz de colisão: 50 gerados, 50 `MISSING`, 0 `IDENTICAL`, 0 `CONFLICT` — merge completo dos 50 sem risco. `docs/sessions/`/`feedback/` confirmados intocados. `npm pack --dry-run --json` pós-scaffold: 95 arquivos, zero vazamento de `Docs/`/`docs/`/`node_modules/`. Gates: 67/65/0/2, `package:check` OK 95 arquivos, `[DDAE smoke] OK`. Detalhe completo em `validacao_bloco_02_stable_host_collision_scaffold.md`.
+
 ---
 
 ### Bloco 03 — Canonical Self-Host Session Bootstrap
