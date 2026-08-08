@@ -50,7 +50,7 @@ Remote correto: https://github.com/LukasAlexandre/DDAE-Engine.git
 | 02 — Fundação de CI multiplataforma | GitHub Actions: Ubuntu (Node 22/24/26), Windows (Node 24), macOS (Node 24) | Concluído / Aprovado — 5/5 jobs verdes (run `31158674593`) |
 | 03 — Proteção de empacotamento e publicação | `package:check`, `release:check` (`test`+`package:check`), `prepublishOnly`; hardening de CI | Concluído / Aprovado — commit `22f6599`, 5/5 jobs verdes (run `31164734911`) |
 | 04 — Smoke tests da distribuição 0.2.0 | Instalar o tarball real isoladamente e validar o binário instalado | Concluído / Aprovado — commit `308083e`, 5/5 jobs verdes incluindo o smoke real (run `31204194590`) |
-| 05 — Tag, release e publicação controlada | Somente com nova autorização humana | Não iniciado |
+| 05 — Tag, release e publicação controlada | Somente com nova autorização humana | Concluído / Aprovado — `v0.2.0` publicada no npm e no GitHub |
 
 ## Decisões Aprovadas (revisão do usuário sobre o planejamento inicial)
 
@@ -137,6 +137,53 @@ npm run release:check
 
 **CI:** `npm run smoke` adicionado como step em todos os 5 jobs da matriz — a primeira vez que a instalação isolada do pacote real é validada em Ubuntu, Windows e macOS de verdade, não só localmente.
 
+## Bloco 05 — Detalhes
+
+O Bloco 05 foi dividido em subetapas, cada uma com seu próprio gate de aprovação:
+
+| Subetapa | Objetivo | Resultado |
+|---|---|---|
+| 05A — Release Candidate Preflight | Auditoria read-only do commit `215cf05` como candidato | Aprovado tecnicamente; 2 achados documentais levaram à 05A.1 |
+| 05A.1 — Finalização do Release Candidate | Corrigir data e declaração de zero-dependency no `CHANGELOG.md` | Aprovado — novo RC `2f4c19e`, CI 5/5 (run `31206798424`) |
+| 05B.0 — NPM Authentication Gate | Restaurar sessão npm expirada (`401`) e confirmar maintainer/2FA | Aprovado — `npm login` completado pelo usuário em terminal próprio (esta ferramenta não consegue completar o fluxo interativo/browser do npm — limitação de ambiente, não do npm); `npm whoami` = `lukasalexandre`; 2FA `auth-and-writes` |
+| 05B — Freeze + Tag | Criar e enviar a tag anotada `v0.2.0` | Aprovado — tag criada apontando exatamente para `2f4c19e`, confirmada local e remotamente (peeled ref) |
+| 05C — NPM Publish | Publicação real de `ddae-engine@0.2.0` | Aprovado — `npm publish` executado pelo usuário em seu terminal (mesma limitação de ambiente do 05B.0: 2FA `auth-and-writes` exige OTP interativo que esta ferramenta não pode fornecer) |
+| 05D — Public Registry Verification | Provar independentemente que o registry entrega o artefato correto | Aprovado — shasum público idêntico ao RC auditado; instalação isolada, CLI e consumer funcionais; segunda prova via `npm exec` |
+| 05E — GitHub Release + Closure | Publicar o GitHub Release e fechar a Session 11 | Aprovado — release `v0.2.0` publicado (não draft, não prerelease), tag preservada, documentação de fechamento registrada |
+
+**Release Candidate final:** `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`
+
+**Artefato publicado:**
+```text
+ddae-engine@0.2.0
+files: 93
+shasum: fa42487f9909b1a6ed440789d8295cfdf76147e0
+integrity: sha512-0k4WB3XKFIRVZdV4L+iIFWL20XLMVya5mU+F2XekyLTUL4UebVNYSCXsYmp3DfX0mkADifdgtxPJzqbuWY5rCA==
+dependencies: {}
+devDependencies: {}
+```
+
+**Verificação pública (05D), independente da publicação:**
+- `npm view ddae-engine version` → `0.2.0`; `dist-tags.latest` → `0.2.0`.
+- `dist.shasum`/`dist.integrity` do registry idênticos, bit a bit, aos capturados na auditoria do RC (05A.1) — nenhuma divergência entre o que foi auditado e o que foi publicado.
+- Instalação real via `npm install ddae-engine@0.2.0` (sem `--offline`, sem tarball local) em diretório isolado fora do checkout: pacote, binário e `node_modules` confirmados fora de `PROJECT_ROOT` via `realpath`.
+- CLI instalado (`--version`, `--help`) e jornada completa (`init` → zero sessões → `session_01_registry_smoke` → 13 módulos → `validate`/`audit`) executados exclusivamente contra o binário baixado do registry.
+- Segunda prova independente via `npm exec --package=ddae-engine@0.2.0 -- ddae-engine --version` → `0.2.0`, de fora do projeto.
+
+**GitHub Release:**
+```text
+tagName: v0.2.0
+name: DDAE Engine v0.2.0
+isDraft: false
+isPrerelease: false
+url: https://github.com/LukasAlexandre/DDAE-Engine/releases/tag/v0.2.0
+```
+Release notes escritas manualmente (sem `--generate-notes`), revisadas antes da criação contra um checklist (título, versão, Node >=22, `session_01`, comportamento legado não-destrutivo, zero dependencies, shasum, repositório, ausência de referências `DDAD`/`DDAT` operacionais, ausência de informação sensível).
+
+**Nota sobre imutabilidade:** a tag `v0.2.0` aponta e continuará apontando para `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`. O commit de fechamento documental desta sessão (que registra esta própria seção) acontece **depois** da release e deliberadamente não faz parte do artefato `v0.2.0` — a identidade da versão publicada não é, e não deve ser, reescrita.
+
+**Limitação de ambiente identificada (não é um problema do DDAE-Engine):** esta ferramenta de execução não conseguiu completar `npm login` nem `npm publish` diretamente (ambos exigem um terminal interativo real para o fluxo de aprovação via navegador/2FA, que este shell não-interativo não fornece). Essas duas ações específicas foram executadas pelo usuário diretamente em seu próprio terminal; todo o restante do Bloco 05 (auditoria, tag, verificação de registry, release) foi executado e comprovado por aqui.
+
 ## Riscos
 
 - ~~Ausência de teste real em Node 24/26~~ — **resolvido no Bloco 02**: CI remota confirmou 5/5 jobs verdes em Ubuntu (22/24/26), Windows (24) e macOS (24).
@@ -154,11 +201,13 @@ npm run release:check
 
 ## Condição para Publicação
 
-`npm publish` de `0.2.0` só pode ocorrer depois que: identidade regularizada (Bloco 01) + CI verde (Bloco 02) + `release:check` (`test`+`package:check`) aprovado e travado via `prepublishOnly` (Bloco 03) + `release:check` expandido com `smoke` do tarball instalado aprovado local e remotamente (Bloco 04) + autorização humana explícita para o Bloco 05.
+`npm publish` de `0.2.0` só podia ocorrer depois que: identidade regularizada (Bloco 01) + CI verde (Bloco 02) + `release:check` (`test`+`package:check`) aprovado e travado via `prepublishOnly` (Bloco 03) + `release:check` expandido com `smoke` do tarball instalado aprovado local e remotamente (Bloco 04) + autorização humana explícita para o Bloco 05. Todas as condições foram satisfeitas e a publicação foi concluída.
 
 ## Status Atual
 
-Em andamento. Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: concluído/aprovado (`22f6599` + `a020db0`) — CI validada remotamente com 5/5 jobs verdes, incluindo `package:check` rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31164734911`). Bloco 04: concluído/aprovado (`308083e`) — CI validada remotamente com 5/5 jobs verdes, incluindo o step "Distribution smoke (real tarball + isolated install)" rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31204194590`). Bloco 05: não iniciado.
+**Concluída / Aprovada.** Bloco 01: concluído/aprovado (`cad98a8`). Bloco 02: concluído/aprovado (`1f873e7` + `ac5c2f1`) — CI validada remotamente com 5/5 jobs verdes. Bloco 03: concluído/aprovado (`22f6599` + `a020db0`) — CI validada remotamente com 5/5 jobs verdes, incluindo `package:check` rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31164734911`). Bloco 04: concluído/aprovado (`308083e`) — CI validada remotamente com 5/5 jobs verdes, incluindo o step "Distribution smoke (real tarball + isolated install)" rodando com sucesso em Ubuntu 22/24/26, Windows 24 e macOS 24 (run `31204194590`). Bloco 05: concluído/aprovado — `v0.2.0` taggeada (`2f4c19e`), publicada no npm (`ddae-engine@0.2.0`, verificada de forma independente contra o registry público) e no GitHub (release não-draft, não-prerelease).
+
+`ddae-engine@0.2.0` está publicamente disponível via `npm install ddae-engine` / `npx ddae-engine`. **Session 12 liberada para planejamento futuro — não iniciada nesta sessão.**
 
 ## Nota Operacional — Validação Remota do Bloco 03
 

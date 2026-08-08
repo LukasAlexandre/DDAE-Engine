@@ -8,7 +8,7 @@ Documento vivo, atualizado ao final de cada bloco.
 - [x] Bloco 02 — Fundação de CI multiplataforma — Aprovado, commitado (`1f873e7`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes (run `31158674593`)
 - [x] Bloco 03 — Proteção de empacotamento e publicação — Aprovado, commitado (`22f6599`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes, incluindo `package:check` (run `31164734911`)
 - [x] Bloco 04 — Smoke tests da distribuição 0.2.0 — Aprovado, commitado (`308083e`), enviado a `origin/main`, e validado remotamente: 5/5 jobs verdes, incluindo o smoke real (run `31204194590`)
-- [ ] Bloco 05 — Tag, release e publicação controlada — Não iniciado
+- [x] Bloco 05 — Tag, release e publicação controlada — Aprovado. `v0.2.0` → `2f4c19e`, publicada em `ddae-engine@0.2.0` (npm) e GitHub Release, ambas verificadas independentemente
 
 ---
 
@@ -152,6 +152,64 @@ Aprovado. Implementação, validação local e validação remota completas — 
 
 ---
 
-## 14. Bloco 05
+## 14. Bloco 05 — Critérios de Aceite (consolidado das subetapas)
 
-A preencher conforme for executado e liberado pelo usuário.
+- [x] 05A — Preflight read-only do RC `215cf05`: HEAD/origin/main idênticos, working tree limpo, nenhuma tag/release prévia, NPM `0.2.0` ausente, `release:check` completo aprovado, `npm publish --dry-run` aprovado.
+- [x] 05A.1 — Correção documental do `CHANGELOG.md` (data + declaração zero-dependency), gerando novo RC final `2f4c19e` com CI 5/5 própria (run `31206798424`).
+- [x] 05B.0 — Autenticação npm restaurada (`npm login` concluído pelo usuário em terminal próprio, após esta ferramenta falhar em completar o fluxo interativo duas vezes); `npm whoami` = `lukasalexandre`; maintainer confirmado; 2FA `auth-and-writes` confirmado sem alterar configuração.
+- [x] 05B — Tag anotada `v0.2.0` criada apontando explicitamente para `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`; validada local (`git cat-file -t`, `rev-parse "^{}"`, `rev-list`) e remotamente (`git ls-remote --tags`, peeled ref) antes e depois do push; push restrito a `refs/tags/v0.2.0` (sem `--tags`, sem `--follow-tags`, sem tocar em `main`).
+- [x] 05C — `npm publish` real executado pelo usuário em seu terminal (mesma limitação de ambiente do login: 2FA `auth-and-writes` exige OTP interativo). Nenhum token/OTP foi solicitado, exibido ou manuseado por esta ferramenta.
+- [x] 05D — Verificação independente do registry: `dist.shasum`/`dist.integrity` públicos idênticos aos do RC auditado; instalação real fora do checkout (sem `--offline`); CLI e jornada funcional completa (`init` → zero sessões → `session_01_registry_smoke` → 13 módulos → `validate`/`audit`) contra o binário baixado; segunda prova via `npm exec`; zero dependências confirmado; cleanup completo.
+- [x] 05E — GitHub Release `v0.2.0` criado a partir da tag existente (`--verify-tag`, sem `--draft`, sem `--prerelease`, sem `--generate-notes`); release notes revisadas antes da criação; tag confirmada inalterada após a criação do release; documentação de fechamento da Session 11 registrada.
+
+## 15. Bloco 05 — Evidências
+
+**Release Candidate final:** `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9` (commit `2f4c19e docs(release): finalize 0.2.0 changelog`).
+
+**Tag:**
+```text
+v0.2.0 (annotated, objeto 9827664bca5007e35249cc4514a1f3d0253506a7)
+peeled target: 2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9
+```
+Confirmado idêntico local e remotamente em três momentos distintos: antes do publish (05B), depois do publish (05D) e depois da criação do GitHub Release (05E) — nunca divergiu.
+
+**NPM:**
+```text
+ddae-engine@0.2.0
+dist-tags.latest: 0.2.0
+files: 93
+shasum: fa42487f9909b1a6ed440789d8295cfdf76147e0
+integrity: sha512-0k4WB3XKFIRVZdV4L+iIFWL20XLMVya5mU+F2XekyLTUL4UebVNYSCXsYmp3DfX0mkADifdgtxPJzqbuWY5rCA==
+dependencies: {} / devDependencies: {}
+```
+Shasum e integrity idênticos, bit a bit, entre a auditoria do RC (05A.1, via `npm pack` local) e o artefato realmente entregue pelo registry (05D, via `npm view`) — prova de que nada foi alterado entre a auditoria e a publicação.
+
+**GitHub Release:**
+```text
+tagName: v0.2.0
+name: DDAE Engine v0.2.0
+isDraft: false
+isPrerelease: false
+publishedAt: 2026-08-08T08:34:05Z
+url: https://github.com/LukasAlexandre/DDAE-Engine/releases/tag/v0.2.0
+```
+
+**CI da tag/RC final:** run `31206798424`, `headSha` = `2f4c19e`, conclusão `success`, 5/5 jobs (Ubuntu 22/24/26, Windows 24, macOS 24), incluindo o step de distribution smoke.
+
+**Limitações de ambiente identificadas (não são falhas do DDAE-Engine):** esta ferramenta de execução (`Bash` não-interativo) não conseguiu completar `npm login` nem executar `npm publish` diretamente — ambos exigem, nesta conta, um fluxo de aprovação via navegador e/ou OTP de 2FA que requer um terminal real. Após duas tentativas de `npm login` falharem de forma idêntica (URL impressa, depois um prompt `Username:` sem TTY para respondê-lo), o usuário executou `npm login` e `npm publish` diretamente em seu próprio terminal. Todo o restante — auditoria do RC, criação e push da tag, verificação independente do registry, criação do GitHub Release, e este próprio registro — foi executado e comprovado nesta ferramenta.
+
+## 16. Bloco 05 — Decisão
+
+Aprovado. `DDAE Engine v0.2.0` publicada e verificada de ponta a ponta: código-fonte (38 testes, 37 pass + 1 skip por padrão) → pacote (`package:check`, 93 arquivos) → CI multiplataforma (5/5, três rodadas de RC) → distribuição instalada (smoke real, 5/5) → tag imutável → publicação NPM → verificação independente do registry público → GitHub Release. Nenhuma etapa pulou validação; cada bug real encontrado durante o processo (assertiva de `--help`, `npm_config_dry_run` herdado, sessão npm expirada) foi diagnosticado e corrigido antes de prosseguir, não contornado.
+
+---
+
+## 17. Encerramento da Session 11
+
+**Status final: Concluída / Aprovada.**
+
+Todos os 5 blocos (01–05) e todas as subetapas do Bloco 05 (05A, 05A.1, 05B.0, 05B, 05C, 05D, 05E) estão aprovados e documentados. `ddae-engine@0.2.0` está publicamente disponível (`npm install ddae-engine` / `npx ddae-engine`), com identidade, CI, proteção de release e distribuição todas comprovadas — não apenas presumidas.
+
+A tag `v0.2.0` permanece imutável, apontando para `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`. O commit de fechamento documental desta sessão ocorre depois da release e não faz parte do artefato publicado, por design.
+
+**Session 12 não foi criada** — fica liberada para planejamento futuro, fora do escopo desta sessão.
