@@ -6,22 +6,16 @@
 
 ## 1. Destaques
 
-O que mudou e por que isso importa para quem usa o produto.
-
-- _..._
+**Nenhuma publicação npm foi realizada nesta sessão.** Esta sessão é um bootstrap interno de governança — o DDAE Engine passou a consumir sua própria release pública estável (`ddae-engine@0.2.0`) como ferramenta de desenvolvimento do próprio repositório, sem gerar nenhum artefato novo para usuários externos do pacote.
 
 ## 2. Impacto para Usuários Existentes
 
-Alguma ação é necessária da parte do usuário (migração, reconfiguração)? Algo deixa de funcionar como antes?
-
-_..._
+Nenhum. `package.json.version` permanece `0.2.0`; `npm view ddae-engine version` continua `0.2.0`; nenhuma tag nova; nenhuma mudança de comportamento de nenhum comando (`init`, `session create`, `block create`, `prompt create`, `feedback create`, `validate`, `audit`) consumido por qualquer projeto externo.
 
 ## 3. Conhecidos Problemas / Limitações
 
-Limitações conhecidas desta entrega que ainda não foram resolvidas (ligar com pendências P2/P3 do feedback do bloco correspondente).
-
-_..._
+BUG-01 (`07_bugs/bugs_identificados.md`): o template-fonte de `Docs/00_ddae_engine/glossario.md` renderiza `{{PROJECT_NAME}}`/`{{CURRENT_DATE}}` em vez de documentá-los literalmente — afeta qualquer projeto que rode `ddae-engine init`, incluindo consumidores externos já em produção. P3, não estrutural, correção de fonte planejada para `session_02_context_compiler_0_3_0`.
 
 ## 4. Decisões Pendentes
 
-_..._
+Nenhuma.

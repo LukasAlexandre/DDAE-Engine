@@ -180,7 +180,7 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 
 ---
 
-### Bloco 05 — Package Isolation & Self-Hosting Documentation
+### Bloco 05 — Self-Hosting Closure + Package Isolation Contract
 
 **Objetivo:** reconfirmar isolamento de pacote com o scaffold real já existente, e documentar o contrato de execução self-host para uso contínuo.
 
@@ -200,6 +200,14 @@ Adotar o próprio DDAE Engine como consumidor da metodologia que oferece a terce
 **Testes:** `npm test`/`package:check`/`smoke` finais.
 
 **Definição de pronto:** isolamento reconfirmado, documentação criada, decisão sobre a continuidade do Context Compiler registrada, Session 13 pronta para ser encerrada.
+
+**Resultado:** Bloco concluído. Instância de `glossario.md` corrigida (BUG-01 registrado em `07_bugs/bugs_identificados.md`, fonte deliberadamente não alterada). `Docs/00_ddae_engine/self_hosting.md` criado com o contrato operacional completo, incluindo o modelo de promoção Stable → Candidate. Continuidade do Context Compiler decidida e registrada: `session_02_context_compiler_0_3_0` (canônica, ainda não criada), nunca mais em `docs/sessions/`. `session_01_ddae_self_hosting_bootstrap` fechada como Aprovada com ressalvas. Isolamento de pacote reconfirmado uma última vez (95 arquivos). Gates finais 67/65/0/2, `package:check` 95 arquivos, `[DDAE smoke] OK`. **Session 13 CONCLUÍDA.** Detalhe completo em `validacao_bloco_05_self_host_closure.md`.
+
+---
+
+## Encerramento da Session 13
+
+Com a aprovação do Bloco 05, `session_13_ddae_self_hosting_bootstrap` está formalmente **CONCLUÍDA**. Todos os 6 blocos/checkpoints (01, 01.1, 02, 03, 04, 05) foram aprovados. `docs/sessions/` não recebe mais sessões de desenvolvimento novas a partir deste ponto — o control plane canônico é `Docs/05_sessions/`, e a próxima sessão de desenvolvimento (`session_02_context_compiler_0_3_0`) nasce lá, criada pelo Stable Host.
 
 ## 5. Estratégia de testes (visão geral)
 

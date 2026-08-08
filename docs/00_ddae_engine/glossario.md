@@ -25,8 +25,8 @@ Os comandos `ddae-engine init`, `session create`, `block create`, `prompt create
 
 | Placeholder | Preenchido com | Onde aparece |
 |---|---|---|
-| `ddae-self-host-scaffold` | Nome da pasta do projeto alvo (`--dir`). | Todos os documentos de `Docs/` e quality gates. |
-| `2026-08-08` | Data corrente em `YYYY-MM-DD`, no momento da geração. | Todos os documentos de `Docs/` e quality gates. |
+| `{{PROJECT_NAME}}` | Nome da pasta do projeto alvo (`--dir`). | Todos os documentos de `Docs/` e quality gates. |
+| `{{CURRENT_DATE}}` | Data corrente em `YYYY-MM-DD`, no momento da geração. | Todos os documentos de `Docs/` e quality gates. |
 | `{{SESSION_NUMBER}}` | Número de 2 dígitos da sessão (ex.: `01`, `11`). | Templates de sessão, bloco, prompt, feedback. |
 | `{{SESSION_TITLE}}` | Título legível da sessão. | Templates de sessão. |
 | `{{SESSION_SLUG}}` | Identificador `snake_case` da sessão (sem o prefixo `session_NN_`). | Templates de sessão, bloco, prompt, feedback. |
