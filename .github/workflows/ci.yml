@@ -68,5 +68,8 @@ jobs:
       - name: Validate package (npm pack --dry-run)
         run: npm pack --dry-run
 
+      - name: "Self-host: prove published stable host governs this checkout"
+        run: node scripts/ci/verify-stable-host.mjs
+
       - name: Verify working tree is clean
         run: node scripts/ci/verify-clean-tree.mjs
