@@ -66,7 +66,8 @@ Em um filesystem case-sensitive (Linux, incluindo os runners `ubuntu-latest` já
 - [x] `npm test` — 67/65/0/2.
 - [x] `npm run package:check` — OK, 95 arquivos.
 - [x] `npm run smoke` — `[DDAE smoke] OK`.
-- [x] CI remota 5/5 (a confirmar após push — ver feedback do bloco).
+- [x] CI remota 5/5 — confirmado, run `31283311633`.
+- [x] Stable Host publicado (`ddae-engine@0.2.0`) instalado e executado (`--version`/`validate`/`audit`) em runner Linux real dentro da CI, com evidência de log capturada — Checkpoint 01.1, commit `d0a9221`.
 
 ## 11. Segurança
 
@@ -87,7 +88,7 @@ Não aplicável.
 
 ## 15. Pendências Esperadas
 
-- P3 (não bloqueante): uma prova mais forte de portabilidade (executar `validate`/`audit` do self-host de fato em um runner Linux via CI) não foi implementada neste bloco — a prova usada aqui é a inspeção direta do objeto Git (`git ls-tree`), que é definitiva quanto ao path armazenado, mais a CI existente confirmando ausência de regressão. Considerar como possível bloco futuro se o self-hosting precisar rodar em CI Linux formalmente.
+- ~~P3 (não bloqueante): uma prova mais forte de portabilidade (executar `validate`/`audit` do self-host de fato em um runner Linux via CI) não foi implementada neste bloco~~ — **resolvida no Checkpoint 01.1** (`scripts/ci/verify-stable-host.mjs`, step de CI nos 5 jobs da matriz, evidência de log real capturada). Ver `08_feedbacks/feedback_bloco_01_cross_platform_self_host_docs_casing.md`, seção "Checkpoint 01.1". Este era o único gate que impedia o fechamento integral do bloco — não foi deixado como dívida.
 
 ## 16. Feedback Obrigatório
 

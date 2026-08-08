@@ -142,6 +142,54 @@ npm run smoke: [DDAE smoke] OK
 - [ ] Bloco concluído com ressalvas (ver pendências)
 - [ ] Bloco bloqueado
 
+## Checkpoint 01.1 — Linux Stable Host Self-Validation Proof
+
+O bloco original deixou uma prova pendente, registrada explicitamente na Seção 13 (P3): a CI multiplataforma confirmava que o checkout `Docs/` + `legacy/` não quebrava a suíte de testes do candidate em Ubuntu/Windows/macOS, mas **não** provava que o `ddae-engine@0.2.0` publicado conseguia de fato governar (`validate`/`audit`) esse checkout em um filesystem case-sensitive real. Esse era o gate que motivou o bloco inteiro — não foi rebaixado a pendência crônica.
+
+**Baseline:** `dd9092d90c5ce49efd9bbe92a39035ca596430b9`.
+
+**Implementação:** `scripts/ci/verify-stable-host.mjs` (novo) — instala `ddae-engine@0.2.0` via `npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund`, executa `--version`/`validate --dir .`/`audit --dir .` contra o próprio binário instalado (nunca `bin/ddae-engine.js`, nunca `npx`), compara SHA-256 de `package.json` antes/depois, confirma `package-lock.json` ausente e `dependencies`/`devDependencies` intocados. Adicionado como step `"Self-host: prove published stable host governs this checkout"` em `.github/workflows/ci.yml`, executado nos 5 jobs da matriz (não só Ubuntu).
+
+**Evidência real extraída do log do runner `ubuntu-latest / Node 22`** (não apenas "CI ficou verde" — os comandos de fato executaram, com output capturado):
+
+```text
+=== DDAE Self-Host: Stable Host Linux/Cross-Platform Validation Proof ===
+package.json SHA-256 (before install): e9b2ca130a37391a0a05a447878c79d2bbe34bba3639bbec6a6e36aed83f820a
+
+$ npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund ddae-engine@0.2.0
+added 1 package in 344ms
+
+$ node "/home/runner/work/DDAE-Engine/DDAE-Engine/node_modules/ddae-engine/bin/ddae-engine.js" --version
+0.2.0
+
+$ node "/home/runner/work/DDAE-Engine/DDAE-Engine/node_modules/ddae-engine/bin/ddae-engine.js" validate --dir .
+Status: OK
+Sessions found: 2
+Warnings: 0
+Errors: 0
+
+$ node "/home/runner/work/DDAE-Engine/DDAE-Engine/node_modules/ddae-engine/bin/ddae-engine.js" audit --dir .
+Status: OK
+Sessions found: 2
+Warnings: 7
+Errors: 0
+Suggestions: 0
+Sessions:
+  - session_01_ddae_self_hosting_bootstrap: vazia (0 bloco(s))
+  - session_02_context_compiler_0_3_0: em andamento (1 bloco(s))
+
+package.json SHA-256 (after install):  e9b2ca130a37391a0a05a447878c79d2bbe34bba3639bbec6a6e36aed83f820a
+
+[DDAE self-host] Stable host validation PASSED
+```
+
+Path `/home/runner/work/DDAE-Engine/DDAE-Engine/node_modules/ddae-engine/bin/ddae-engine.js` confirma execução em filesystem Linux real (case-sensitive por definição), não uma simulação. `[DDAE self-host] Stable host validation PASSED` confirmado nos 5 jobs (`ubuntu-latest` Node 22/24/26, `windows-latest` Node 24, `macos-latest` Node 24) via `grep` direto no log bruto da run.
+
+**Commit técnico:** `d0a9221deee9e91bf2a053525c3e953c3f083aa7`.
+**CI run:** `31283311633` — `success`, 5/5.
+
+**Resultado:** Checkpoint 01.1 aprovado. Bloco 01 passa de "tecnicamente implementado" para **integralmente fechado** — a única evidência faltante (Stable Host publicado governando o checkout em Linux) agora existe, é reproduzível a cada push, e roda nos 5 ambientes da matriz, não apenas Ubuntu.
+
 ## 17. Próximo Bloco Recomendado
 
 Bloco 02 — DDAE State Collector (`src/context/ddae-context.js`).
