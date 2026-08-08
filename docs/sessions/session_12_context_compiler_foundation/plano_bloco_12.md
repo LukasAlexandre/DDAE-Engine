@@ -119,6 +119,8 @@ Blocos 02 e 03 podem ser desenvolvidos em qualquer ordem entre si (ambos depende
 
 **Definição de pronto:** testes verdes; nenhuma regressão em `npm test` completo.
 
+**Resultado:** Bloco concluído — commit técnico `7860bf6`, CI 5/5 (run `31276247468`). Nomes de arquivo de teste ajustados de `test/context-git-collector.test.js`/`test/context-project-collector.test.js` (previstos aqui) para `test/context-git.test.js`/`test/context-project.test.js`, por consistência com o padrão já existente na suíte (`test/cli-init.test.js`, `test/cli-session.test.js`, sem sufixo `-collector`). Um refinamento real de contrato foi descoberto durante a implementação e não estava previsto neste plano: em filesystems case-insensitive (Windows, macOS padrão), checar `docs` e `Docs` separadamente via `lstat` produz falso positivo de dupla detecção quando só um dos dois existe fisicamente; corrigido com verificação de capitalização exata via `fs.realpathSync.native()`, sem introduzir leitura de diretório. Detalhe completo em `validacao_bloco_02_git_project_collectors.md`.
+
 ---
 
 ### Bloco 03 — DDAE State Collector

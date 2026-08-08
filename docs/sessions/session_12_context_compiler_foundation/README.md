@@ -97,7 +97,7 @@ Evolução prevista após esta sessão: Session 13 (Work Packets + Handoff), Ses
 | Bloco | Objetivo | Status |
 |---|---|---|
 | 01 — Context Model & Architecture | Fechar o contrato: Manifest v1, determinismo, Source Model, Authority Model, budget, fingerprint, Git degradado, `.ddae`/ignore, segurança, staleness, CLI contract | Concluído |
-| 02 — Git + Project Collectors | Coletores determinísticos de estado Git e de projeto (stack, filesystem) | Pendente |
+| 02 — Git + Project Collectors | Coletores determinísticos de estado Git e de projeto (stack, filesystem) | Concluído |
 | 03 — DDAE State Collector | Coletor de sessão atual, decisões, bugs, validação | Pendente |
 | 04 — Authority & Source Model | Implementação do modelo de autoridade por domínio e provenance | Pendente |
 | 05 — Relevance Engine v1 | Motor de relevância heurístico e determinístico | Pendente |
@@ -113,8 +113,8 @@ Ver `plano_bloco_12.md` para o detalhamento de cada bloco, `contrato_context_man
 
 ## Status atual
 
-Bloco 01 concluído: contrato arquitetural fechado, zero código de runtime implementado (`src/context/` e `src/schemas/` ainda não existem no repositório). `package.json.version` e `EXPECTED_VERSION` permanecem em `0.2.0` deliberadamente — o bump para `0.3.0` só ocorre no Bloco 12.
+Bloco 01 concluído: contrato arquitetural fechado. Bloco 02 concluído: `src/context/git-context.js` e `src/context/project-context.js` implementados como os primeiros collectors reais — determinísticos, read-only, zero-dependency, com modo degradado quando Git não está disponível. `src/schemas/` ainda não existe no repositório. `package.json.version` e `EXPECTED_VERSION` permanecem em `0.2.0` deliberadamente — o bump para `0.3.0` só ocorre no Bloco 12.
 
 ## Próximos passos
 
-Bloco 02 — Git + Project Collectors: implementar `src/context/git-context.js` e `src/context/project-context.js` conforme o contrato fechado neste bloco, com modo degradado quando Git não estiver disponível.
+Bloco 03 — DDAE State Collector: implementar `src/context/ddae-context.js` (sessão atual, decisões, bugs, validações), reaproveitando `src/utils/session.js` sem duplicar sua lógica.
