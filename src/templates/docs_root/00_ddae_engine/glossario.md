@@ -21,12 +21,12 @@
 
 ## 2. Placeholders Reconhecidos pelo CLI
 
-Os comandos `ddae-engine init`, `session create`, `block create`, `prompt create` e `feedback create` renderizam estes placeholders nos templates que geram:
+Os comandos `ddae-engine init`, `session create`, `block create`, `prompt create` e `feedback create` renderizam estes placeholders nos templates que geram. Para documentar um placeholder literalmente (como nesta tabela) em vez de deixá-lo ser interpolado, prefixe-o com `\` (ex.: `\\{{PROJECT_NAME}}`) — a barra é removida e o token sobrevive sem substituição.
 
 | Placeholder | Preenchido com | Onde aparece |
 |---|---|---|
-| `{{PROJECT_NAME}}` | Nome da pasta do projeto alvo (`--dir`). | Todos os documentos de `Docs/` e quality gates. |
-| `{{CURRENT_DATE}}` | Data corrente em `YYYY-MM-DD`, no momento da geração. | Todos os documentos de `Docs/` e quality gates. |
+| `\{{PROJECT_NAME}}` | Nome da pasta do projeto alvo (`--dir`). | Todos os documentos de `Docs/` e quality gates. |
+| `\{{CURRENT_DATE}}` | Data corrente em `YYYY-MM-DD`, no momento da geração. | Todos os documentos de `Docs/` e quality gates. |
 | `{{SESSION_NUMBER}}` | Número de 2 dígitos da sessão (ex.: `01`, `11`). | Templates de sessão, bloco, prompt, feedback. |
 | `{{SESSION_TITLE}}` | Título legível da sessão. | Templates de sessão. |
 | `{{SESSION_SLUG}}` | Identificador `snake_case` da sessão (sem o prefixo `session_NN_`). | Templates de sessão, bloco, prompt, feedback. |

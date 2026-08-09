@@ -20,11 +20,18 @@ export function pad2(n) {
 
 /**
  * Replaces {{KEY}} placeholders in a template string with values from `data`.
+ * A leading backslash escapes a placeholder so it survives rendering as a
+ * literal token (e.g. `\{{PROJECT_NAME}}` renders as `{{PROJECT_NAME}}`) —
+ * used by templates that need to document a placeholder rather than have it
+ * interpolated.
  */
 export function renderTemplate(content, data) {
-  return content.replace(/{{\s*([A-Z_]+)\s*}}/g, (match, key) => (
-    key in data ? String(data[key]) : match
-  ));
+  return content.replace(/\\?{{\s*([A-Z_]+)\s*}}/g, (match, key) => {
+    if (match.startsWith('\\')) {
+      return match.slice(1);
+    }
+    return key in data ? String(data[key]) : match;
+  });
 }
 
 /**
