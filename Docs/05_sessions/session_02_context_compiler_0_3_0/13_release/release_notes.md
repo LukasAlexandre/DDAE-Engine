@@ -8,11 +8,13 @@
 
 **Target:** `ddae-engine@0.3.0`
 
-**Status:** **RELEASE CANDIDATE PREPARED** — preparado pelo Bloco 11 (`session_02_context_compiler_0_3_0`), ainda **não publicado**.
+**Status:** **RELEASE CANDIDATE READY — FINAL RELEASE GATE PREFLIGHT PASSED** — preparado pelo Bloco 11 e validado pelo Checkpoint 11.1 (`session_02_context_compiler_0_3_0`), ainda **não publicado**.
 
 - Publicação no registro npm: **NÃO EXECUTADA**.
 - Tag `v0.3.0`: **NÃO CRIADA** (local e remoto).
 - `v0.2.0` (tag imutável, `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`): **inalterada**.
+- Gate formal de publicação (`npm run release:check`, disparado via `prepublishOnly` como o `npm publish` real disparará) **provado de ponta a ponta** em `npm publish --dry-run`, sem exigência de credencial — ver Checkpoint 11.1.
+- Fingerprint do release candidate capturado: `shasum e41ede33157278f700247d3b4f074a141fc2d9b6`, `106 files`, `100.3 kB` / `320.2 kB` — será comparado com o artefato publicado no Bloco 12.
 - Stable Host que governa este checkout: **`ddae-engine@0.2.0`** (permanece publicado; não promovido para 0.3.0 neste bloco).
 - A publicação real (`npm publish`, criação de tag, GitHub Release) é reservada para um bloco controlado e separado (Bloco 12), com autorização humana explícita antes de cada operação irreversível.
 
