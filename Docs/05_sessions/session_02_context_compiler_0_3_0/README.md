@@ -1,6 +1,6 @@
 # Session 02 — context compiler 0 3 0
 
-> Projeto: DDAE · Atualizado em: 2026-08-08
+> Projeto: DDAE · Atualizado em: 2026-08-09
 
 > Este README é o ponto de entrada da sessão. Qualquer pessoa ou agente de IA deve conseguir, lendo só este arquivo, entender o que esta sessão faz, o que já está pronto e qual é o próximo passo — sem precisar abrir todas as subpastas.
 
@@ -46,7 +46,7 @@ O Context Compiler começou em `legacy/sessions/session_12_context_compiler_foun
 |---|---|---|
 | 01 | Cross-Platform Self-Host Docs Casing (+ Checkpoint 01.1 — Linux Stable Host Proof) | Concluído — aprovado integralmente |
 | 02 | DDAE State Collector | Concluído — aprovado |
-| 03 | Authority & Source Model | Pendente |
+| 03 | Authority & Source Model | Concluído — aprovado |
 | 04 | Relevance Engine v1 | Pendente |
 | 05 | Context Manifest + Compiler | Pendente |
 | 06 | Markdown Renderer | Pendente |
@@ -67,7 +67,7 @@ Depende de `legacy/sessions/session_12_context_compiler_foundation/` (contrato d
 
 ## 10. Resultado
 
-Bloco 01 concluído e integralmente fechado: estrutura física do repositório corrigida para portabilidade cross-platform, sem perda de conteúdo (113 arquivos verificados byte-a-byte). Checkpoint 01.1 fechou a única evidência pendente — o Stable Host publicado (`ddae-engine@0.2.0`) agora é comprovadamente instalado e executado (`validate`/`audit`) contra este checkout dentro da CI, nos 5 ambientes da matriz, com evidência de log real capturada de um runner Linux. Bloco 02 concluído: `collectDdaeContext` (`src/context/ddae-context.js`) implementado — terceiro sensor do Context Compiler, coletando sessão atual, módulos, blocos, prompts, feedbacks, bugs, validação e governança de forma determinística, read-only, sem tocar `legacy/sessions/`. 26 testes novos, provado contra o próprio self-host, CI 5/5. Demais blocos ainda não iniciados.
+Bloco 01 concluído e integralmente fechado: estrutura física do repositório corrigida para portabilidade cross-platform, sem perda de conteúdo (113 arquivos verificados byte-a-byte). Checkpoint 01.1 fechou a única evidência pendente — o Stable Host publicado (`ddae-engine@0.2.0`) agora é comprovadamente instalado e executado (`validate`/`audit`) contra este checkout dentro da CI, nos 5 ambientes da matriz, com evidência de log real capturada de um runner Linux. Bloco 02 concluído: `collectDdaeContext` (`src/context/ddae-context.js`) implementado — terceiro sensor do Context Compiler, coletando sessão atual, módulos, blocos, prompts, feedbacks, bugs, validação e governança de forma determinística, read-only, sem tocar `legacy/sessions/`. 26 testes novos, provado contra o próprio self-host, CI 5/5. Bloco 03 concluído: Source Model v1 e Authority Model v1 (`src/context/authority.js`) implementados — `createSource` normaliza evidência em Sources canônicas com domínio sempre explícito (nunca inferido de `kind`/prosa), `resolveAuthorityConflict` resolve conflitos por partição de domínio (`future_intent`/`history` nunca vencem o presente), preservando toda fonte perdedora com `reason_superseded` categórico, e retornando `unresolved` quando não há vencedor objetivo. 34 testes novos, incluindo o caso nomeado JWT vs HttpOnly, provado contra saída real dos três coletores desta sessão, CI 5/5. Demais blocos ainda não iniciados.
 
 ## 11. Próxima Sessão
 
