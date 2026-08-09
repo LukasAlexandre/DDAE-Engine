@@ -27,8 +27,8 @@ Sessão ainda em andamento — preenchido progressivamente, não é fechamento f
 | 08 — Sensitive Data Guard | Aprovado | Nenhuma |
 | 09 — Real Consumer Smoke and Agent Workflow | Aprovado | Nenhuma |
 | 10 — BUG-01 (template do glossário) + polish | Aprovado | Nenhuma |
-| 11 — Release Readiness | Pendente | — |
-| 12 — Release 0.3.0 | Pendente | — |
+| 11 — Context Compiler 0.3.0 Release Preparation | Aprovado | Nenhuma |
+| 12 — Controlled 0.3.0 Release (`npm publish` + tag `v0.3.0`) | Pendente | — |
 
 ## 3. Critérios de Aceite
 
