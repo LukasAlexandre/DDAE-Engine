@@ -22,7 +22,8 @@ Sessão ainda em andamento — preenchido progressivamente, não é fechamento f
 | 03 — Authority & Source Model | Aprovado | Nenhuma |
 | 04 — Relevance Engine v1 | Aprovado | Nenhuma |
 | 05 — Context Manifest + Compiler | Aprovado | Nenhuma |
-| 06 — Markdown Renderer | Pendente | — |
+| 06 — Markdown Renderer | Aprovado | Nenhuma |
+| 07 — `context build/show/validate` CLI | Pendente | — |
 | ... | Pendente | — |
 | 12 — Release 0.3.0 | Pendente | — |
 
