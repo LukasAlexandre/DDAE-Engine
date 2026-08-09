@@ -264,6 +264,57 @@ function assertAudit(binPath, consumerDir) {
   }
 }
 
+/**
+ * Proves the Context Compiler capability (Blocos 05–08) works through the
+ * INSTALLED tarball, not just this checkout — packs/installs already
+ * happened above; this only exercises `context build/show/validate`
+ * against a small, disposable consumer via the same `binPath` used for
+ * every other step in this script. A minimal secret sentinel confirms the
+ * Sensitive Data Guard is active in the shipped artifact, not just in the
+ * source tree.
+ */
+function contextCompilerJourney(binPath, contextConsumerDir) {
+  const SENTINEL = 'DDAE_DISTRIBUTION_SMOKE_SECRET_3C91EA';
+
+  fs.mkdirSync(contextConsumerDir, { recursive: true });
+  runInstalledCli(binPath, ['init', '--dir', contextConsumerDir]);
+  fs.writeFileSync(path.join(contextConsumerDir, 'README.md'), 'Distribution smoke overview for the context compiler.\n');
+  fs.writeFileSync(path.join(contextConsumerDir, '.env'), `API_KEY=${SENTINEL}\n`);
+
+  const buildOutput = runInstalledCli(binPath, ['context', 'build', '--goal', 'distribution smoke proof', '--dir', contextConsumerDir]);
+  if (!/Context package built successfully\./.test(buildOutput)) {
+    throw new Error(`context build did not report success:\n${buildOutput}`);
+  }
+  if (buildOutput.includes(SENTINEL)) {
+    throw new Error('context build stdout leaked the sentinel secret');
+  }
+
+  const manifestPath = path.join(contextConsumerDir, '.ddae', 'context', 'manifest.json');
+  const contextMdPath = path.join(contextConsumerDir, '.ddae', 'context', 'CONTEXT.md');
+  const manifestText = fs.readFileSync(manifestPath, 'utf8');
+  const contextMdText = fs.readFileSync(contextMdPath, 'utf8');
+  if (manifestText.includes(SENTINEL) || contextMdText.includes(SENTINEL)) {
+    throw new Error('the built context package leaked the sentinel secret');
+  }
+  const manifest = JSON.parse(manifestText);
+  if (!manifest.excluded_sources.some((entry) => entry.path === '.env' && entry.reason === 'sensitive_name')) {
+    throw new Error(`expected .env to be excluded by the Sensitive Data Guard:\n${JSON.stringify(manifest.excluded_sources)}`);
+  }
+  if (!manifest.sources.some((source) => source.path === 'README.md')) {
+    throw new Error('expected README.md to be safely ingested as a Source');
+  }
+
+  const showOutput = runInstalledCli(binPath, ['context', 'show', '--dir', contextConsumerDir]);
+  if (showOutput !== contextMdText) {
+    throw new Error('context show did not print exactly the built CONTEXT.md');
+  }
+
+  const validateOutput = runInstalledCli(binPath, ['context', 'validate', '--dir', contextConsumerDir]);
+  if (!/Status: VALID/.test(validateOutput)) {
+    throw new Error(`context validate did not report VALID:\n${validateOutput}`);
+  }
+}
+
 function legacyDetectionJourney(binPath, legacyConsumerDir) {
   fs.mkdirSync(legacyConsumerDir, { recursive: true });
   runInstalledCli(binPath, ['init', '--dir', legacyConsumerDir]);
@@ -305,6 +356,7 @@ export async function runDistributionSmoke({ keepTmp = process.env.DDAE_SMOKE_KE
       install: path.join(tmpRoot, 'install'),
       consumer: path.join(tmpRoot, 'consumer'),
       legacyConsumer: path.join(tmpRoot, 'legacy-consumer'),
+      contextConsumer: path.join(tmpRoot, 'context-consumer'),
     };
 
     currentStep = 'Tarball';
@@ -386,6 +438,10 @@ export async function runDistributionSmoke({ keepTmp = process.env.DDAE_SMOKE_KE
     currentStep = 'Legacy detection';
     legacyDetectionJourney(binPath, dirs.legacyConsumer);
     results.push({ name: 'Legacy detection', ok: true });
+
+    currentStep = 'Context compiler';
+    contextCompilerJourney(binPath, dirs.contextConsumer);
+    results.push({ name: 'Context compiler', ok: true });
 
     return { ok: true, results, header };
   } catch (error) {
