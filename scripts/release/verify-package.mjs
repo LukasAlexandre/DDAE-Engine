@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const PROJECT_ROOT = path.join(__dirname, '..', '..');
 
 // Bumped alongside package.json's own "version" field when preparing a new release.
-export const EXPECTED_VERSION = '0.2.0';
+export const EXPECTED_VERSION = '0.3.0';
 
 export const REQUIRED_FILES = [
   'package.json',

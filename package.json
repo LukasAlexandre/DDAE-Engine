@@ -1,6 +1,6 @@
 {
   "name": "ddae-engine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "DDAE Engine — Document-Driven AI Engineering Engine. A CLI that scaffolds a document-driven workflow and AI agent rules into any project.",
   "type": "module",
   "bin": {

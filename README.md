@@ -87,6 +87,9 @@ ddae-engine prompt create --block <block> --session <session> [--dir <path>] [--
 ddae-engine feedback create --block <block> --session <session> [--dir <path>] [--force]
 ddae-engine validate [--dir <path>]
 ddae-engine audit [--dir <path>]
+ddae-engine context build --goal "<text>" [--session <name>] [--budget minimal|standard|deep] [--dir <path>]
+ddae-engine context show [--dir <path>]
+ddae-engine context validate [--dir <path>]
 ddae-engine --help
 ddae-engine --version
 ```
@@ -95,6 +98,9 @@ ddae-engine --version
 |---|---|
 | `--dir <path>` | Target directory to operate in (default: current directory) |
 | `--force` | Overwrite files that already exist |
+| `--goal <text>` | (`context build`) The objective driving relevance selection |
+| `--session <name>` | (`context build`) Explicit canonical session, instead of the latest one |
+| `--budget <level>` | (`context build`) `minimal` \| `standard` \| `deep` (default: `standard`) |
 
 ### Examples
 
@@ -138,6 +144,40 @@ Audit for orphaned/incomplete sessions, blocks, prompts, feedbacks, pending P1/P
 npx ddae-engine audit
 ```
 
+Build a context package for an AI agent, then check whether it's still fresh:
+
+```bash
+npx ddae-engine context build --goal "Implement user audit"
+npx ddae-engine context show
+npx ddae-engine context validate
+```
+
+## Context Compiler
+
+`ddae-engine context build` compiles the current Git state, project files, and DDAE session state (`Docs/05_sessions/`) into a single, deterministic context package — so an AI agent can start a task by reading one file instead of exploring the whole repository. It's entirely local: no LLM call, no network access, no embeddings. Source selection is a lexical, goal-driven relevance ranking (no translation, stemming, or synonyms), and file ingestion is gated by a Sensitive Data Guard that runs *before* any content is read.
+
+```bash
+ddae-engine context build --goal "<text>" [--session <name>] [--budget minimal|standard|deep] [--dir <path>]
+ddae-engine context show [--dir <path>]      # print CONTEXT.md — read-only
+ddae-engine context validate [--dir <path>]  # report VALID / STALE / INVALID — read-only
+```
+
+`--budget` controls how much of the char budget (`minimal` / `standard` / `deep`) relevant sources are allowed to consume; sources that don't fit are excluded with `reason: budget_exceeded` — there's no minimum relevance score, a zero-score source is still a valid candidate if it fits.
+
+`context build` writes three files under `.ddae/context/` (self-`.gitignore`d, never committed):
+
+| File | Purpose |
+|---|---|
+| `manifest.json` | Canonical, deterministic, fingerprinted Context Manifest — the source of truth |
+| `CONTEXT.md` | Human/agent-readable rendering of the manifest, fixed section order |
+| `validation.json` | Freshness receipt as of the build (see `context validate` below) |
+
+`context validate` re-checks the package against the current Git HEAD, session state, and source content hashes, and reports one of three statuses: `VALID` (unchanged since build), `STALE` (the underlying project moved — e.g. a selected file changed or `HEAD` advanced), or `INVALID` (the package itself was tampered with or doesn't match its own fingerprint).
+
+**Sensitive Data Guard.** Before any file's content is read, it's checked against a deny-list (`.env`, `.env.*`, `*.pem`, `*.key`, `id_rsa`, `id_ed25519`, `.npmrc`, `credentials*`, `secrets*`, `*.p12`, `*.pfx`), a size limit, binary-content detection, path containment, and (fail-closed) symlink handling; text that passes those checks is still scanned for secret-shaped content (`PRIVATE KEY`, `API_KEY=`, `TOKEN=`, `PASSWORD=`, `SECRET=`) before being ingested. Anything excluded is recorded as `{path, reason}` in the manifest — never with the file's content, value, or matched snippet.
+
+**Known limitation.** The manifest's structured fact sections (`decisions`, `bugs`, `validation`) are populated only from explicit, formally-structured input — DDAE Engine does not perform NLP or semantic extraction from Markdown. Until a project supplies that structured input, `CONTEXT.md`'s `## Decisions` / `## Known Bugs` / `## Validation` sections read "None recorded.", even though the same decision/bug/validation content is still selected, correctly labeled, and available under `## Relevant Files`.
+
 ## The workflow
 
 1. **Write the document first.** A new feature starts as an edit to `Docs/01_product/requisitos_funcionais.md`, not as a code diff.
@@ -177,7 +217,9 @@ DDAE Engine is documentation + prompts + implementation + feedback + audit + val
 
 ## Project status
 
-`v0.1.0` of the DDAE Engine CLI implements `init`, `session create`, `block create`, `prompt create`, `feedback create`, `validate`, and `audit`. As of this version, the official templates (`Docs/` content, session skeleton, block/prompt/feedback/validation templates, quality gates, and agent rule files) were substantially rewritten for documentation quality — not just structural placeholders, but content that guides real execution for both humans and AI agents (Claude Code, Codex, Cursor, Copilot). The validation and audit commands now also understand required quality gates: `validate` checks their minimum structure and required fields, while `audit` reports gate status and P1/P2 pendencies.
+The DDAE Engine CLI implements `init`, `session create`, `block create`, `prompt create`, `feedback create`, `validate`, `audit`, and `context build`/`show`/`validate` (see [Context Compiler](#context-compiler)). The official templates (`Docs/` content, session skeleton, block/prompt/feedback/validation templates, quality gates, and agent rule files) aren't just structural placeholders — they ship with content that guides real execution for both humans and AI agents (Claude Code, Codex, Cursor, Copilot). `validate` checks structural compliance and required quality gate fields; `audit` reports orphaned/incomplete work, quality gate status, and P1/P2 pendencies. The Context Compiler adds a fourth surface: a deterministic, offline context package built from the same `Docs/` structure, so an agent can start a task without re-deriving it from scratch.
+
+Out of scope for now (see `Docs/01_product/visao_produto.md` in a DDAE-scaffolded project for the full roadmap): NLP/semantic fact extraction, an MCP server, and an Obsidian workspace integration.
 
 ## License
 

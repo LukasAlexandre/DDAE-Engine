@@ -4,6 +4,26 @@ Todas as mudanças relevantes deste projeto são documentadas neste arquivo.
 
 O formato segue, livremente, [Keep a Changelog](https://keepachangelog.com/). O versionamento segue [SemVer](https://semver.org/); enquanto o pacote estiver em `0.x`, mudanças incompatíveis incrementam a versão `MINOR`.
 
+## [0.3.0] — 2026-08-09
+
+Context Compiler. Registrado em `Docs/05_sessions/session_02_context_compiler_0_3_0/`.
+
+### Added
+
+- `ddae-engine context build --goal "<text>" [--session <name>] [--budget minimal|standard|deep]`: compila o estado atual do Git, dos arquivos do projeto e da sessão DDAE (`Docs/05_sessions/`) em um pacote de contexto determinístico, sob `.ddae/context/` (self-`.gitignore`d) — `manifest.json` (canônico, fingerprinted), `CONTEXT.md` (leitura humana/agente) e `validation.json` (recibo de frescor).
+- `ddae-engine context show` / `ddae-engine context validate`: leitura e verificação de frescor (`VALID` / `STALE` / `INVALID`) estritamente read-only.
+- Coleta de contexto (Git, projeto, sessão DDAE), Source/Authority Model, motor de relevância lexical goal-driven (sem tradução/stemming/sinônimos, sem threshold mínimo — exclusão só por pressão de orçamento), Context Manifest v1 com fingerprint canônico, e renderer Markdown determinístico com dez seções fixas.
+- Sensitive Data Guard: deny-list por nome, limite de tamanho, detecção de binário, containment de path, symlink fail-closed e heurística de conteúdo sensível — aplicados antes de qualquer leitura de conteúdo, permitindo ingestão segura de texto real do projeto.
+- Zero chamada a LLM, zero acesso a rede, zero embeddings — todo o pipeline roda local e offline.
+
+### Fixed
+
+- BUG-01: o template do glossário (`Docs/00_ddae_engine/glossario.md`) renderizava, em vez de documentar, os tokens `{{PROJECT_NAME}}`/`{{CURRENT_DATE}}` em sua própria tabela de referência.
+
+### Known limitation
+
+- As seções estruturadas do manifesto (`decisions`, `bugs`, `validation`) só são populadas a partir de entrada formalmente estruturada — não há extração automática por NLP a partir de Markdown. O conteúdo correspondente continua selecionado e disponível em `## Relevant Files`.
+
 ## [0.2.0] — 2026-08-07
 
 Correção do modelo de sessões e módulos internos. Registrado em `docs/sessions/session_10_correcao_modelo_sessoes/`.
