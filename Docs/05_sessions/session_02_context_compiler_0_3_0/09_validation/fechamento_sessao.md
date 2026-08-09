@@ -20,7 +20,8 @@ Sessão ainda em andamento — preenchido progressivamente, não é fechamento f
 | 01 — Cross-Platform Self-Host Docs Casing (+ Checkpoint 01.1) | Aprovado integralmente | Nenhuma |
 | 02 — DDAE State Collector | Aprovado | Nenhuma |
 | 03 — Authority & Source Model | Aprovado | Nenhuma |
-| 04 — Relevance Engine v1 | Pendente | — |
+| 04 — Relevance Engine v1 | Aprovado | Nenhuma |
+| 05 — Context Manifest + Compiler | Pendente | — |
 | ... | Pendente | — |
 | 12 — Release 0.3.0 | Pendente | — |
 
