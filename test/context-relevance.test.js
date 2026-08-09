@@ -22,6 +22,7 @@ const RELEVANCE_FILE = path.join(__dirname, '..', 'src', 'context', 'relevance.j
 // naive "must not mention LLM" check).
 function stripLineComments(source) {
   return source
+    .replace(/\r\n/g, '\n')
     .split('\n')
     .map((line) => line.replace(/\/\/.*$/, ''))
     .join('\n');
