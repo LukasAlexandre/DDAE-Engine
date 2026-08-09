@@ -78,18 +78,26 @@ export function computeContextFingerprint(payload) {
 /**
  * Builds the canonical fingerprint payload per the Manifest v1 contract
  * (Section 9): schema version, compiler contract version, normalized goal,
- * session id, budget profile/max_chars, Git HEAD when available, the
- * selected Source ids + their content_hash (sorted by id — independent of
- * whatever order the Relevance Engine selected them in, which is a
- * relevance concern, not an identity concern), and relevant constraints.
- * Never includes: the manifest's own fingerprint value, absolute paths,
- * timestamps, mtime/ctime, or filesystem enumeration order.
+ * session id and selection reason, budget profile/max_chars, Git HEAD when
+ * available, the selected Source ids + their content_hash (sorted by id —
+ * independent of whatever order the Relevance Engine selected them in,
+ * which is a relevance concern, not an identity concern), and relevant
+ * constraints. Never includes: the manifest's own fingerprint value,
+ * absolute paths, timestamps, mtime/ctime, or filesystem enumeration order.
+ *
+ * `sessionSelectionReason` is included alongside `sessionId` deliberately:
+ * `session.id` alone doesn't capture *why* that session was selected
+ * (`explicit` vs `latest_canonical`), and that distinction is itself part
+ * of the canonical state the Manifest records (Checkpoint 07.1) — two
+ * builds naming the same session for different reasons are not the same
+ * logical state, and must not collide onto the same fingerprint.
  */
 export function buildFingerprintPayload({
   schemaVersion,
   compilerContractVersion,
   goalNormalized,
   sessionId,
+  sessionSelectionReason,
   budgetProfile,
   budgetMaxChars,
   gitHead,
@@ -107,6 +115,7 @@ export function buildFingerprintPayload({
     compiler_contract_version: compilerContractVersion,
     goal_normalized: goalNormalized,
     session_id: sessionId ?? null,
+    session_selection_reason: sessionSelectionReason ?? null,
     budget_profile: budgetProfile,
     budget_max_chars: budgetMaxChars,
     git_head: gitHead ?? null,

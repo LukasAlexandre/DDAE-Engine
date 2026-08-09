@@ -36,6 +36,7 @@ function rebuildFingerprintPayload(manifest) {
     compilerContractVersion: manifest.compiler.contract_version,
     goalNormalized: manifest.goal.normalized,
     sessionId: manifest.session.id,
+    sessionSelectionReason: manifest.session.selection_reason,
     budgetProfile: manifest.budget.profile,
     budgetMaxChars: manifest.budget.max_chars,
     gitHead: manifest.git.head,

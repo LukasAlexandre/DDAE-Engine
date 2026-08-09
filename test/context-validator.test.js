@@ -100,6 +100,22 @@ test('6. a CONTEXT.md that does not match the Renderer output is INVALID', () =>
   assert.ok(result.reasons.some((r) => r.code === 'CONTEXT_MARKDOWN_MISMATCH'));
 });
 
+// Checkpoint 07.1 — tampering only session.selection_reason (keeping the
+// original fingerprint, and re-rendering CONTEXT.md to stay coherent with
+// the tampered manifest) must still be caught as INVALID. This proves the
+// protection does not rely solely on a CONTEXT.md mismatch: even a fully
+// self-consistent tampered manifest+CONTEXT.md pair fails, because the
+// original fingerprint no longer matches the (now different) recomputed one.
+test('Checkpoint 07.1. tampering only session.selection_reason (fingerprint left as-is) is caught as INVALID via FINGERPRINT_MISMATCH', () => {
+  const { manifest } = buildPair();
+  assert.equal(manifest.session.selection_reason, 'latest_canonical');
+  const tampered = { ...manifest, session: { ...manifest.session, selection_reason: 'explicit' } };
+  const rerenderedMarkdown = renderContextMarkdown(tampered);
+  const result = validateContextState({ manifest: tampered, contextMarkdown: rerenderedMarkdown });
+  assert.equal(result.status, 'INVALID');
+  assert.ok(result.reasons.some((r) => r.code === 'FINGERPRINT_MISMATCH'));
+});
+
 // 7. same Git HEAD -> VALID
 test('7. an unchanged Git HEAD keeps the package VALID', () => {
   const head = 'b'.repeat(40);

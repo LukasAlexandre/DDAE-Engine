@@ -217,6 +217,7 @@ export function compileContext(input) {
     compilerContractVersion: CONTEXT_COMPILER_CONTRACT_VERSION,
     goalNormalized: normalizedGoal.normalized,
     sessionId: session.id,
+    sessionSelectionReason: session.selection_reason,
     budgetProfile: ranking.budget.profile,
     budgetMaxChars: ranking.budget.max_chars,
     gitHead: git.head,

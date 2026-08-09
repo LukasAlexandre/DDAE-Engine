@@ -17,6 +17,7 @@ function basePayloadArgs(overrides = {}) {
     compilerContractVersion: '1',
     goalNormalized: 'audit users',
     sessionId: 'session_02_context_compiler_0_3_0',
+    sessionSelectionReason: 'latest_canonical',
     budgetProfile: 'standard',
     budgetMaxChars: 60000,
     gitHead: 'a'.repeat(40),
@@ -64,6 +65,29 @@ test('5. a changed session id changes the fingerprint', () => {
   const a = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs()));
   const b = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionId: 'session_03_other' })));
   assert.notEqual(a.value, b.value);
+});
+
+// Checkpoint 07.1 — A: same session_id, different selection_reason -> different fingerprint
+test('Checkpoint 07.1 A. the same session id with a different selection_reason changes the fingerprint', () => {
+  const latestCanonical = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionSelectionReason: 'latest_canonical' })));
+  const explicit = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionSelectionReason: 'explicit' })));
+  assert.notEqual(latestCanonical.value, explicit.value);
+});
+
+// Checkpoint 07.1 B: same session_id + same selection_reason -> identical fingerprint
+test('Checkpoint 07.1 B. the same session id and selection_reason produce an identical fingerprint across calls', () => {
+  const a = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionSelectionReason: 'explicit' })));
+  const b = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionSelectionReason: 'explicit' })));
+  assert.equal(a.value, b.value);
+});
+
+// Checkpoint 07.1 C: null session stays deterministic
+test('Checkpoint 07.1 C. a null session (id=null, selection_reason="none") remains deterministic', () => {
+  const a = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionId: null, sessionSelectionReason: 'none' })));
+  const b = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionId: null, sessionSelectionReason: 'none' })));
+  assert.equal(a.value, b.value);
+  const differentNullReason = computeContextFingerprint(buildFingerprintPayload(basePayloadArgs({ sessionId: null, sessionSelectionReason: 'explicit_not_found' })));
+  assert.notEqual(a.value, differentNullReason.value);
 });
 
 // 6. budget changes -> fingerprint changes

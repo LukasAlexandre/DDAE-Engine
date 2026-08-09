@@ -256,6 +256,19 @@ test('24. the compiled manifest always carries a fingerprint', () => {
   assert.match(manifest.fingerprint.value, /^[0-9a-f]{64}$/);
 });
 
+// Checkpoint 07.1 — session selection reason is bound to the fingerprint
+test('Checkpoint 07.1. the same session id selected for a different reason (explicit vs latest_canonical) produces a different fingerprint', () => {
+  const manifestA = compileContext(baseCompileInput({
+    ddaeContext: ddaeFixture({ selection: { requested: null, selected: 'session_02_context_compiler_0_3_0', reason: 'latest_canonical' } }),
+  }));
+  const manifestB = compileContext(baseCompileInput({
+    ddaeContext: ddaeFixture({ selection: { requested: 'session_02_context_compiler_0_3_0', selected: 'session_02_context_compiler_0_3_0', reason: 'explicit' } }),
+  }));
+  assert.equal(manifestA.session.id, manifestB.session.id);
+  assert.notEqual(manifestA.session.selection_reason, manifestB.session.selection_reason);
+  assert.notEqual(manifestA.fingerprint.value, manifestB.fingerprint.value);
+});
+
 // 25. repeated calls deepEqual
 test('25. repeated compiles with the same input produce deepEqual manifests', () => {
   const input = baseCompileInput();
