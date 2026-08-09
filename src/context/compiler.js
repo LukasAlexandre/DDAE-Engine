@@ -152,9 +152,11 @@ function resolveClaims(claims) {
  * kernel: never scans the filesystem, never opens `source.path`, never
  * calls the network, and never writes anything. Every candidate the
  * Compiler considers must already have been gathered by an authorized
- * caller — the Sensitive Data Guard that will police *that* gathering step
- * doesn't exist yet (a future block), so this function stays a closed,
- * read-nothing kernel until it does.
+ * caller — the Sensitive Data Guard (src/context/sensitive-files.js)
+ * polices that gathering step, upstream of this function. The Compiler
+ * itself still never touches the filesystem: `input.securityExclusions`
+ * (paths the Guard already refused to ingest) is just data handed in, the
+ * same as `input.candidates`.
  */
 export function compileContext(input) {
   requirePlainObject(input, 'input');
@@ -189,13 +191,29 @@ export function compileContext(input) {
     };
   });
 
-  const excludedSources = ranking.skipped.map((entry) => ({
+  const relevanceExclusions = ranking.skipped.map((entry) => ({
     source_id: entry.source.id,
     path: entry.path || null,
     score: entry.score,
     char_cost: entry.char_cost,
     reason: entry.reason,
   }));
+
+  // Security exclusions (files the Guard refused before they ever became a
+  // Source) never carry a source_id — see checkExcludedSources in
+  // context-schema.js. Ordered by path ASC / reason ASC, independent of
+  // whatever order the Guard's own traversal produced them in, and kept
+  // after the relevance exclusions rather than interleaved with them.
+  const securityExclusions = [...(input.securityExclusions ?? [])]
+    .map((entry) => ({ path: entry.path, reason: entry.reason }))
+    .sort((a, b) => {
+      if (a.path !== b.path) {
+        return a.path < b.path ? -1 : 1;
+      }
+      return a.reason < b.reason ? -1 : a.reason > b.reason ? 1 : 0;
+    });
+
+  const excludedSources = [...relevanceExclusions, ...securityExclusions];
 
   const facts = input.facts ?? {};
   const decisions = facts.decisions ?? [];

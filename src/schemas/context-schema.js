@@ -194,6 +194,61 @@ function checkReferenceList(manifest, errors, field, sourceIds, { requireValue =
   });
 }
 
+// excluded_sources carries two distinct shapes (Checkpoint 08 —
+// legacy/sessions/session_12_context_compiler_foundation/
+// contrato_context_manifest_v1.md, Section 12): a *relevance* exclusion
+// (a Source that was already safely ingested, but didn't fit the budget —
+// `{source_id, path, score, char_cost, reason}`), and a *security*
+// exclusion (a file the Sensitive Data Guard refused to ingest in the
+// first place — `{path, reason}`, deliberately with no `source_id`,
+// because it never became a Source, and no content/value/snippet/match/
+// secret field, because nothing about *why* it matched is ever recorded).
+// The two are told apart by the presence of `source_id`, never by a
+// separate discriminator field — a security exclusion never carried one to
+// begin with.
+const FORBIDDEN_SECURITY_EXCLUSION_FIELDS = Object.freeze(['content', 'value', 'snippet', 'match', 'secret']);
+
+function checkExcludedSources(manifest, errors, sourceIds) {
+  const list = manifest.excluded_sources;
+  if (!Array.isArray(list)) {
+    pushError(errors, 'excluded_sources', 'must be an array');
+    return;
+  }
+  list.forEach((entry, index) => {
+    const label = `excluded_sources[${index}]`;
+    if (!entry || typeof entry !== 'object') {
+      pushError(errors, label, 'must be an object');
+      return;
+    }
+    if (entry.source_id !== undefined) {
+      if (!isNonEmptyString(entry.source_id)) {
+        pushError(errors, label, 'source_id must be a non-empty string when present');
+        return;
+      }
+      if (!sourceIds.has(entry.source_id)) {
+        pushError(errors, label, `source_id "${entry.source_id}" not found in sources`);
+      }
+      return;
+    }
+    // Security exclusion: no source_id — the file never became a Source.
+    if (!isNonEmptyString(entry.path)) {
+      pushError(errors, label, 'a security exclusion (no source_id) must include a non-empty path');
+      return;
+    }
+    if (!isProjectRelativePath(entry.path)) {
+      pushError(errors, `${label}.path`, 'must be project-relative');
+    }
+    if (!isNonEmptyString(entry.reason)) {
+      pushError(errors, label, 'must include a non-empty reason');
+    }
+    for (const forbidden of FORBIDDEN_SECURITY_EXCLUSION_FIELDS) {
+      if (forbidden in entry) {
+        pushError(errors, label, `must never carry "${forbidden}" — security exclusions record only path and reason, never the matched content`);
+      }
+    }
+  });
+}
+
 function checkConflicts(manifest, errors, sourceIds) {
   if (!Array.isArray(manifest.conflicts)) {
     pushError(errors, 'conflicts', 'must be an array');
@@ -267,7 +322,7 @@ export function validateContextManifest(manifest) {
   const sourceIds = checkSources(manifest, errors);
 
   checkReferenceList(manifest, errors, 'relevant_files', sourceIds);
-  checkReferenceList(manifest, errors, 'excluded_sources', sourceIds);
+  checkExcludedSources(manifest, errors, sourceIds);
   checkReferenceList(manifest, errors, 'decisions', sourceIds, { requireValue: true });
   checkReferenceList(manifest, errors, 'constraints', sourceIds, { requireValue: true });
   checkReferenceList(manifest, errors, 'bugs', sourceIds, { requireValue: true });

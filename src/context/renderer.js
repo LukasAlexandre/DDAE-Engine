@@ -191,10 +191,18 @@ function renderRelevantFile(entry, sourceById) {
 }
 
 /**
- * `excluded_sources` means "left out by budget/selection" — it is never a
- * synonym for "out of product scope", and is deliberately kept here, under
- * Relevant Files, rather than folded into the Out of Scope section, which
- * would assert a semantic the Manifest never made.
+ * `excluded_sources` means "left out before it could become relevant
+ * context" — it is never a synonym for "out of product scope", and is
+ * deliberately kept here, under Relevant Files, rather than folded into
+ * the Out of Scope section, which would assert a semantic the Manifest
+ * never made.
+ *
+ * Two distinct shapes are rendered differently, on purpose: a *relevance*
+ * exclusion (`source_id` present — a Source that was safely ingested but
+ * didn't fit the budget) shows its score/char cost/reason; a *security*
+ * exclusion (no `source_id` — a file the Sensitive Data Guard refused to
+ * ingest at all) shows only `path` and `reason`, because that is the
+ * entire safe surface of that record — no content, no matched value, ever.
  */
 function renderExcludedSources(manifest) {
   const lines = ['### Excluded Sources', ''];
@@ -204,7 +212,11 @@ function renderExcludedSources(manifest) {
   }
   for (const entry of manifest.excluded_sources) {
     const label = entry.path ? inlineCode(entry.path) : inlineCode(entry.source_id);
-    lines.push(`- ${label} — source: ${inlineCode(entry.source_id)}, score: ${entry.score}, char cost: ${entry.char_cost}, reason: ${inlineCode(entry.reason)}`);
+    if (entry.source_id !== undefined) {
+      lines.push(`- ${label} — source: ${inlineCode(entry.source_id)}, score: ${entry.score}, char cost: ${entry.char_cost}, reason: ${inlineCode(entry.reason)}`);
+    } else {
+      lines.push(`- ${label} — reason: ${inlineCode(entry.reason)}`);
+    }
   }
   return lines.join('\n');
 }

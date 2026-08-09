@@ -130,6 +130,41 @@ test('11. an oversized candidate is mapped into excluded_sources with reason bud
   assert.equal(manifest.excluded_sources[0].reason, 'budget_exceeded');
 });
 
+// Bloco 08 — security exclusions pass through as {path, reason}, never becoming a Source
+test('Bloco 08. securityExclusions never become Sources and are merged into excluded_sources as {path, reason}', () => {
+  const manifest = compileContext(baseCompileInput({
+    securityExclusions: [{ path: 'config/.env', reason: 'sensitive_name' }],
+  }));
+  const securityExclusion = manifest.excluded_sources.find((e) => e.path === 'config/.env');
+  assert.deepEqual(securityExclusion, { path: 'config/.env', reason: 'sensitive_name' });
+  assert.equal(manifest.sources.some((s) => s.path === 'config/.env'), false);
+});
+
+// Bloco 08 — relevance exclusions and security exclusions coexist deterministically
+test('Bloco 08. relevance exclusions and security exclusions coexist, security exclusions ordered by path then reason', () => {
+  const oversized = candidateWithContent('coexist-oversized', 'x'.repeat(20001));
+  const manifest = compileContext(baseCompileInput({
+    candidates: [oversized],
+    budget: 'minimal',
+    goal: 'audit users',
+    securityExclusions: [
+      { path: 'z.env', reason: 'sensitive_name' },
+      { path: 'a.env', reason: 'sensitive_name' },
+    ],
+  }));
+  const relevanceExclusion = manifest.excluded_sources.find((e) => e.reason === 'budget_exceeded');
+  assert.ok(relevanceExclusion);
+  const securityPaths = manifest.excluded_sources.filter((e) => e.source_id === undefined).map((e) => e.path);
+  assert.deepEqual(securityPaths, ['a.env', 'z.env']);
+});
+
+// Bloco 08 — compiler.js still performs no filesystem I/O despite accepting securityExclusions
+test('Bloco 08. compiler.js still performs no filesystem access — securityExclusions is just data', () => {
+  const source = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'context', 'compiler.js'), 'utf8');
+  const code = source.replace(/\/\/.*$/gm, '');
+  assert.ok(!/node:fs/.test(code));
+});
+
 // 12. explicit facts incluídos
 test('12. explicit facts (decisions) are included when their source exists', () => {
   const decisionSource = createSource({ kind: 'decision', domain: 'architecture_intent', identity: 'dec-1', content: 'use HttpOnly cookies' });

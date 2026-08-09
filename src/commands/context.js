@@ -9,16 +9,10 @@ import { renderContextMarkdown } from '../context/renderer.js';
 import { validateContextState } from '../context/validator.js';
 import { stableStringify } from '../context/fingerprint.js';
 import { BUDGET_PROFILES } from '../context/relevance.js';
+import { collectSafeProjectSources, collectSafeCurrentSourceHashes } from '../context/sensitive-files.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'));
-
-// The Sensitive Data Guard (a future block) doesn't exist yet, so `context
-// build` runs in a deliberately fail-closed "structural" mode: it compiles
-// a real Manifest from Git/project/DDAE structural state, but never turns
-// any file's content into a RelevanceCandidate. Widening this is exactly
-// the Guard's job, not the CLI's.
-const STRUCTURAL_MODE_WARNING = 'Structural context only: textual source ingestion is deferred until the Sensitive Data Guard.';
 
 function ddaeOutputPaths(dir) {
   const ddaeDir = path.join(dir, '.ddae');
@@ -97,6 +91,12 @@ export async function contextBuildCommand({ goal, session, budget, dir }) {
     throw new Error(`context build: session not found: ${session}`);
   }
 
+  // Every candidate that reaches compileContext() has already passed
+  // through the Sensitive Data Guard — this is the only place project file
+  // content is ever read. Security exclusions (files the Guard refused
+  // outright) are carried alongside, without ever having become a Source.
+  const { candidates, excluded_sources: securityExclusions } = collectSafeProjectSources(dir);
+
   // Build entirely in memory first — nothing touches the filesystem until
   // the Manifest and CONTEXT.md are both known-good (Bloco 07 contract:
   // never leave a partial context package behind on failure).
@@ -107,16 +107,32 @@ export async function contextBuildCommand({ goal, session, budget, dir }) {
     budget: budgetProfile,
     gitContext,
     ddaeContext,
-    candidates: [],
+    candidates,
+    securityExclusions,
     claims: [],
     facts: { decisions: [], constraints: [], bugs: [], validation: [] },
   });
   const contextMarkdown = renderContextMarkdown(manifest);
+
+  // The hashes the Guard already computed while reading each candidate —
+  // never a second read of the filesystem just to build the receipt.
+  const currentSourceHashes = Object.fromEntries(
+    candidates
+      .filter((candidate) => candidate.source.content_hash !== null)
+      .map((candidate) => [candidate.source.id, candidate.source.content_hash]),
+  );
+  const { status: builtStatus, reasons: builtReasons } = validateContextState({
+    manifest,
+    contextMarkdown,
+    currentGitContext: gitContext,
+    currentDdaeContext: ddaeContext,
+    currentSourceHashes,
+  });
   const validationReceipt = {
     schema_version: manifest.schema_version,
-    status: 'VALID',
+    status: builtStatus,
     fingerprint: manifest.fingerprint.value,
-    reasons: [],
+    reasons: builtReasons,
   };
 
   const { ddaeDir, contextDir, gitignorePath, manifestPath, contextMdPath, validationPath } = ddaeOutputPaths(dir);
@@ -129,7 +145,8 @@ export async function contextBuildCommand({ goal, session, budget, dir }) {
   writeDeterministic(validationPath, `${stableStringify(validationReceipt)}\n`);
 
   console.log('Context package built successfully.');
-  console.log(STRUCTURAL_MODE_WARNING);
+  console.log(`Safe sources ingested: ${candidates.length}`);
+  console.log(`Sources excluded by the Sensitive Data Guard: ${securityExclusions.length}`);
 }
 
 export async function contextShowCommand({ dir }) {
@@ -168,11 +185,31 @@ export async function contextValidateCommand({ dir }) {
   const currentGitContext = collectGitContext(dir);
   const currentDdaeContext = collectDdaeContext(dir);
 
+  // Every selected source is re-read through the same Guard used at build
+  // time — never a raw fs.readFileSync of `source.path`. A source that is
+  // missing, or now fails any Guard check (renamed into a denied name,
+  // grown oversized, turned binary, or started matching a sensitive-content
+  // heuristic), is simply absent from the map — never assigned a hash by
+  // bypassing the Guard.
+  const relevantPaths = Array.isArray(manifest?.relevant_files)
+    ? manifest.relevant_files.map((entry) => entry.path).filter((entry) => typeof entry === 'string')
+    : [];
+  const hashesByPath = collectSafeCurrentSourceHashes(dir, relevantPaths);
+  const currentSourceHashes = {};
+  if (Array.isArray(manifest?.relevant_files)) {
+    for (const entry of manifest.relevant_files) {
+      if (typeof entry.path === 'string' && hashesByPath[entry.path] !== undefined) {
+        currentSourceHashes[entry.source_id] = hashesByPath[entry.path];
+      }
+    }
+  }
+
   const { status, reasons } = validateContextState({
     manifest,
     contextMarkdown,
     currentGitContext,
     currentDdaeContext,
+    currentSourceHashes,
   });
 
   console.log(`Status: ${status}`);

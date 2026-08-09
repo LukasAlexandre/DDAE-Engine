@@ -232,6 +232,51 @@ test('19. excluded_sources referencing an existing source are preserved', () => 
   assert.equal(manifest.excluded_sources.length, 1);
 });
 
+// Bloco 08 — A: relevance exclusion (with source_id) continues valid
+test('Bloco 08 A. a relevance exclusion (source_id present, referencing an existing source) remains valid', () => {
+  const s = sourceFixture('relevance-excl');
+  const manifest = createContextManifest(baseInput({
+    sources: [s],
+    excluded_sources: [{ source_id: s.id, path: s.path, score: 1, char_cost: 99999, reason: 'budget_exceeded' }],
+  }));
+  assert.equal(manifest.excluded_sources[0].source_id, s.id);
+});
+
+// Bloco 08 — B: security exclusion ({path, reason}, no source_id) is valid
+test('Bloco 08 B. a security exclusion ({path, reason}, no source_id) is valid', () => {
+  const manifest = createContextManifest(baseInput({
+    excluded_sources: [{ path: 'config/.env', reason: 'sensitive_name' }],
+  }));
+  assert.deepEqual(manifest.excluded_sources[0], { path: 'config/.env', reason: 'sensitive_name' });
+});
+
+// Bloco 08 — C: a security exclusion carrying content/value/snippet/match/secret is rejected
+test('Bloco 08 C. a security exclusion carrying a forbidden field (content/value/snippet/match/secret) is rejected', () => {
+  for (const forbiddenField of ['content', 'value', 'snippet', 'match', 'secret']) {
+    assert.throws(
+      () => createContextManifest(baseInput({
+        excluded_sources: [{ path: 'config/.env', reason: 'sensitive_name', [forbiddenField]: 'API_KEY=leaked' }],
+      })),
+      new RegExp(`must never carry "${forbiddenField}"`),
+      `expected rejection for forbidden field "${forbiddenField}"`,
+    );
+  }
+});
+
+// Bloco 08 — a security exclusion with an absolute or backslash path is rejected
+test('Bloco 08. a security exclusion with a non-project-relative path is rejected', () => {
+  assert.throws(
+    () => createContextManifest(baseInput({ excluded_sources: [{ path: 'C:\\Users\\x\\.env', reason: 'sensitive_name' }] })),
+    /excluded_sources\[0\]\.path/,
+  );
+});
+
+// Bloco 08 — a security exclusion missing path or reason is rejected
+test('Bloco 08. a security exclusion missing path or reason is rejected', () => {
+  assert.throws(() => createContextManifest(baseInput({ excluded_sources: [{ reason: 'sensitive_name' }] })), /must include a non-empty path/);
+  assert.throws(() => createContextManifest(baseInput({ excluded_sources: [{ path: 'config/.env' }] })), /must include a non-empty reason/);
+});
+
 // 20. zero timestamp
 test('20. the manifest never carries a timestamp field', () => {
   const manifest = createContextManifest(baseInput());

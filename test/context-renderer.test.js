@@ -355,6 +355,35 @@ test('34. excluded_sources are rendered under the "Excluded Sources" subsection 
   assert.ok(relevantFilesSection.includes('Docs/excluded.md'));
 });
 
+// Bloco 08 — D: security exclusion prints only path and reason
+test('Bloco 08 D. a security exclusion ({path, reason}, no source_id) is rendered with only path and reason', () => {
+  const markdown = renderContextMarkdown(validManifest({
+    excluded_sources: [{ path: 'config/.env', reason: 'sensitive_name' }],
+  }));
+  const relevantFilesSection = markdown.split('## Relevant Files')[1].split('## Decisions')[0];
+  assert.ok(relevantFilesSection.includes('config/.env'));
+  assert.ok(relevantFilesSection.includes('sensitive_name'));
+  assert.ok(!relevantFilesSection.includes('source:'));
+  assert.ok(!relevantFilesSection.includes('score:'));
+});
+
+// Bloco 08 — E: renderer never attempts sourceById lookup for a security exclusion
+test('Bloco 08 E. rendering a security exclusion never throws, even with zero sources in the manifest', () => {
+  assert.doesNotThrow(() => renderContextMarkdown(validManifest({
+    sources: [],
+    excluded_sources: [{ path: 'config/.env', reason: 'sensitive_name' }],
+  })));
+});
+
+// Bloco 08 — F: Out of Scope stays semantically separate from a security exclusion too
+test('Bloco 08 F. a security exclusion never leaks into Out of Scope either', () => {
+  const markdown = renderContextMarkdown(validManifest({
+    excluded_sources: [{ path: 'config/marker-xyz.env', reason: 'sensitive_name' }],
+  }));
+  const outOfScopeSection = markdown.split('## Out of Scope')[1];
+  assert.ok(!outOfScopeSection.includes('marker-xyz'));
+});
+
 // 35. excluded_sources NÃO aparecem como semantic Out of Scope
 test('35. excluded_sources never leak into Out of Scope', () => {
   const source = createSource({ kind: 'documentation', domain: 'history', path: 'Docs/excluded-marker-xyz.md' });

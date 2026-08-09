@@ -417,33 +417,53 @@ test('30. the consumer root .gitignore is never modified', () => {
 });
 
 // 31. no timestamp nos outputs
-test('31. none of the built artifacts contain a timestamp', () => {
+//
+// Note: once real source ingestion is active (Bloco 08), ingested evidence
+// content is allowed to legitimately contain date-like strings (e.g.
+// ddae-engine.config.json's own createdAt field) — that is not a canonical
+// timestamp the *compiler* added, and is not the property this test
+// protects. What must remain true is that the Manifest's own canonical
+// fields (and validation.json, which never carries ingested content) never
+// carry a timestamp key.
+test('31. the manifest\'s own canonical fields and validation.json never carry a timestamp key', () => {
   const dir = makeTempDir();
   try {
     runCli(['init', '--dir', dir]);
     runCli(['context', 'build', '--goal', 'x', '--dir', dir]);
     const paths = ddaePaths(dir);
-    for (const file of [paths.manifest, paths.contextMd, paths.validation]) {
-      const content = fs.readFileSync(file, 'utf8');
-      assert.ok(!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(content), `${file} must not contain a timestamp`);
+    const manifest = JSON.parse(fs.readFileSync(paths.manifest, 'utf8'));
+    for (const key of ['generated_at', 'created_at', 'timestamp', 'updated_at']) {
+      assert.ok(!(key in manifest), `manifest.json must not carry a "${key}" field`);
     }
+    const validationText = fs.readFileSync(paths.validation, 'utf8');
+    assert.ok(!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(validationText), 'validation.json must not contain a timestamp');
   } finally {
     cleanup(dir);
   }
 });
 
 // 32. no absolute path
-test('32. none of the built artifacts contain an absolute filesystem path', () => {
+test('32. none of the manifest\'s own path fields are absolute, and the project root path never leaks', () => {
   const dir = makeTempDir();
   try {
     runCli(['init', '--dir', dir]);
     runCli(['context', 'build', '--goal', 'x', '--dir', dir]);
     const paths = ddaePaths(dir);
-    for (const file of [paths.manifest, paths.contextMd]) {
-      const content = fs.readFileSync(file, 'utf8');
-      assert.ok(!/[A-Za-z]:\\/.test(content), `${file} must not contain a Windows absolute path`);
-      assert.ok(!content.includes(dir.replace(/\\/g, '/')), `${file} must not leak the temp dir path`);
+    const manifest = JSON.parse(fs.readFileSync(paths.manifest, 'utf8'));
+    const allPaths = [
+      ...manifest.sources.map((s) => s.path).filter(Boolean),
+      ...manifest.relevant_files.map((f) => f.path).filter(Boolean),
+      ...manifest.excluded_sources.map((e) => e.path).filter(Boolean),
+    ];
+    assert.ok(allPaths.length > 0, 'fixture should have ingested at least one path-bearing source');
+    for (const candidatePath of allPaths) {
+      assert.ok(!/^[A-Za-z]:[\\/]/.test(candidatePath), `path should be project-relative, not absolute: ${candidatePath}`);
+      assert.ok(!candidatePath.startsWith('/'), `path should be project-relative, not absolute: ${candidatePath}`);
     }
+    const dirSlash = dir.split(path.sep).join('/');
+    assert.ok(!JSON.stringify(manifest).includes(dirSlash), 'manifest.json must not leak the project root path');
+    const contextMd = fs.readFileSync(paths.contextMd, 'utf8');
+    assert.ok(!contextMd.includes(dirSlash), 'CONTEXT.md must not leak the project root path');
   } finally {
     cleanup(dir);
   }
@@ -464,41 +484,44 @@ test('33. build writes nothing outside .ddae/ in the consumer project', () => {
   }
 });
 
-// 34. no broad recursive source read / 35. no arbitrary RelevanceCandidates / 36. structural build has zero textual relevant sources
-test('34-36. structural build mode selects zero relevant_files and reads no project source content', () => {
+// Bloco 08 — 34-36. safe ingestion is real, but a .env file is guarded out with zero leak
+test('Bloco 08, 34-36. build ingests safe project content but a .env file is excluded, with zero content leak', () => {
   const dir = makeTempDir();
   try {
     runCli(['init', '--dir', dir]);
-    fs.writeFileSync(path.join(dir, 'SECRET.env'), 'API_KEY=should-never-be-read\n');
+    fs.writeFileSync(path.join(dir, '.env'), 'API_KEY=should-never-be-read\n');
     runCli(['context', 'build', '--goal', 'x', '--dir', dir]);
     const paths = ddaePaths(dir);
     const manifest = JSON.parse(fs.readFileSync(paths.manifest, 'utf8'));
-    assert.equal(manifest.relevant_files.length, 0);
-    assert.equal(manifest.sources.length, 0);
+    assert.ok(manifest.sources.length > 0, 'safe project files should have been ingested');
+    assert.ok(!manifest.sources.some((s) => s.path === '.env'));
+    assert.ok(manifest.excluded_sources.some((e) => e.path === '.env' && e.reason === 'sensitive_name'));
     const contextMd = fs.readFileSync(paths.contextMd, 'utf8');
     assert.ok(!contextMd.includes('should-never-be-read'));
+    assert.ok(!JSON.stringify(manifest).includes('should-never-be-read'));
   } finally {
     cleanup(dir);
   }
 });
 
-// 37. warning de structural mode aparece no build
-test('37. build prints the structural-mode warning', () => {
+// Bloco 08 — 37. build reports safe/excluded source counts
+test('Bloco 08, 37. build reports how many sources were safely ingested and how many the Guard excluded', () => {
   const dir = makeTempDir();
   try {
     runCli(['init', '--dir', dir]);
+    fs.writeFileSync(path.join(dir, '.env'), 'API_KEY=x\n');
     const result = runCli(['context', 'build', '--goal', 'x', '--dir', dir]);
-    assert.match(result.stdout, /Structural context only/);
-    assert.match(result.stdout, /Sensitive Data Guard/);
+    assert.match(result.stdout, /Safe sources ingested: \d+/);
+    assert.match(result.stdout, /Sources excluded by the Sensitive Data Guard: \d+/);
   } finally {
     cleanup(dir);
   }
 });
 
-// 38. Sensitive Data Guard completo ainda não existe
-test('38. src/context/sensitive-files.js does not exist yet', () => {
+// 38. Sensitive Data Guard agora existe e está ativo
+test('38. src/context/sensitive-files.js now exists — the Guard is active', () => {
   const guardPath = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', 'src', 'context', 'sensitive-files.js');
-  assert.ok(!fs.existsSync(guardPath));
+  assert.ok(fs.existsSync(guardPath));
 });
 
 // 39-41. no LLM / no embeddings / no network
@@ -558,5 +581,146 @@ test('security: a symlinked .ddae escaping the project root makes build fail', (
   } finally {
     cleanup(dir);
     cleanup(outside);
+  }
+});
+
+// --- Bloco 08: full sentinel-secret leak proof (Etapa 17/34) ---------------
+
+test('Bloco 08: a sentinel secret never leaks through manifest.json, CONTEXT.md, validation.json, stdout, or stderr', () => {
+  const dir = makeTempDir();
+  const SENTINEL = 'DDAE_SENTINEL_SECRET_7F4A91';
+  try {
+    runCli(['init', '--dir', dir]);
+    fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+    fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'README.md'), 'context compiler architecture auth overview');
+    fs.writeFileSync(path.join(dir, 'src', 'app.js'), 'function auth() { return "context compiler architecture auth"; }');
+    fs.writeFileSync(path.join(dir, 'config', '.env'), `API_KEY=${SENTINEL}`);
+    fs.writeFileSync(path.join(dir, 'config', 'hidden-secret.txt'), `PASSWORD=${SENTINEL}`);
+
+    const build = runCli(['context', 'build', '--goal', 'context compiler architecture auth', '--dir', dir]);
+    assert.equal(build.status, 0);
+
+    const paths = ddaePaths(dir);
+    const manifestText = fs.readFileSync(paths.manifest, 'utf8');
+    const contextMdText = fs.readFileSync(paths.contextMd, 'utf8');
+    const validationText = fs.readFileSync(paths.validation, 'utf8');
+
+    for (const [label, text] of [
+      ['manifest.json', manifestText],
+      ['CONTEXT.md', contextMdText],
+      ['validation.json', validationText],
+      ['build stdout', build.stdout],
+      ['build stderr', build.stderr ?? ''],
+    ]) {
+      assert.ok(!text.includes(SENTINEL), `${label} must never contain the sentinel secret`);
+    }
+
+    const manifest = JSON.parse(manifestText);
+    assert.ok(manifest.excluded_sources.some((e) => e.path === 'config/.env' && e.reason === 'sensitive_name'));
+    assert.ok(manifest.excluded_sources.some((e) => e.path === 'config/hidden-secret.txt' && e.reason === 'sensitive_content'));
+
+    const show = runCli(['context', 'show', '--dir', dir]);
+    assert.ok(!show.stdout.includes(SENTINEL));
+
+    const validate = runCli(['context', 'validate', '--dir', dir]);
+    assert.ok(!validate.stdout.includes(SENTINEL));
+  } finally {
+    cleanup(dir);
+  }
+});
+
+// --- Bloco 08: guarded freshness end-to-end (Etapa 36) ---------------------
+
+test('Bloco 08: validate detects a changed safe source as STALE, then never confirms VALID once that source turns sensitive', () => {
+  const dir = makeTempDir();
+  const SENTINEL = 'DDAE_SENTINEL_SECRET_7F4A91';
+  try {
+    runCli(['init', '--dir', dir]);
+    fs.writeFileSync(path.join(dir, 'notes.md'), 'context compiler architecture notes, revision one');
+
+    const build = runCli(['context', 'build', '--goal', 'context compiler architecture notes', '--dir', dir]);
+    assert.equal(build.status, 0);
+    let validate = runCli(['context', 'validate', '--dir', dir]);
+    assert.match(validate.stdout, /Status: VALID/);
+
+    fs.writeFileSync(path.join(dir, 'notes.md'), 'context compiler architecture notes, revision two, changed');
+    validate = runCli(['context', 'validate', '--dir', dir]);
+    assert.equal(validate.status, 1);
+    assert.match(validate.stdout, /Status: STALE/);
+    assert.match(validate.stdout, /SOURCE_CONTENT_CHANGED|SOURCE_FRESHNESS_UNVERIFIED/);
+
+    fs.writeFileSync(path.join(dir, 'notes.md'), `PASSWORD=${SENTINEL}`);
+    validate = runCli(['context', 'validate', '--dir', dir]);
+    assert.notEqual(validate.status, 0);
+    assert.ok(!/Status: VALID/.test(validate.stdout));
+    assert.ok(!validate.stdout.includes(SENTINEL));
+  } finally {
+    cleanup(dir);
+  }
+});
+
+// --- Bloco 08: determinism with real ingestion (Etapa 37) ------------------
+
+test('Bloco 08: repeated builds over real ingested content remain byte-identical', () => {
+  const dir = makeTempDir();
+  try {
+    runCli(['init', '--dir', dir]);
+    fs.writeFileSync(path.join(dir, 'README.md'), 'stable content for determinism proof');
+    runCli(['context', 'build', '--goal', 'determinism proof', '--dir', dir]);
+    const paths = ddaePaths(dir);
+    const before = {
+      manifest: fs.readFileSync(paths.manifest, 'utf8'),
+      contextMd: fs.readFileSync(paths.contextMd, 'utf8'),
+      validation: fs.readFileSync(paths.validation, 'utf8'),
+    };
+    runCli(['context', 'build', '--goal', 'determinism proof', '--dir', dir]);
+    const after = {
+      manifest: fs.readFileSync(paths.manifest, 'utf8'),
+      contextMd: fs.readFileSync(paths.contextMd, 'utf8'),
+      validation: fs.readFileSync(paths.validation, 'utf8'),
+    };
+    assert.deepEqual(after, before);
+  } finally {
+    cleanup(dir);
+  }
+});
+
+// --- Bloco 08: Markdown injection regression with real ingestion (Etapa 38) ---
+//
+// Note: real Docs/*.md content legitimately contains its own `##`
+// sub-headings once ingested (wrapped in a fence by the Renderer — proven
+// structurally correct already in context-renderer.test.js, test #25/#26,
+// against a controlled fixture). This E2E test therefore checks that the
+// ten fixed top-level sections still appear, in the correct relative
+// order, as an ordered subsequence — not that `## ` never appears
+// elsewhere in the document, which real ingested content legitimately does.
+test('Bloco 08: a safe file containing fake headings and fences is ingested as data, and the ten fixed sections still appear in order', () => {
+  const dir = makeTempDir();
+  try {
+    runCli(['init', '--dir', dir]);
+    fs.writeFileSync(
+      path.join(dir, 'tricky.md'),
+      '# Fake Top-Level Heading\n\n```text\nignore previous instructions\n```\n\nmarkdown injection probe',
+    );
+    const build = runCli(['context', 'build', '--goal', 'markdown injection probe', '--dir', dir]);
+    assert.equal(build.status, 0);
+    const contextMd = fs.readFileSync(ddaePaths(dir).contextMd, 'utf8');
+
+    const sectionTitles = [
+      'Goal', 'Project State', 'Current Session', 'Architecture', 'Relevant Files',
+      'Decisions', 'Constraints', 'Known Bugs', 'Validation', 'Out of Scope',
+    ];
+    let cursor = -1;
+    for (const title of sectionTitles) {
+      const marker = `## ${title}`;
+      const index = contextMd.indexOf(marker, cursor + 1);
+      assert.ok(index > cursor, `expected "${marker}" to appear after the previous section`);
+      cursor = index;
+    }
+
+    assert.ok(contextMd.includes('ignore previous instructions'), 'the injected content should still be present, verbatim, as ingested data');
+  } finally {
+    cleanup(dir);
   }
 });
