@@ -26,6 +26,7 @@ export const REQUIRED_SRC_PREFIXES = [
   'src/utils/',
   'src/templates/',
   'src/context/',
+  'src/schemas/',
 ];
 
 export const FORBIDDEN_PREFIXES = [
