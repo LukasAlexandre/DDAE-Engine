@@ -8,6 +8,7 @@ import { promptCreateCommand } from './commands/prompt.js';
 import { feedbackCreateCommand } from './commands/feedback.js';
 import { validateCommand } from './commands/validate.js';
 import { auditCommand } from './commands/audit.js';
+import { contextBuildCommand, contextShowCommand, contextValidateCommand } from './commands/context.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
@@ -25,12 +26,18 @@ Commands:
   feedback create --block <block> --session <s>   Generate a feedback doc from an existing block
   validate                                        Check the Docs/ structure for compliance (exit 0/1)
   audit                                           Report orphaned/incomplete sessions, blocks, prompts, feedbacks
+  context build --goal "<text>"                   Compile and persist a context package under .ddae/context/
+  context show                                    Print the built CONTEXT.md (read-only)
+  context validate                                Report VALID/STALE/INVALID for the built context package (exit 0/1)
 
 Options:
   -h, --help        Show this help message
   -v, --version     Print the installed ddae-engine version
   --dir <path>      Target directory to operate in (default: current directory)
   --force           Overwrite files that already exist
+  --goal <text>     (context build) The objective driving relevance selection
+  --session <name>  (context build) Explicit canonical session, instead of the latest one
+  --budget <level>  (context build) minimal | standard | deep (default: standard)
 
 Examples:
   npx ddae-engine init
@@ -40,6 +47,9 @@ Examples:
   npx ddae-engine feedback create --block bloco_01_login_administrativo --session session_01_dashboard_admin
   npx ddae-engine validate
   npx ddae-engine audit
+  npx ddae-engine context build --goal "Implement user audit"
+  npx ddae-engine context show
+  npx ddae-engine context validate
 `;
 
 function parseArgs(args, { withValue = [] } = {}) {
@@ -138,6 +148,18 @@ export async function run(argv) {
     case 'audit': {
       const opts = parseArgs(args.slice(1));
       await auditCommand({ dir: opts.dir });
+      break;
+    }
+    case 'context': {
+      const sub = requireSubcommand(args.slice(1), 'context', ['build', 'show', 'validate']);
+      const opts = parseArgs(args.slice(2), { withValue: ['goal', 'session', 'budget'] });
+      if (sub === 'build') {
+        await contextBuildCommand({ goal: opts.goal, session: opts.session, budget: opts.budget, dir: opts.dir });
+      } else if (sub === 'show') {
+        await contextShowCommand({ dir: opts.dir });
+      } else {
+        await contextValidateCommand({ dir: opts.dir });
+      }
       break;
     }
     case '-v':
