@@ -24,7 +24,8 @@ Sessão ainda em andamento — preenchido progressivamente, não é fechamento f
 | 05 — Context Manifest + Compiler | Aprovado | Nenhuma |
 | 06 — Markdown Renderer | Aprovado | Nenhuma |
 | 07 — `context build/show/validate` CLI (+ Checkpoint 07.1) | Aprovado integralmente | Nenhuma |
-| 08 — Sensitive Data Guard | Pendente | — |
+| 08 — Sensitive Data Guard | Aprovado | Nenhuma |
+| 09 — Consumer + Self-host Smoke | Pendente | — |
 | ... | Pendente | — |
 | 12 — Release 0.3.0 | Pendente | — |
 
