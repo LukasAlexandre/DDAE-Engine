@@ -8,7 +8,7 @@
 
 | ID | Descrição | Severidade | Onde foi encontrado | Status |
 |---|---|---|---|---|
-| BUG-01 | Template de glossário renderiza placeholders que deveria documentar | P3 | Bloco 04 desta sessão (self-hosting), `Docs/00_ddae_engine/glossario.md` | Aberto — instância corrigida manualmente, fonte pendente |
+| BUG-01 | Template de glossário renderiza placeholders que deveria documentar | P3 | Bloco 04 desta sessão (self-hosting), `Docs/00_ddae_engine/glossario.md` | **Corrigido** — ver `07_bugs/bugs_corrigidos.md` (fonte corrigida no Bloco 10 de `session_02_context_compiler_0_3_0`) |
 
 ## 2. Detalhamento
 
@@ -24,7 +24,7 @@
 - **Workaround:** correção manual da instância gerada (aplicada aqui).
 - **Source fix:** pendente.
 - **Target:** sessão de desenvolvimento `0.3.0` (`session_02_context_compiler_0_3_0`), preferencialmente resolvido antes do Context Compiler começar a consumir `Docs/` como fonte real.
-- **Status:** OPEN / DEFERRED TO SESSION 02.
+- **Status:** **CORRIGIDO** — fonte (`src/templates/docs_root/00_ddae_engine/glossario.md` + `renderTemplate` em `src/utils/text.js`) corrigida no Bloco 10 de `session_02_context_compiler_0_3_0`, antes do Context Compiler consumir `Docs/` como fonte real (conforme o alvo definido aqui). Detalhamento completo da correção em `07_bugs/bugs_corrigidos.md` desta sessão.
 
 ## 3. Perguntas Orientadoras
 

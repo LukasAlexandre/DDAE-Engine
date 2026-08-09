@@ -26,7 +26,7 @@ Sessão ainda em andamento — preenchido progressivamente, não é fechamento f
 | 07 — `context build/show/validate` CLI (+ Checkpoint 07.1) | Aprovado integralmente | Nenhuma |
 | 08 — Sensitive Data Guard | Aprovado | Nenhuma |
 | 09 — Real Consumer Smoke and Agent Workflow | Aprovado | Nenhuma |
-| 10 — BUG-01 (template do glossário) + polish | Pendente | — |
+| 10 — BUG-01 (template do glossário) + polish | Aprovado | Nenhuma |
 | 11 — Release Readiness | Pendente | — |
 | 12 — Release 0.3.0 | Pendente | — |
 

@@ -4,14 +4,16 @@
 
 ## Baseline confirmado antes do bloco
 
+> **Correção de provenance (Bloco 10, 2026-08-09):** esta seção registrava originalmente `8ab26b0221f001d46071a3c924da25b727e435ba` como o `HEAD` anterior ao início deste bloco. Esse SHA é, na verdade, o **commit técnico produzido pelo próprio Bloco 09** (`test(context): add real consumer context smoke`), não o baseline pré-bloco. O baseline real, confirmado pelo commit imediatamente anterior no histórico (`docs(session-02): validate sensitive data guard`, fechamento do Bloco 08), era `1e35cf4c08dc2d2d73db885e1a46ad229510c40d`. Corrigido abaixo; o restante do documento e o resultado técnico do Bloco 09 (aprovado) não são alterados por esta correção — classificada como **P3 — documentation provenance accuracy — RESOLVED** em `09_validation/validacao_bloco_10_bug_01_context_compiler_polish.md`.
+
 ```text
 git status --short --branch
 ## main...origin/main
 
-git rev-parse HEAD
-8ab26b0221f001d46071a3c924da25b727e435ba
+PRE-BLOCK BASELINE (git rev-parse HEAD, antes do Bloco 09):
+1e35cf4c08dc2d2d73db885e1a46ad229510c40d
 
-git rev-parse origin/main
+TECHNICAL COMMIT (produzido por este bloco):
 8ab26b0221f001d46071a3c924da25b727e435ba
 
 git rev-parse "v0.2.0^{}"
