@@ -45,7 +45,7 @@ O Context Compiler começou em `legacy/sessions/session_12_context_compiler_foun
 | Bloco | Título | Status |
 |---|---|---|
 | 01 | Cross-Platform Self-Host Docs Casing (+ Checkpoint 01.1 — Linux Stable Host Proof) | Concluído — aprovado integralmente |
-| 02 | DDAE State Collector | Pendente |
+| 02 | DDAE State Collector | Concluído — aprovado |
 | 03 | Authority & Source Model | Pendente |
 | 04 | Relevance Engine v1 | Pendente |
 | 05 | Context Manifest + Compiler | Pendente |
@@ -67,7 +67,7 @@ Depende de `legacy/sessions/session_12_context_compiler_foundation/` (contrato d
 
 ## 10. Resultado
 
-Bloco 01 concluído e integralmente fechado: estrutura física do repositório corrigida para portabilidade cross-platform, sem perda de conteúdo (113 arquivos verificados byte-a-byte). Checkpoint 01.1 fechou a única evidência pendente — o Stable Host publicado (`ddae-engine@0.2.0`) agora é comprovadamente instalado e executado (`validate`/`audit`) contra este checkout dentro da CI, nos 5 ambientes da matriz, com evidência de log real capturada de um runner Linux. Demais blocos ainda não iniciados.
+Bloco 01 concluído e integralmente fechado: estrutura física do repositório corrigida para portabilidade cross-platform, sem perda de conteúdo (113 arquivos verificados byte-a-byte). Checkpoint 01.1 fechou a única evidência pendente — o Stable Host publicado (`ddae-engine@0.2.0`) agora é comprovadamente instalado e executado (`validate`/`audit`) contra este checkout dentro da CI, nos 5 ambientes da matriz, com evidência de log real capturada de um runner Linux. Bloco 02 concluído: `collectDdaeContext` (`src/context/ddae-context.js`) implementado — terceiro sensor do Context Compiler, coletando sessão atual, módulos, blocos, prompts, feedbacks, bugs, validação e governança de forma determinística, read-only, sem tocar `legacy/sessions/`. 26 testes novos, provado contra o próprio self-host, CI 5/5. Demais blocos ainda não iniciados.
 
 ## 11. Próxima Sessão
 

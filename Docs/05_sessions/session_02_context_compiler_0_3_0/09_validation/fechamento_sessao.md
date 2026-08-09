@@ -13,9 +13,15 @@
 
 ## 2. Resumo dos Blocos
 
+Sessão ainda em andamento — preenchido progressivamente, não é fechamento final (ver aviso no topo do documento).
+
 | Bloco | Status da validação | Pendências críticas (P1) abertas |
 |---|---|---|
-| _..._ | Aprovado / Aprovado com ressalvas / Reprovado | _..._ |
+| 01 — Cross-Platform Self-Host Docs Casing (+ Checkpoint 01.1) | Aprovado integralmente | Nenhuma |
+| 02 — DDAE State Collector | Aprovado | Nenhuma |
+| 03 — Authority & Source Model | Pendente | — |
+| ... | Pendente | — |
+| 12 — Release 0.3.0 | Pendente | — |
 
 ## 3. Critérios de Aceite
 
