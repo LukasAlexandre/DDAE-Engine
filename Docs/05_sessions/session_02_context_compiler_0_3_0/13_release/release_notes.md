@@ -8,16 +8,16 @@
 
 **Target:** `ddae-engine@0.3.0`
 
-**Status:** **PUBLISHED ON NPM — GIT TAG AND GITHUB RELEASE PENDING** — o release candidate preparado pelo Bloco 11 e validado pelo Checkpoint 11.1 já está publicado no registro npm; a publicação foi descoberta fora da sequência de Human Gates documentada no Bloco 12 (nenhum Gate A/B/C havia sido executado neste checkout) e reconciliada com evidência forense no Bloco 13 e no Checkpoint 12.1.
+**Status:** **PUBLISHED** — npm, tag Git `v0.3.0` e GitHub Release estão todos reconciliados. O release candidate preparado pelo Bloco 11 e validado pelo Checkpoint 11.1 está publicado no registro npm; a publicação foi descoberta fora da sequência de Human Gates documentada no Bloco 12 (nenhum Gate A/B/C havia sido executado neste checkout), reconciliada com evidência forense no Bloco 13, e fechada com os Gates B e C no Checkpoint 12.1/Bloco 12.
 
 - Publicação no registro npm: **EXECUTADA**. `npm view ddae-engine@0.3.0` retorna metadados reais; `dist-tags.latest = 0.3.0`; publicado em `2026-08-10T01:52:59.338Z`.
 - Equivalência de artefato: **PROVADA**. `npm shasum e41ede33157278f700247d3b4f074a141fc2d9b6` e `SHA-256 c332de44979e4069ff93b2e35c3076fdd36aa5c1e5115317893abf9c7982271c` idênticos entre o tarball publicado e o tarball gerado do HEAD local; 106/106 arquivos; `diff -rq` recursivo do conteúdo extraído = 0 diferenças (Bloco 13).
 - Canonical release commit: **`0ca3f904be7b292115412dcba27539ac277ad8be`**, provado pelo campo `gitHead` do próprio registro npm (não inferido por timestamp), com o mesmo mecanismo cross-validado contra `v0.2.0` e `v0.1.0` (Checkpoint 12.1).
-- Tag `v0.3.0`: **NÃO CRIADA** (local e remoto) — Human Gate B pendente de autorização explícita.
-- GitHub Release `v0.3.0`: **NÃO CRIADO** — Human Gate C pendente de autorização explícita.
+- Tag `v0.3.0`: **CRIADA** (annotated) local e remotamente, apontando exatamente para `0ca3f904be7b292115412dcba27539ac277ad8be` — confirmado via `git ls-remote --tags origin`.
+- GitHub Release `v0.3.0`: **CRIADO** — https://github.com/LukasAlexandre/DDAE-Engine/releases/tag/v0.3.0, sobre a tag existente, `latest`.
 - `v0.2.0` (tag imutável, `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`): **inalterada**.
 - Uma tentativa posterior de `npm publish` foi corretamente recusada com `You cannot publish over the previously published versions: 0.3.0` — isto é a garantia de imutabilidade de versão do npm funcionando como projetado, não uma falha de release.
-- Stable Host que governa este checkout: **`ddae-engine@0.2.0`** (permanece publicado; promoção para `0.3.0` reservada para depois dos Gates B/C).
+- Stable Host que governa este checkout: **`ddae-engine@0.2.0`** — **ainda não promovido para `0.3.0`**. Registrado como pendência P2 (`08_feedbacks/feedback_bloco_12_controlled_0_3_0_release.md`, `Docs/04_governance/matriz_riscos.md` MR-01), não bloqueante para o fechamento da sessão, mas em aberto.
 - Veredito de versionamento (Bloco 13): `NO NEW RELEASE REQUIRED`, `0.3.1 NOT REQUIRED` — o estado local é byte a byte equivalente ao publicado.
 
 ## 1. Destaques
@@ -43,4 +43,4 @@ Nenhuma ação de migração é necessária. Todos os comandos existentes (`init
 
 ## 4. Decisões Pendentes
 
-Nenhuma decisão de produto pendente para o escopo desta release. `npm publish` já ocorreu (ver Status desta Entrega). As decisões operacionais restantes são puramente processuais: criar a tag `v0.3.0` no canonical release commit `0ca3f904be7b292115412dcba27539ac277ad8be` (Human Gate B) e criar o GitHub Release `v0.3.0` (Human Gate C) — cada uma mediante autorização humana explícita e individual, tratada no Bloco 12.
+Nenhuma decisão de produto pendente para o escopo desta release. `npm publish`, a tag `v0.3.0` e a GitHub Release já foram executados (ver Status desta Entrega). A única decisão operacional em aberto é quando promover o Stable Host deste checkout (`scripts/ci/verify-stable-host.mjs`) de `0.2.0` para `0.3.0` — registrada como pendência P2, não bloqueante para o fechamento da Session 02 (ver `08_feedbacks/feedback_bloco_12_controlled_0_3_0_release.md` e `Docs/04_governance/matriz_riscos.md`, MR-01).
