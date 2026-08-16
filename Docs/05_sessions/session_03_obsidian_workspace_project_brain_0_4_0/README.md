@@ -32,17 +32,23 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Bloco 01 criado
+- [x] `05_blocks/` — Bloco 01 criado e aprovado
 - [x] `06_prompts/` — prompt do Bloco 01 criado
-- [ ] `08_feedbacks/` — um feedback por bloco concluído (nenhum bloco concluído ainda — Bloco 01 criado, não executado)
-- [ ] `09_validation/fechamento_sessao.md`
+- [x] `08_feedbacks/` — feedback do Bloco 01 preenchido (`feedback_bloco_01_workspace_project_brain_contract.md`)
+- [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
 ## 7. Blocos Planejados
 
+```text
+Architecture Bootstrap    COMPLETE
+Block 01                   APPROVED
+Block 02                    READY — NOT STARTED
+```
+
 | Bloco | Título | Status |
 |---|---|---|
-| 01 | Workspace & Project Brain Contract | Criado — pronto para implementação (execução futura) |
-| 02 | Workspace Discovery | Pendente |
+| 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
+| 02 | Workspace Discovery | Pronto para iniciar — não iniciado |
 | 03 | Project Brain Schema, Fingerprint & Compiler | Pendente |
 | 04 | Workspace Renderer | Pendente |
 | 05 | Obsidian Navigation Hardening | Pendente |
@@ -79,7 +85,9 @@ Depende de `session_02_context_compiler_0_3_0` (Context Compiler estável e publ
 
 ## 10. Resultado
 
-Arquitetura e discovery concluídos nesta primeira execução: modelo de fonte de verdade fixado (`Docs/` + Git sempre autoritativos, `.ddae/brain/` sempre view, nunca fonte), seis modelos de integração avaliados com trade-offs explícitos (Vault = raiz do repositório + `.ddae/brain/` efêmero, seguindo exatamente o precedente já estabelecido pelo Context Compiler), Project Brain definido tecnicamente (17 entidades mapeadas — já existe/derivado/gerado/explicitamente fora de escopo, incluindo a decisão explícita de que "Memory" não é reimplementado porque `Docs/` já cumpre esse papel), contrato de CLI fixado em 4 comandos (`workspace init/build/validate/show`, com `sync`/`open`/`brain build` avaliados e rejeitados), threat model de 7 riscos com mitigação concreta, roadmap de 13 blocos com dependências mapeadas, e Bloco 01 (Contract) criado e pronto para execução. Nenhuma linha de código de produção foi escrita — conforme o escopo desta execução. `package.json` não foi alterado; `0.3.1`/`0.4.0` não foram versionados.
+Arquitetura e discovery concluídos: modelo de fonte de verdade fixado (`Docs/` + Git sempre autoritativos, `.ddae/brain/` sempre view, nunca fonte), seis modelos de integração avaliados com trade-offs explícitos (Vault = raiz do repositório + `.ddae/brain/` efêmero, seguindo exatamente o precedente já estabelecido pelo Context Compiler), Project Brain definido tecnicamente (17 entidades mapeadas — já existe/derivado/gerado/explicitamente fora de escopo, incluindo a decisão explícita de que "Memory" não é reimplementado porque `Docs/` já cumpre esse papel), contrato de CLI fixado em 4 comandos (`workspace init/build/validate/show`, com `sync`/`open`/`brain build` avaliados e rejeitados), threat model de 7 riscos com mitigação concreta, roadmap de 13 blocos com dependências mapeadas. Arquitetura congelada em commit `ca54d59` (`docs(session-03): define project brain architecture`).
+
+Bloco 01 (Workspace & Project Brain Contract) executado e **aprovado**: requisito funcional (RF-01), decisão arquitetural (DT-01) e contrato dedicado (`Docs/03_contracts/contrato_workspace_project_brain.md`, Seções A–J) formalizados a partir das análises já aprovadas — Brain Manifest Schema v1 com campos concretos, contrato de CLI final, ownership/drift/security/migration contracts. Matriz de aceite 6/6 `PASS`. Nenhuma linha de código de produção foi escrita em nenhum dos dois passos — conforme o escopo desta sessão até aqui. `package.json` não foi alterado; `0.3.1`/`0.4.0` não foram versionados.
 
 ## 11. Próxima Sessão
 

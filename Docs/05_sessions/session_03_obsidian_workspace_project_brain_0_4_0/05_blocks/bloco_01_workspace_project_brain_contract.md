@@ -52,18 +52,18 @@ Sem um contrato fixado antes da implementação, cada bloco técnico (Discovery,
 
 ## 9. Critérios de Aceite
 
-- [ ] Requisito funcional criado em `Docs/01_product/requisitos_funcionais.md`, referenciado pela análise funcional desta sessão.
-- [ ] Decisão arquitetural (modelo de filesystem/Vault) registrada em `Docs/02_architecture/decisoes_tecnicas.md`.
-- [ ] Rascunho do Brain Manifest Schema v1 documentado (campos, `schema_version`, payload do fingerprint).
-- [ ] Contrato de CLI final (4 comandos, sem adição/remoção em relação à análise) documentado em local estável para os blocos seguintes referenciarem.
-- [ ] Nenhum código em `src/` alterado.
-- [ ] `ddae-engine validate`/`audit` sem novo warning específico desta sessão.
+- [x] Requisito funcional criado em `Docs/01_product/requisitos_funcionais.md` (RF-01), referenciado pela análise funcional desta sessão.
+- [x] Decisão arquitetural (modelo de filesystem/Vault) registrada em `Docs/02_architecture/decisoes_tecnicas.md` (DT-01).
+- [x] Rascunho do Brain Manifest Schema v1 documentado (campos, `schema_version`, payload do fingerprint) — `Docs/03_contracts/contrato_workspace_project_brain.md`, Seção B.
+- [x] Contrato de CLI final (4 comandos, sem adição/remoção em relação à análise) documentado — mesmo arquivo, Seção F.
+- [x] Nenhum código em `src/` alterado.
+- [x] `ddae-engine validate`/`audit` sem novo warning específico desta sessão (warning de "Bloco 01 sem feedback" fechado pela Seção 16 abaixo).
 
 ## 10. Validações Obrigatórias
 
-- [ ] `ddae-engine validate`
-- [ ] `ddae-engine audit`
-- [ ] `git diff --check`
+- [x] `ddae-engine validate`
+- [x] `ddae-engine audit`
+- [x] `git diff --check`
 
 ## 11. Segurança
 
