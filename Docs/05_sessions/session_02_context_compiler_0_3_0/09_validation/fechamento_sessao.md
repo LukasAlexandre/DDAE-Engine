@@ -53,4 +53,18 @@
 
 ## 7. Próxima Sessão Recomendada
 
-Session 03 (`0.4.0`) — escopo reservado em `Docs/01_product/visao_produto.md` (Work Packets, Handoff, MCP Server, Obsidian Workspace, P3 de structured context completeness). Antes de abrir, decidir se a promoção do Stable Host para `0.3.0` (MR-01) é tratada como último item de fechamento desta linha `0.3.x` ou como primeiro item da Session 03.
+Session 03 (`0.4.0`) — escopo reservado em `Docs/01_product/visao_produto.md` (Work Packets, Handoff, MCP Server, Obsidian Workspace, P3 de structured context completeness).
+
+## 8. Addendum Pós-Fechamento (2026-08-16) — Resolução da Ressalva
+
+> Esta seção não substitui as Seções 1–7 acima, que permanecem como o registro histórico exato do fechamento original: a Session 02 foi encerrada em `2026-08-16` (commit `f93b846`) como **"Aprovada com ressalvas"**, com a pendência P2/MR-01 (Stable Host não promovido) explicitamente em aberto. Este addendum registra o que aconteceu depois, sem reescrever esse histórico.
+
+1. A Session 02 foi originalmente fechada com uma ressalva concreta: P2 — Stable Host promotion (`0.2.0` → `0.3.0`), não executada dentro do escopo do Bloco 12.
+2. Essa pendência foi posteriormente resolvida — ver Checkpoint 12.2 (`09_validation/checkpoint_12_2_stable_host_promotion.md`) e a Seção 19 (adendo) de `08_feedbacks/feedback_bloco_12_controlled_0_3_0_release.md`.
+3. O Stable Host deste checkout foi promovido para `0.3.0` (`scripts/ci/verify-stable-host.mjs`), provado via instalação real do registro público e reexecução de `validate`/`audit` contra o repositório — `PASSED`.
+4. Não houve nova publicação npm — `npm pack --dry-run` permanece byte a byte idêntico ao artefato `ddae-engine@0.3.0` já publicado (mesmo shasum, mesma integrity, 106 arquivos).
+5. A tag `v0.3.0` permaneceu imutável — nenhum comando de tag foi executado neste addendum.
+6. A GitHub Release `v0.3.0` permaneceu vinculada ao canonical release commit (`0ca3f904be7b292115412dcba27539ac277ad8be`) — nenhuma alteração.
+7. A ressalva deixou de estar ativa: nenhuma pendência P1 ou P2 permanece aberta para esta sessão.
+
+**Status efetivo a partir deste addendum: CLOSED — APROVADA (post-closure P2 resolved).** O fechamento original com ressalvas (Seção 1) permanece registrado como o que de fato ocorreu naquele momento.

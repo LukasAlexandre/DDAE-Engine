@@ -100,7 +100,7 @@ Nenhuma.
 
 ### P2 — Importante
 
-- **Promoção do Stable Host (`scripts/ci/verify-stable-host.mjs`, `0.2.0` → `0.3.0`) não executada neste bloco.** O escopo original do Bloco 12 previa essa promoção; a reconciliação da publicação já consumada e os Gates B/C consumiram o escopo desta execução. Este checkout continua sendo governado por `ddae-engine@0.2.0` como Stable Host, mesmo com `0.3.0` já publicado, taggeado e released. Registrado para decisão explícita do usuário antes da próxima sessão.
+Nenhuma pendência P2 aberta. Uma pendência existiu neste bloco — promoção do Stable Host (`scripts/ci/verify-stable-host.mjs`, `0.2.0` → `0.3.0`) não executada durante os Human Gates A/B/C, com este checkout continuando governado por `ddae-engine@0.2.0` mesmo com `0.3.0` já publicado, taggeado e released — e foi **resolvida em 2026-08-16** (ver Seção 19 abaixo e `09_validation/checkpoint_12_2_stable_host_promotion.md`, prova formal via `node scripts/ci/verify-stable-host.mjs` = `PASSED`).
 
 ### P3 — Melhoria Recomendada
 
@@ -144,3 +144,9 @@ docs(session-02): close context compiler 0.3.0 release
 ```
 
 _Lembrete: este commit não é executado automaticamente — exige confirmação explícita do usuário._
+
+## 19. Pós-Fechamento — Resolução da Pendência P2 (2026-08-16)
+
+A pendência P2 registrada na Seção 13 (Stable Host promotion, `0.2.0` → `0.3.0`) foi resolvida após o fechamento formal deste bloco, sem reabrir ou alterar a release pública `v0.3.0`. Detalhe completo, prova formal e evidência em `09_validation/checkpoint_12_2_stable_host_promotion.md`. Resumo: `scripts/ci/verify-stable-host.mjs` promovido para `0.3.0`; `node scripts/ci/verify-stable-host.mjs` executado com sucesso (instalação real do registro público, `validate`/`audit` do Stable Host `0.3.0` reportando `Status: OK`/`Errors: 0` contra este checkout, `package.json` byte-idêntico antes/depois); regressão completa inalterada; `npm pack --dry-run` confirmado idêntico ao artefato publicado (nenhuma nova release npm necessária). Esta seção é um adendo — a Seção 13 original permanece intacta como registro histórico de que a pendência existiu no momento do fechamento.
+
+**P2 — Stable Host promotion: RESOLVED.**

@@ -11,7 +11,7 @@ const PROJECT_ROOT = path.join(__dirname, '..', '..');
 // governs by (Docs/00_ddae_engine/self_hosting.md) — intentionally not read
 // from package.json.version, since the whole point is proving a *published*
 // release, independent of whatever the in-development candidate says.
-const STABLE_HOST_VERSION = '0.2.0';
+const STABLE_HOST_VERSION = '0.3.0';
 
 function sha256(filePath) {
   return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');

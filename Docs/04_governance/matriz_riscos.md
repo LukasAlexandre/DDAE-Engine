@@ -1,6 +1,6 @@
 # Matriz de Riscos
 
-> Projeto: DDAE Engine · Atualizado em: 2026-08-16
+> Projeto: DDAE Engine · Atualizado em: 2026-08-16 (MR-01 mitigado)
 
 > Esta matriz é o consolidado de riscos de todo o projeto (produto, arquitetura, segurança, operação). Riscos detalhados por área continuam vivendo em seus documentos específicos (`Docs/02_architecture/riscos_arquiteturais.md`, `Docs/06_quality_gates/security_gate.md`, etc.) — aqui entra a visão executiva.
 
@@ -12,7 +12,7 @@ Dar visibilidade consolidada sobre o que pode dar errado no projeto, priorizado 
 
 | ID | Risco | Área | Probabilidade | Impacto | Status |
 |---|---|---|---|---|---|
-| MR-01 | Stable Host deste checkout continua pinado em `ddae-engine@0.2.0` (`scripts/ci/verify-stable-host.mjs`) apesar de `0.3.0` já estar publicado, taggeado (`v0.3.0` → `0ca3f904be7b292115412dcba27539ac277ad8be`) e released no GitHub. Promoção planejada no escopo original do Bloco 12, não executada — ver `Docs/05_sessions/session_02_context_compiler_0_3_0/08_feedbacks/feedback_bloco_12_controlled_0_3_0_release.md`, pendência P2. | Operação | Baixa | Baixo | Aberto |
+| MR-01 | ~~Stable Host deste checkout continuava pinado em `ddae-engine@0.2.0`~~ (`scripts/ci/verify-stable-host.mjs`) apesar de `0.3.0` já estar publicado, taggeado e released. Promoção planejada no escopo original do Bloco 12, não executada no fechamento da sessão — registrada como P2. **Mitigado em 2026-08-16**: `STABLE_HOST_VERSION` promovido para `0.3.0`, provado via `node scripts/ci/verify-stable-host.mjs` (instalação real do registro, `validate`/`audit` OK contra este checkout, `package.json` inalterado) — ver `Docs/05_sessions/session_02_context_compiler_0_3_0/09_validation/checkpoint_12_2_stable_host_promotion.md`. | Operação | Baixa | Baixo | Mitigado |
 
 ## 3. Probabilidade × Impacto
 

@@ -1,6 +1,6 @@
 # Visão de Produto
 
-> Projeto: DDAE Engine · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-16
 
 > Preencha este documento antes de criar o primeiro bloco de implementação. Ele é a referência que justifica todo requisito funcional.
 
@@ -16,7 +16,7 @@ O DDAE Engine estrutura o desenvolvimento de software (feito por humanos e por a
 
 - [x] Objetivo 1: Scaffold determinístico e auditável de documentação de projeto (`Docs/`), com sessões e módulos internos claramente distintos (entregue na `0.2.0`).
 - [x] Objetivo 2: Validação e auditoria automatizadas da estrutura do projeto (`validate`/`audit`), com detecção não-destrutiva de layouts legados (entregue na `0.2.0`).
-- [ ] Objetivo 3: Compilar o estado de Git, projeto e DDAE em um pacote de contexto determinístico e reproduzível, consumível por qualquer agente de IA sem chamar nenhuma LLM no próprio compiler (`0.3.0`, em desenvolvimento).
+- [x] Objetivo 3: Compilar o estado de Git, projeto e DDAE em um pacote de contexto determinístico e reproduzível, consumível por qualquer agente de IA sem chamar nenhuma LLM no próprio compiler (entregue na `0.3.0`).
 - [ ] Objetivo 4: Integração oficial DDAE ↔ Obsidian como workspace de "Project Brain" — Vault estruturado, alinhado ao estado real do projeto (`0.4.0`, planejado).
 
 ## 4. Roadmap Oficial
@@ -24,7 +24,7 @@ O DDAE Engine estrutura o desenvolvimento de software (feito por humanos e por a
 | Versão | Nome | Escopo principal | Status |
 |---|---|---|---|
 | `0.2.0` | Engineering Foundation | Sessões e módulos corrigidos, CI multiplataforma, empacotamento e publicação protegidos, distribuição validada de ponta a ponta | **Released** |
-| `0.3.0` | Context Compiler | Git + Project collectors, DDAE state collector, Source/Authority model, Relevance Engine v1, Context Manifest, fingerprint, Markdown renderer, `context build/show/validate`, Sensitive Data Guard, validação com consumidor real e com o próprio DDAE (self-hosting) | **In development** |
+| `0.3.0` | Context Compiler | Git + Project collectors, DDAE state collector, Source/Authority model, Relevance Engine v1, Context Manifest, fingerprint, Markdown renderer, `context build/show/validate`, Sensitive Data Guard, validação com consumidor real e com o próprio DDAE (self-hosting) | **Released** |
 | `0.4.0` | Obsidian Workspace / Project Brain | Integração oficial DDAE ↔ Obsidian; workspace "Project Brain"; Vault estruturado gerado/alinhado pelo DDAE; visões de estado atual/dashboard; sessões, decisões, bugs, roadmap e base de conhecimento; consumo dos outputs/contratos do Context Compiler onde aplicável | **Planned** |
 
 Este roadmap é a fonte de direção de produto vigente, registrada pelo próprio DDAE Engine (via `ddae-engine session create`, Stable Host `0.2.0`) em `session_01_ddae_self_hosting_bootstrap` (`Docs/05_sessions/`). Documentação histórica anterior (`docs/sessions/`, incluindo referências a uma futura "Session 15 — Obsidian Knowledge Workspace" com numeração diferente) descreve planejamento de uma fase anterior do projeto, antes deste roadmap versionado existir — esse histórico não é reescrito; este documento substitui apenas a **intenção futura**, não a história já registrada.

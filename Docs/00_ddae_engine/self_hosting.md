@@ -1,15 +1,15 @@
 # DDAE Self-Hosting
 
-> Projeto: DDAE Engine · Atualizado em: 2026-08-08
+> Projeto: DDAE Engine · Atualizado em: 2026-08-16
 
-> Contrato operacional oficial de como o próprio DDAE Engine governa seu desenvolvimento futuro. Estabelecido em `session_13_ddae_self_hosting_bootstrap` (histórico legacy) e `session_01_ddae_self_hosting_bootstrap` (sessão canônica de origem). Válido a partir daqui para toda sessão futura em `Docs/05_sessions/`.
+> Contrato operacional oficial de como o próprio DDAE Engine governa seu desenvolvimento futuro. Estabelecido em `session_13_ddae_self_hosting_bootstrap` (histórico legacy) e `session_01_ddae_self_hosting_bootstrap` (sessão canônica de origem). Válido a partir daqui para toda sessão futura em `Docs/05_sessions/`. Stable Host promovido de `0.2.0` para `0.3.0` em `2026-08-16` (pós-fechamento da `session_02_context_compiler_0_3_0`, resolução da pendência P2/MR-01).
 
 ## 1. Stable Host
 
 Package:
 
 ```text
-ddae-engine@0.2.0
+ddae-engine@0.3.0
 ```
 
 Instalação (local, efêmera, nunca persistida em `package.json`):
@@ -21,7 +21,7 @@ npm install \
   --ignore-scripts \
   --no-audit \
   --no-fund \
-  ddae-engine@0.2.0
+  ddae-engine@0.3.0
 ```
 
 Execução:
@@ -110,11 +110,11 @@ Aplicação atual do modelo:
         ↓
 0.3.0 Candidate — Context Compiler
         ↓
-publicação futura (fora do escopo desta sessão)
+publicado (npm ddae-engine@0.3.0, tag v0.3.0, GitHub Release — session_02_context_compiler_0_3_0)
         ↓
-0.3.0 Stable Host
+0.3.0 Stable Host — promovido (scripts/ci/verify-stable-host.mjs, prova via reinstalação + validate/audit)
         ↓
-0.4.0 Candidate — Obsidian Workspace / Project Brain
+0.4.0 Candidate — Obsidian Workspace / Project Brain (ainda não iniciado)
 ```
 
 ## 8. Roadmap oficial (referência)
@@ -124,7 +124,7 @@ Fonte canônica: `Docs/01_product/visao_produto.md`, Seção 4.
 | Versão | Nome | Status |
 |---|---|---|
 | `0.2.0` | Engineering Foundation | Released |
-| `0.3.0` | Context Compiler | In development |
+| `0.3.0` | Context Compiler | Released |
 | `0.4.0` | Obsidian Workspace / Project Brain | Planned |
 
 ## 9. Defeito conhecido, deliberadamente não corrigido nesta sessão
