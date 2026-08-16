@@ -1,6 +1,6 @@
 # Fechamento da Sessão
 
-> Projeto: DDAE · Atualizado em: 2026-08-09
+> Projeto: DDAE · Atualizado em: 2026-08-16
 
 > Preencha somente depois que todos os blocos planejados tiverem feedback e validação individual aprovados.
 
@@ -28,7 +28,8 @@ Sessão ainda em andamento — preenchido progressivamente, não é fechamento f
 | 09 — Real Consumer Smoke and Agent Workflow | Aprovado | Nenhuma |
 | 10 — BUG-01 (template do glossário) + polish | Aprovado | Nenhuma |
 | 11 — Context Compiler 0.3.0 Release Preparation (+ Checkpoint 11.1 — Final Release Gate Preflight) | Aprovado integralmente | Nenhuma |
-| 12 — Controlled 0.3.0 Release (`npm publish` + tag `v0.3.0`) | Pendente | — |
+| 12 — Controlled 0.3.0 Release (`npm publish` + tag `v0.3.0`) (+ Checkpoint 12.1) | Em andamento — Gate A confirmado publicado e reconciliado (Checkpoint 12.1); Gates B/C pendentes | Nenhuma |
+| 13 — 0.3.0 Release Forensics Audit | Aprovado | Nenhuma |
 
 ## 3. Critérios de Aceite
 

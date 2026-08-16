@@ -1,6 +1,6 @@
 # Release Notes
 
-> Projeto: DDAE · Atualizado em: 2026-08-09
+> Projeto: DDAE · Atualizado em: 2026-08-16
 
 > Diferente do changelog (técnico, granular), release notes são para quem vai usar a mudança — linguagem direta, foco em valor.
 
@@ -8,15 +8,17 @@
 
 **Target:** `ddae-engine@0.3.0`
 
-**Status:** **RELEASE CANDIDATE READY — FINAL RELEASE GATE PREFLIGHT PASSED** — preparado pelo Bloco 11 e validado pelo Checkpoint 11.1 (`session_02_context_compiler_0_3_0`), ainda **não publicado**.
+**Status:** **PUBLISHED ON NPM — GIT TAG AND GITHUB RELEASE PENDING** — o release candidate preparado pelo Bloco 11 e validado pelo Checkpoint 11.1 já está publicado no registro npm; a publicação foi descoberta fora da sequência de Human Gates documentada no Bloco 12 (nenhum Gate A/B/C havia sido executado neste checkout) e reconciliada com evidência forense no Bloco 13 e no Checkpoint 12.1.
 
-- Publicação no registro npm: **NÃO EXECUTADA**.
-- Tag `v0.3.0`: **NÃO CRIADA** (local e remoto).
+- Publicação no registro npm: **EXECUTADA**. `npm view ddae-engine@0.3.0` retorna metadados reais; `dist-tags.latest = 0.3.0`; publicado em `2026-08-10T01:52:59.338Z`.
+- Equivalência de artefato: **PROVADA**. `npm shasum e41ede33157278f700247d3b4f074a141fc2d9b6` e `SHA-256 c332de44979e4069ff93b2e35c3076fdd36aa5c1e5115317893abf9c7982271c` idênticos entre o tarball publicado e o tarball gerado do HEAD local; 106/106 arquivos; `diff -rq` recursivo do conteúdo extraído = 0 diferenças (Bloco 13).
+- Canonical release commit: **`0ca3f904be7b292115412dcba27539ac277ad8be`**, provado pelo campo `gitHead` do próprio registro npm (não inferido por timestamp), com o mesmo mecanismo cross-validado contra `v0.2.0` e `v0.1.0` (Checkpoint 12.1).
+- Tag `v0.3.0`: **NÃO CRIADA** (local e remoto) — Human Gate B pendente de autorização explícita.
+- GitHub Release `v0.3.0`: **NÃO CRIADO** — Human Gate C pendente de autorização explícita.
 - `v0.2.0` (tag imutável, `2f4c19ee8ba08f5d4c6fe217aec9e7fdcda999c9`): **inalterada**.
-- Gate formal de publicação (`npm run release:check`, disparado via `prepublishOnly` como o `npm publish` real disparará) **provado de ponta a ponta** em `npm publish --dry-run`, sem exigência de credencial — ver Checkpoint 11.1.
-- Fingerprint do release candidate capturado: `shasum e41ede33157278f700247d3b4f074a141fc2d9b6`, `106 files`, `100.3 kB` / `320.2 kB` — será comparado com o artefato publicado no Bloco 12.
-- Stable Host que governa este checkout: **`ddae-engine@0.2.0`** (permanece publicado; não promovido para 0.3.0 neste bloco).
-- A publicação real (`npm publish`, criação de tag, GitHub Release) é reservada para um bloco controlado e separado (Bloco 12), com autorização humana explícita antes de cada operação irreversível.
+- Uma tentativa posterior de `npm publish` foi corretamente recusada com `You cannot publish over the previously published versions: 0.3.0` — isto é a garantia de imutabilidade de versão do npm funcionando como projetado, não uma falha de release.
+- Stable Host que governa este checkout: **`ddae-engine@0.2.0`** (permanece publicado; promoção para `0.3.0` reservada para depois dos Gates B/C).
+- Veredito de versionamento (Bloco 13): `NO NEW RELEASE REQUIRED`, `0.3.1 NOT REQUIRED` — o estado local é byte a byte equivalente ao publicado.
 
 ## 1. Destaques
 
@@ -41,4 +43,4 @@ Nenhuma ação de migração é necessária. Todos os comandos existentes (`init
 
 ## 4. Decisões Pendentes
 
-Nenhuma decisão de produto pendente para o escopo desta release. A decisão operacional restante é puramente processual: quando executar a publicação real (`npm publish`, tag `v0.3.0`, GitHub Release) — reservada para o Bloco 12, mediante autorização humana explícita e checkpoints antes de cada operação irreversível.
+Nenhuma decisão de produto pendente para o escopo desta release. `npm publish` já ocorreu (ver Status desta Entrega). As decisões operacionais restantes são puramente processuais: criar a tag `v0.3.0` no canonical release commit `0ca3f904be7b292115412dcba27539ac277ad8be` (Human Gate B) e criar o GitHub Release `v0.3.0` (Human Gate C) — cada uma mediante autorização humana explícita e individual, tratada no Bloco 12.
