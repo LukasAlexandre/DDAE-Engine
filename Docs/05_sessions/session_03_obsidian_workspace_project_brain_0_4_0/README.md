@@ -42,13 +42,13 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 ```text
 Architecture Bootstrap    COMPLETE
 Block 01                   APPROVED
-Block 02                    READY — NOT STARTED
+Block 02                    CREATED — NOT EXECUTED
 ```
 
 | Bloco | Título | Status |
 |---|---|---|
 | 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
-| 02 | Workspace Discovery | Pronto para iniciar — não iniciado |
+| 02 | Workspace Discovery | Bloco e prompt criados (`05_blocks/bloco_02_workspace_discovery.md`, `06_prompts/prompt_bloco_02_workspace_discovery.md`) — execução (código real) ainda não iniciada |
 | 03 | Project Brain Schema, Fingerprint & Compiler | Pendente |
 | 04 | Workspace Renderer | Pendente |
 | 05 | Obsidian Navigation Hardening | Pendente |
