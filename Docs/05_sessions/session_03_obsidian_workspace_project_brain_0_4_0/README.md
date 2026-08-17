@@ -42,13 +42,15 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 ```text
 Architecture Bootstrap    COMPLETE
 Block 01                   APPROVED
-Block 02                    CREATED — NOT EXECUTED
+Block 02                    APPROVED
+Block 03                     READY — NOT STARTED
 ```
 
 | Bloco | Título | Status |
 |---|---|---|
 | 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
-| 02 | Workspace Discovery | Bloco e prompt criados (`05_blocks/bloco_02_workspace_discovery.md`, `06_prompts/prompt_bloco_02_workspace_discovery.md`) — execução (código real) ainda não iniciada |
+| 02 | Workspace Discovery | **Aprovado** — `src/workspace/discover.js`, 18 testes novos; Architecture Delta Gate DEFERRED `recent_commits.subject`, REJECTED Stable Host no runtime; `08_feedbacks/feedback_bloco_02_workspace_discovery.md`, `09_validation/validacao_bloco_02_workspace_discovery.md` |
+| 03 | Project Brain Schema, Fingerprint & Compiler | Pronto para iniciar — não iniciado |
 | 03 | Project Brain Schema, Fingerprint & Compiler | Pendente |
 | 04 | Workspace Renderer | Pendente |
 | 05 | Obsidian Navigation Hardening | Pendente |
@@ -87,7 +89,9 @@ Depende de `session_02_context_compiler_0_3_0` (Context Compiler estável e publ
 
 Arquitetura e discovery concluídos: modelo de fonte de verdade fixado (`Docs/` + Git sempre autoritativos, `.ddae/brain/` sempre view, nunca fonte), seis modelos de integração avaliados com trade-offs explícitos (Vault = raiz do repositório + `.ddae/brain/` efêmero, seguindo exatamente o precedente já estabelecido pelo Context Compiler), Project Brain definido tecnicamente (17 entidades mapeadas — já existe/derivado/gerado/explicitamente fora de escopo, incluindo a decisão explícita de que "Memory" não é reimplementado porque `Docs/` já cumpre esse papel), contrato de CLI fixado em 4 comandos (`workspace init/build/validate/show`, com `sync`/`open`/`brain build` avaliados e rejeitados), threat model de 7 riscos com mitigação concreta, roadmap de 13 blocos com dependências mapeadas. Arquitetura congelada em commit `ca54d59` (`docs(session-03): define project brain architecture`).
 
-Bloco 01 (Workspace & Project Brain Contract) executado e **aprovado**: requisito funcional (RF-01), decisão arquitetural (DT-01) e contrato dedicado (`Docs/03_contracts/contrato_workspace_project_brain.md`, Seções A–J) formalizados a partir das análises já aprovadas — Brain Manifest Schema v1 com campos concretos, contrato de CLI final, ownership/drift/security/migration contracts. Matriz de aceite 6/6 `PASS`. Nenhuma linha de código de produção foi escrita em nenhum dos dois passos — conforme o escopo desta sessão até aqui. `package.json` não foi alterado; `0.3.1`/`0.4.0` não foram versionados.
+Bloco 01 (Workspace & Project Brain Contract) executado e **aprovado**: requisito funcional (RF-01), decisão arquitetural (DT-01) e contrato dedicado (`Docs/03_contracts/contrato_workspace_project_brain.md`, Seções A–J) formalizados a partir das análises já aprovadas — Brain Manifest Schema v1 com campos concretos, contrato de CLI final, ownership/drift/security/migration contracts. Matriz de aceite 6/6 `PASS`. Nenhuma linha de código de produção foi escrita neste bloco.
+
+Bloco 02 (Workspace Discovery) executado e **aprovado** — primeiro código real da `0.4.0`: `src/workspace/discover.js` implementado, precedido por um Architecture Delta Gate que reavaliou (e rejeitou/deferiu, com evidência, não por inércia) as duas extensões cogitadas ao planejar o bloco — `recent_commits.subject` (Schema v1 não exige, teste existente trava a forma atual) e extração de `STABLE_HOST_VERSION` para o runtime do produto (infraestrutura de self-hosting deste repositório, ausente do pacote npm distribuído, sem campo correspondente no Schema v1). `src/context/**` permanece inteiramente intocado. 18 testes novos (determinismo, zero escrita, containment de path/symlink, filtro de placeholder), prova direta contra o próprio self-host do DDAE, regressão completa (466 testes, 463 pass, 0 fail, 3 skip — 448 → 466). `npm run package:check` passou a reportar 107 arquivos (era 106) — divergência esperada e documentada em relação ao artefato `npm@0.3.0` publicado, já que este bloco inicia código de produção da próxima versão. `package.json` permanece em `0.3.0`; `0.4.0` não foi versionado.
 
 ## 11. Próxima Sessão
 
