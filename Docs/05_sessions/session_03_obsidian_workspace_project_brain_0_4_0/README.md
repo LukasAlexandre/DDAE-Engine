@@ -32,9 +32,9 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Blocos 01, 02 e 03 aprovados; Bloco 04 preparado (não iniciado)
+- [x] `05_blocks/` — Blocos 01, 02, 03 e 04 aprovados
 - [x] `06_prompts/` — prompts dos Blocos 01 a 04 criados
-- [x] `08_feedbacks/` — feedbacks dos Blocos 01, 02 e 03 preenchidos
+- [x] `08_feedbacks/` — feedbacks dos Blocos 01, 02, 03 e 04 preenchidos
 - [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
 ## 7. Blocos Planejados
@@ -44,7 +44,8 @@ Architecture Bootstrap    COMPLETE
 Block 01                   APPROVED
 Block 02                    APPROVED
 Block 03                     APPROVED
-Block 04                      PREPARED — NOT STARTED (NOW)
+Block 04                      APPROVED
+Block 05                       PRÓXIMO / AGORA
 ```
 
 | Bloco | Título | Status |
@@ -52,8 +53,8 @@ Block 04                      PREPARED — NOT STARTED (NOW)
 | 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
 | 02 | Workspace Discovery | **Aprovado** — `src/workspace/discover.js`, 18 testes novos; Architecture Delta Gate DEFERRED `recent_commits.subject`, REJECTED Stable Host no runtime; `08_feedbacks/feedback_bloco_02_workspace_discovery.md`, `09_validation/validacao_bloco_02_workspace_discovery.md` |
 | 03 | Project Brain Schema, Fingerprint & Compiler | **Aprovado** — `src/schemas/brain-schema.js`, `src/workspace/fingerprint.js`, `src/workspace/compiler.js`; 5 decisões resolvidas antes do código; Discovery ganhou `ddae`/`project.name` (aditivo); `08_feedbacks/feedback_bloco_03_project_brain_schema_fingerprint_compiler.md`, `09_validation/validacao_bloco_03_project_brain_schema_fingerprint_compiler.md` |
-| 04 | Workspace Renderer | **Preparado / AGORA — não iniciado** — `05_blocks/bloco_04_project_brain_workspace_renderer.md`, prompt em `06_prompts/`; atualizado pelo Amendment 1 (`DT-03`): root `DDAE-Brain/`, links Markdown relativos, marcador de arquivo gerado; sem decisões pendentes |
-| 05 | Obsidian Navigation Hardening | Pendente |
+| 04 | Workspace Renderer | **Aprovado** — `src/workspace/renderer.js`, `BRAIN_DIR`/`BRAIN_RENDERER_VIEW_PATHS`, 38 testes novos; bug de codificação (`U+2028`/`U+2029` literais em regex) encontrado e corrigido na retomada, classificado como problema de implementação, não arquitetural; `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md`, `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md` |
+| 05 | Obsidian Navigation Hardening | **Próximo / AGORA — não iniciado.** Desbloqueado pelo Bloco 04 (`04_planning/mapa_dependencias.md`); endurece os links Markdown relativos que o Renderer já produz. Paralelizável com o Bloco 06 (ambos dependem só do 04), mas o plano de execução lista 5→6 como ordem de exposição. |
 | 06 | Context Compiler Integration | Pendente |
 | 07 | Workspace Validator | Pendente |
 | 08 | CLI | Pendente |
@@ -103,6 +104,8 @@ Bloco 02 (Workspace Discovery) executado e **aprovado** — primeiro código rea
 
 Bloco 03 (Schema, Fingerprint & Compiler) executado e **aprovado**, em TDD: Brain Manifest v1 com schema fechado (`src/schemas/brain-schema.js`), fingerprint reproduzível reutilizando o serializador do Context Compiler (`src/workspace/fingerprint.js`, incluindo `engine_version`) e Compiler puro `snapshot → manifesto` (`src/workspace/compiler.js`), tudo em memória (zero escrita, zero rede, zero LLM). As 5 decisões abertas foram fechadas antes do código; o único ajuste ao Discovery foi expor `ddae` e `project.name` (aditivo). `src/context/**` intocado. Regressão: 520 testes, 517 pass, 0 fail, 3 skip. Nenhum conceito de memória persistente em runtime (DT-02).
 
+Bloco 04 (Workspace Renderer) executado e **aprovado**: `renderBrainWorkspace(manifest)` puro (`src/workspace/renderer.js`), gerando as 7 views do contrato (`BRAIN_DIR = 'DDAE-Brain'`, `BRAIN_RENDERER_VIEW_PATHS`) inteiramente em memória, com marcador de arquivo gerado, links Markdown relativos e Markdown safety (inline code com fence dinâmica) conforme o Amendment 1 (`DT-03`). A implementação foi iniciada por uma execução anterior interrompida por limite de uso; esta execução recuperou o working tree (recovery gate somente leitura, sem `reset`/`checkout`/`stash`), confirmou que os arquivos deixados eram coerentes com o bloco planejado e encontrou um bug de codificação — caracteres `U+2028`/`U+2029` inseridos literalmente (em vez de escapados) em duas regex, impedindo o módulo de carregar (`SyntaxError`, falha de parse, não de asserção) — corrigido sem alterar a lógica ou o contrato. 38 testes específicos novos, todos passando; regressão completa 558 testes, 555 pass, 0 fail, 3 skip. `manifest.views` permanece `[]` (dívida transitória deliberada até o Bloco 08); o Renderer nunca o lê, compara ou altera.
+
 ## 11. Próxima Sessão
 
-Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: implementar o Bloco 04 (Renderer) em TDD, já sob o Amendment 1.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: Bloco 05 (Obsidian Navigation Hardening), a ser criado formalmente no início de sua própria execução.

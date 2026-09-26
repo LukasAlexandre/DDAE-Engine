@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-26
 
-> **Status: PREPARADO — NÃO INICIADO.** Este documento especifica o bloco para revisão. Nenhum código do Renderer foi escrito. **Atualizado pelo Amendment 1 do contrato (`DT-03`, 2026-09-26):** root das views = `DDAE-Brain/` (não mais `.ddae/brain/`), links Markdown relativos, marcador de arquivo gerado no contrato, ownership de `manifest.views` congelado. As três decisões pendentes anteriores estão resolvidas (Seção 20).
+> **Status: CONCLUÍDO / APROVADO.** `src/workspace/renderer.js` implementado em TDD; 38/38 testes específicos verdes; regressão completa (558 total, 555 pass, 0 fail, 3 skip) verde. Detalhes em `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md` e `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md`. **Atualizado pelo Amendment 1 do contrato (`DT-03`, 2026-09-26):** root das views = `DDAE-Brain/` (não mais `.ddae/brain/`), links Markdown relativos, marcador de arquivo gerado no contrato, ownership de `manifest.views` congelado. As três decisões pendentes anteriores estão resolvidas (Seção 20).
 
 ## 1. Objetivo
 
@@ -225,19 +225,33 @@ Pendências herdadas (não bloqueiam o Bloco 04): Compiler recebe `views` (Bloco
 
 ## 21. Critérios de Aceite
 
-- [ ] `renderBrainWorkspace` retorna exatamente os 7 arquivos de `BRAIN_RENDERER_VIEW_PATHS` (todos sob `DDAE-Brain/`), ordenados, com `Home.md`.
-- [ ] Mesma entrada → saída byte a byte idêntica; LF; um `\n` final.
-- [ ] Manifest não mutado; entrada inválida rejeitada.
-- [ ] Todos os paths relativos e portáveis, nenhum em dotfolder; todo link é Markdown relativo e aponta para caminho conhecido do Manifest ou view gerada; nenhum wikilink.
-- [ ] Todo arquivo tem o marcador de arquivo gerado logo após o H1 e termina com exatamente uma newline.
-- [ ] O Renderer não altera `manifest.views`.
-- [ ] Estados vazios explícitos para todos os casos da Seção 13.
-- [ ] Conteúdo arbitrário nunca altera a estrutura do documento (Seção 14).
-- [ ] Nenhum campo inventado; `generated_at` e `status` nunca exibidos.
-- [ ] Zero fs/rede/relógio/aleatoriedade/Claude-Mem no código.
-- [ ] Nenhuma alteração em `src/context/**`, schema, Compiler, Fingerprint, Discovery, contrato.
-- [ ] Nenhum arquivo escrito em disco; `DDAE-Brain/` e `.ddae/brain/` não criados; `.gitignore` do repositório inalterado.
-- [ ] Regressão completa verde.
+Conferidos contra o código e os testes reais (`src/workspace/renderer.js`, `test/workspace-renderer.test.js`), não contra o que estava apenas planejado. Detalhe em `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md`.
+
+- [x] `renderBrainWorkspace` retorna exatamente os 7 arquivos de `BRAIN_RENDERER_VIEW_PATHS` (todos sob `DDAE-Brain/`), ordenados, com `Home.md`.
+- [x] Mesma entrada → saída byte a byte idêntica; LF; um `\n` final.
+- [x] Manifest não mutado; entrada inválida rejeitada.
+- [x] Todos os paths relativos e portáveis, nenhum em dotfolder; todo link é Markdown relativo e aponta para caminho conhecido do Manifest ou view gerada; nenhum wikilink.
+- [x] Todo arquivo tem o marcador de arquivo gerado logo após o H1 e termina com exatamente uma newline.
+- [x] O Renderer não altera `manifest.views`.
+- [x] Estados vazios explícitos para todos os casos da Seção 13.
+- [x] Conteúdo arbitrário nunca altera a estrutura do documento (Seção 14).
+- [x] Nenhum campo inventado; `generated_at` e `status` nunca exibidos.
+- [x] Zero fs/rede/relógio/aleatoriedade/Claude-Mem no código.
+- [x] Nenhuma alteração em `src/context/**`, schema, Compiler, Fingerprint, Discovery, contrato.
+- [x] Nenhum arquivo escrito em disco; `DDAE-Brain/` e `.ddae/brain/` não criados; `.gitignore` do repositório inalterado.
+- [x] Regressão completa verde (558 total, 555 pass, 0 fail, 3 skip).
+
+**Resultado real:**
+
+```text
+BRAIN_DIR:          DDAE-Brain
+Views:               7
+Renderer:             pure (único import: ../schemas/brain-schema.js)
+Output:                in-memory ([{path, content}], congelado)
+Links:                  relative Markdown (./X.md, ../Docs/...)
+Generated marker:        presente, uma vez, logo após o H1
+Line endings:              LF + exatamente uma newline final
+```
 
 ## 22. Validações Obrigatórias
 
@@ -260,9 +274,11 @@ Performance: não aplicável (dados em memória). Design System: não aplicável
 
 Renderer implementado em TDD; critérios da Seção 21 atendidos; feedback e validação do bloco preenchidos; README da Session atualizado; commit único aprovado pelo usuário. (Decisões pendentes: nenhuma — resolvidas por `DT-03`.)
 
+**Concluído.** Feedback: `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md`. Validação: `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md`.
+
 ## 26. Feedback Obrigatório
 
-_Ao final do bloco, gerar e preencher o feedback via `ddae-engine feedback create --block bloco_04_project_brain_workspace_renderer --session session_03_obsidian_workspace_project_brain_0_4_0`. Sem feedback preenchido, o bloco não está concluído._
+Preenchido em `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md`, incluindo o bug de codificação (`U+2028`/`U+2029` literais) encontrado e corrigido durante a retomada do trabalho da sessão anterior.
 
 ## 27. Commit Semântico Sugerido
 
