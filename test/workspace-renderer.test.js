@@ -521,3 +521,291 @@ test('38. integration: the DDAE self-host renders 7 views with only real links a
   }
   assert.ok(!fs.existsSync(brainDir) && !fs.existsSync(machineDir), 'nothing written by rendering');
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Bloco 05 — portable Markdown navigation hardening (adversarial characterization)
+//
+// These pin down the link generator (`source_path` → link or inert code) that
+// Bloco 04 already implemented. They are characterization/regression tests: the
+// renderer must keep classifying every adversarial path as either a safe,
+// single-encoded, ../-prefixed relative link or inert inline code — never a
+// clickable escape, scheme, or decoded traversal.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SAFE_DEST = /^\.\.\/[A-Za-z0-9._~%/-]+$/;
+const pid = (index) => `P-${String(index + 1).padStart(3, '0')}`;
+
+function renderPaths(paths) {
+  const decisions = paths.map((p, i) => ({ id: pid(i), summary: `entry ${i + 1}`, source_path: p }));
+  const files = render({ decisions });
+  return { files, decisions: file(files, 'Decisions.md') };
+}
+
+function entryLine(markdown, index) {
+  return markdown.split('\n').find((line) => line.includes(`\`${pid(index)}\``));
+}
+
+/** Decodes a link destination exactly once, per segment (what a consumer's single URL-decode yields). */
+function decodeOnce(destination) {
+  return destination.slice(3).split('/').map((segment) => decodeURIComponent(segment));
+}
+
+test('39. literal traversal / dot / empty segments in source_path never become a link (inert code instead)', () => {
+  const paths = ['Docs/../secrets.md', '../outside.md', '../../outside.md', 'Docs/../../../etc/passwd.md', 'Docs/a/../b.md', 'Docs/./a.md', './a.md', 'Docs//a.md', 'Docs/..'];
+  const { decisions } = renderPaths(paths);
+  paths.forEach((p, i) => {
+    const line = entryLine(decisions, i);
+    assert.ok(line, p);
+    assert.ok(!line.includes(']('), `${p} must not be linked`);
+    assert.ok(line.includes(`\`${p}\``), `${p} is shown as inert code`);
+  });
+  assert.equal(linkTargets(decisions).filter((t) => t.startsWith('../')).length, 0);
+});
+
+test('40. encoded traversal (%2e%2e, %2E%2E, %2e., .%2e) is only ever a literal, single-encoded name — never a decoded ..', () => {
+  const cases = [
+    ['%2e%2e/secret.md', '../%252e%252e/secret.md'],
+    ['%2E%2E/secret.md', '../%252E%252E/secret.md'],
+    ['%2e./x.md', '../%252e./x.md'],
+    ['.%2e/x.md', '../.%252e/x.md'],
+    ['Docs/%2e%2e/x.md', '../Docs/%252e%252e/x.md'],
+    ['%2e%2e%2fsecret.md', '../%252e%252e%252fsecret.md'],
+  ];
+  const { decisions } = renderPaths(cases.map(([p]) => p));
+  cases.forEach(([original, expected], i) => {
+    const line = entryLine(decisions, i);
+    assert.ok(line.includes(`](${expected})`), `${original} → ${expected}`);
+    const destination = expected;
+    assert.ok(!/(?<!%25)%2e/i.test(destination), 'a raw %2e never survives encoding');
+    assert.deepEqual(decodeOnce(destination).join('/'), original, 'one decode gives back the original text, not ..');
+    assert.ok(!decodeOnce(destination).some((s) => s === '..' || s === '.'), 'no traversal segment after one decode');
+    assert.ok(!destination.includes('/../'));
+  });
+});
+
+test('41. double encoding: an already-encoded name is encoded exactly once more — never decoded, normalized or re-encoded', () => {
+  const { decisions } = renderPaths(['Docs/%252e%252e/x.md', 'Docs/%2F%5C.md']);
+  assert.ok(entryLine(decisions, 0).includes('](../Docs/%25252e%25252e/x.md)'));
+  assert.ok(entryLine(decisions, 1).includes('](../Docs/%252F%255C.md)'));
+});
+
+test('42. scheme-like values never yield an external or scheme link (":" is always encoded, dest always ../-prefixed)', () => {
+  const paths = ['http://evil.example/a.md', 'https://evil.example/a.md', 'javascript:alert(1).md', 'JaVaScRiPt:x.md', 'file:///etc/passwd.md', 'data:text/html,x.md', 'mailto:a@b.md', 'C:x.md', 'Docs/a:b.md'];
+  const { files, decisions } = renderPaths(paths);
+  assert.ok(entryLine(decisions, 0).includes('`http://evil.example/a.md`') && !entryLine(decisions, 0).includes(']('), 'empty segment → inert code');
+  assert.ok(!entryLine(decisions, 4).includes(']('), 'file:/// → inert code');
+  assert.ok(entryLine(decisions, 2).includes('](../javascript%3Aalert%281%29.md)'));
+  assert.ok(entryLine(decisions, 7).includes('](../C%3Ax.md)'));
+  for (const { content } of files) {
+    for (const target of linkTargets(content)) {
+      assert.ok(!target.includes(':'), target);
+      assert.ok(target.startsWith('./') || target.startsWith('../'), target);
+    }
+    assert.ok(!/\]\((?:https?|javascript|file|data|mailto):/i.test(content));
+  }
+});
+
+test('43. Unicode look-alikes for . / \\ : are inert text — not traversal, separators or schemes — and are not normalized', () => {
+  const dotLeader = 'Docs/\u2024\u2024/x.md';
+  const ellipsis = 'Docs/\u2026/x.md';
+  const fullwidthDots = 'Docs/\uFF0E\uFF0E/x.md';
+  const fullwidthSlash = 'Docs\uFF0F..\uFF0Fx.md';
+  const fullwidthBackslash = 'Docs\uFF3Ca.md';
+  const fullwidthColon = 'javascript\uFF1Ax.md';
+  const divisionSlash = 'Docs/a\u2215b.md';
+  const rtlOverride = 'Docs/\u202Egnp.md';
+  const paths = [dotLeader, ellipsis, fullwidthDots, fullwidthSlash, fullwidthBackslash, fullwidthColon, divisionSlash, rtlOverride];
+  const { decisions } = renderPaths(paths);
+  paths.forEach((original, i) => {
+    const line = entryLine(decisions, i);
+    const destination = linkTargets(line)[0];
+    assert.ok(destination, `${JSON.stringify(original)} is an ordinary (non-traversal) name and links`);
+    assert.match(destination, SAFE_DEST, 'destination is pure ASCII percent-encoding');
+    assert.equal(decodeOnce(destination).join('/'), original, 'no Unicode normalization');
+    assert.equal(destination.slice(3).split('/').length, original.split('/').length, 'look-alike slashes are not separators');
+    assert.ok(!decodeOnce(destination).some((s) => s === '.' || s === '..' || s === ''));
+  });
+});
+
+test('44. "%" and malformed escapes never break encoding or throw', () => {
+  const { decisions } = renderPaths(['Docs/100%.md', 'Docs/%zz.md', 'Docs/%.md', '%%%.md', 'Docs/a%2Fb.md', 'Docs/a%00b.md']);
+  assert.ok(entryLine(decisions, 0).includes('](../Docs/100%25.md)'));
+  assert.ok(entryLine(decisions, 1).includes('](../Docs/%25zz.md)'));
+  assert.ok(entryLine(decisions, 2).includes('](../Docs/%25.md)'));
+  assert.ok(entryLine(decisions, 3).includes('](../%25%25%25.md)'));
+  assert.ok(entryLine(decisions, 4).includes('](../Docs/a%252Fb.md)'), 'encoded separator text stays one segment');
+  assert.ok(entryLine(decisions, 5).includes('](../Docs/a%2500b.md)'), 'encoded NUL text is literal text, not a control char');
+});
+
+test('45. brackets, parentheses, backticks, spaces, # ? < > quotes are all percent-encoded in destinations', () => {
+  const { decisions } = renderPaths(['Docs/[x] (y) `z` #h ?q.md', 'Docs/<b>&amp;.md', 'Docs/"q" it\'s.md']);
+  assert.ok(entryLine(decisions, 0).includes('](../Docs/%5Bx%5D%20%28y%29%20%60z%60%20%23h%20%3Fq.md)'));
+  for (let i = 0; i < 3; i += 1) {
+    assert.match(linkTargets(entryLine(decisions, i))[0], SAFE_DEST);
+  }
+});
+
+test('46. control characters and lone surrogates in source_path: no link, no raw control in output, no exception', () => {
+  const controls = ['\u0000', '\n', '\r', '\t', '\u001b', '\u007f', '\u0085', '\u2028', '\u2029'];
+  const paths = [...controls.map((c) => `Docs/a${c}b.md`), 'Docs/\uD800.md'];
+  const { files, decisions } = renderPaths(paths);
+  paths.forEach((p, i) => {
+    const line = entryLine(decisions, i);
+    assert.ok(line, JSON.stringify(p));
+    assert.ok(!line.includes(']('), `${JSON.stringify(p)} must not be linked`);
+  });
+  for (const { content } of files) {
+    assert.ok(!/[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029]/.test(content));
+    assert.ok(!content.includes('\r'));
+  }
+  assert.equal(decisions.split('\n').filter((l) => /`entry \d+`/.test(l)).length, paths.length, 'each entry stays on exactly one line');
+});
+
+test('47. absolute, Windows-drive, backslash and UNC source paths are rejected before rendering (Schema), not rendered', () => {
+  const rejected = ['/etc/passwd.md', 'C:/Users/x/a.md', 'C:\\Users\\x\\a.md', 'Docs\\a.md', '\\\\server\\share\\a.md', '//server/share/a.md'];
+  for (const p of rejected) {
+    assert.throws(() => compile({ decisions: [{ id: 'RD-01', summary: 's', source_path: p }] }), /source_path/, p);
+    const manifest = clone(compile());
+    manifest.entities.decisions[0].source_path = p;
+    assert.throws(() => renderBrainWorkspace(manifest), /source_path/, `renderer rejects ${p}`);
+  }
+});
+
+test('48. link eligibility requires membership in manifest.sources and a .md name (hand-built manifests)', () => {
+  const noSources = clone(compile());
+  noSources.sources = [];
+  const withoutLinks = renderBrainWorkspace(noSources);
+  for (const { content } of withoutLinks) {
+    assert.equal(linkTargets(content).filter((t) => t.startsWith('../')).length, 0, 'no source known → nothing linked');
+  }
+  assert.ok(file(withoutLinks, 'Decisions.md').includes('`Docs/04_governance/registro_decisoes.md`'), 'path is still shown, inert');
+
+  const partial = clone(compile());
+  partial.sources = partial.sources.filter((s) => s.entity === 'decisions');
+  const partialFiles = renderBrainWorkspace(partial);
+  assert.ok(linkTargets(file(partialFiles, 'Decisions.md')).some((t) => t.startsWith('../')));
+  assert.equal(linkTargets(file(partialFiles, 'Risks.md')).filter((t) => t.startsWith('../')).length, 0);
+});
+
+const CORPUS = [
+  'Docs/../secrets.md', '../outside.md', 'Docs/./a.md', 'Docs//a.md', 'Docs/a/../b.md',
+  '%2e%2e/secret.md', '%2E%2E/secret.md', '%2e./x.md', '.%2e/x.md', 'Docs/%2e%2e/x.md', '%2e%2e%2fsecret.md',
+  'Docs/%252e%252e/x.md', '%252e%252e%252fx.md',
+  'http://evil.example/a.md', 'javascript:alert(1).md', 'JaVaScRiPt:x.md', 'file:///etc/passwd.md', 'data:text/html,x.md', 'mailto:a@b.md', 'C:x.md', 'Docs/a:b.md',
+  'Docs/100%.md', 'Docs/%zz.md', '%%%.md', 'Docs/a%2Fb.md', 'Docs/a%5Cb.md', 'Docs/a%00b.md',
+  'Docs/[x] (y) `z` #h ?q.md', 'Docs/<b>&amp;.md', 'Docs/"q" it\'s.md',
+  'Docs/\u2024\u2024/x.md', 'Docs/\u2026/x.md', 'Docs/\uFF0E\uFF0E/x.md', 'Docs\uFF0F..\uFF0Fx.md', 'Docs\uFF3Ca.md', 'javascript\uFF1Ax.md', 'Docs/a\u2215b.md', 'Docs/\u202Egnp.md',
+  'Docs/\uD800.md', 'Docs/a\u0000b.md', 'Docs/a\nb.md', 'Docs/a\tb.md', 'Docs/a\u007fb.md', 'Docs/a\u0085b.md', 'Docs/a\u2028b.md',
+  'Docs/ leading.md', 'Docs/trailing .md', 'Docs/ .md', 'Docs/x.MD', 'Docs/x.md/', 'Docs/x.txt', 'Docs/..',
+  'Docs/café ação 日本語 🙂.md',
+];
+const MUST_NOT_LINK = new Set([
+  'Docs/../secrets.md', '../outside.md', 'Docs/./a.md', 'Docs//a.md', 'Docs/a/../b.md', 'http://evil.example/a.md', 'file:///etc/passwd.md',
+  'Docs/\uD800.md', 'Docs/a\u0000b.md', 'Docs/a\nb.md', 'Docs/a\tb.md', 'Docs/a\u007fb.md', 'Docs/a\u0085b.md', 'Docs/a\u2028b.md',
+  'Docs/x.MD', 'Docs/x.md/', 'Docs/x.txt', 'Docs/..',
+]);
+
+test('49. property over an adversarial corpus: every generated link is ../-prefixed, pure-ASCII, single-encoded and maps back to a known .md source', () => {
+  const manifest = compile({ decisions: CORPUS.map((p, i) => ({ id: pid(i), summary: `entry ${i + 1}`, source_path: p })) });
+  const files = renderBrainWorkspace(manifest);
+  const known = new Set(manifest.sources.map((source) => source.path));
+  const linked = new Set();
+  for (const { content } of files) {
+    for (const target of linkTargets(content)) {
+      if (target.startsWith('./')) {
+        assert.ok(BRAIN_RENDERER_VIEW_PATHS.includes(`${BRAIN_DIR}/${target.slice(2)}`), target);
+        continue;
+      }
+      assert.match(target, SAFE_DEST, target);
+      assert.ok(!target.includes(':') && !target.includes('\\'), target);
+      const segments = decodeOnce(target);
+      assert.ok(!segments.some((s) => s === '' || s === '.' || s === '..'), target);
+      const original = segments.join('/');
+      assert.ok(known.has(original), `dangling/invented link ${target}`);
+      assert.ok(original.endsWith('.md'), original);
+      linked.add(original);
+    }
+  }
+  for (const forbidden of MUST_NOT_LINK) {
+    assert.ok(!linked.has(forbidden), `must not link ${JSON.stringify(forbidden)}`);
+  }
+  for (const expected of ['Docs/café ação 日本語 🙂.md', '%2e%2e/secret.md', 'javascript:alert(1).md', 'Docs/\u202Egnp.md', 'Docs/ leading.md']) {
+    assert.ok(linked.has(expected), `should link ${JSON.stringify(expected)}`);
+  }
+});
+
+test('50. adversarial manifests render byte-identically every time and never throw', () => {
+  const a = renderPaths(CORPUS).files;
+  const b = renderPaths(CORPUS).files;
+  assert.deepEqual(a, b);
+  for (let i = 0; i < a.length; i += 1) {
+    assert.ok(Buffer.from(a[i].content, 'utf8').equals(Buffer.from(b[i].content, 'utf8')));
+  }
+  for (const { content } of a) {
+    assert.ok(content.endsWith('\n') && !content.endsWith('\n\n') && !content.includes('\r'));
+  }
+});
+
+test('51. navigation is symmetric and independent of entity data: Home ↔ 6 views, every view reachable, no dangling view link', () => {
+  const graphOf = (files) => {
+    const graph = new Map();
+    for (const { path: p, content } of files) {
+      graph.set(p, linkTargets(content).filter((t) => t.startsWith('./')).map((t) => `${BRAIN_DIR}/${t.slice(2)}`));
+    }
+    return graph;
+  };
+  const normal = graphOf(render());
+  const adversarial = graphOf(renderPaths(CORPUS).files);
+  const empty = graphOf(render(EMPTY_SNAPSHOT));
+  for (const graph of [normal, adversarial, empty]) {
+    const home = `${BRAIN_DIR}/Home.md`;
+    const others = BRAIN_RENDERER_VIEW_PATHS.filter((p) => p !== home);
+    assert.equal(others.length, 6);
+    assert.deepEqual([...graph.get(home)].sort(), [...others].sort(), 'Home links to the six views, once each, never to itself');
+    for (const view of others) {
+      assert.deepEqual(graph.get(view), [home], `${view} links back to Home exactly once and to nothing else`);
+    }
+    const seen = new Set([home]);
+    const queue = [home];
+    while (queue.length > 0) {
+      for (const next of graph.get(queue.shift())) {
+        assert.ok(BRAIN_RENDERER_VIEW_PATHS.includes(next), `dangling view link ${next}`);
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+      }
+    }
+    assert.equal(seen.size, 7, 'all seven views reachable from Home');
+  }
+  assert.deepEqual([...adversarial.entries()], [...normal.entries()], 'entity data never changes the navigation graph');
+});
+
+test('52. portable Markdown only: no frontmatter, wikilinks, Obsidian URIs, Dataview, backslashes or drive letters in any output', () => {
+  for (const { content } of [...render(), ...renderPaths(CORPUS).files]) {
+    assert.ok(content.startsWith('# '), 'first line is the H1 — no frontmatter block');
+    assert.ok(!content.split('\n').some((line) => line === '---'), 'no frontmatter/hr delimiter line');
+    assert.ok(!stripCode(content).includes('[['), 'no wikilink outside inert code');
+    assert.ok(!/obsidian:\/\/|app:\/\//i.test(stripCode(content)));
+    assert.ok(!/dataview/i.test(stripCode(content)));
+    for (const target of linkTargets(content)) {
+      assert.ok(!target.includes('\\') && !/^[A-Za-z]:/.test(target));
+    }
+  }
+});
+
+test('53. source guard: the link generator never decodes or normalizes, has no Obsidian coupling and imports only the schema', () => {
+  const code = readCode('src', 'workspace', 'renderer.js');
+  for (const token of ['decodeURI', 'decodeURIComponent', 'unescape(', '.normalize(', 'obsidian://', 'app://', 'dataview', 'frontmatter', "from 'node:path'", "from 'path'", 'process.platform']) {
+    assert.ok(!code.toLowerCase().includes(token.toLowerCase()), `renderer.js must not contain ${token}`);
+  }
+});
+
+test('54. KNOWN LIMITATION (P4, documented not fixed): bidi controls are preserved verbatim inside inert code spans and percent-encoded in link destinations', () => {
+  // Contract: summaries are extracted verbatim and never sanitized aggressively. Bidi
+  // controls are not Markdown structure, so they cannot create links or headings; whether
+  // they should be neutralized for visual-spoofing reasons is a Bloco 09 (security) decision.
+  const bidi = '‮⁦⁩';
+  const { decisions } = renderPaths([`Docs/a${bidi}b.md`]);
+  assert.ok(decisions.includes('](../Docs/a%E2%80%AE%E2%81%A6%E2%81%A9b.md)'), 'destination is ASCII percent-encoding of the exact bytes');
+  assert.ok(decisions.includes(`[\`a${bidi}b.md\`]`), 'the label keeps the bidi controls verbatim, inside a code span');
+  const headings = decisions.split('\n').filter((l) => l.startsWith('#'));
+  assert.deepEqual(headings, ['# Decisions', '## Index'], 'no structure is created by them');
+});

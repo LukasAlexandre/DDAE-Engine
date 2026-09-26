@@ -32,9 +32,9 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Blocos 01, 02, 03 e 04 aprovados; Bloco 05 preparado (não iniciado)
+- [x] `05_blocks/` — Blocos 01 a 05 aprovados
 - [x] `06_prompts/` — prompts dos Blocos 01 a 05 criados
-- [x] `08_feedbacks/` — feedbacks dos Blocos 01, 02, 03 e 04 preenchidos
+- [x] `08_feedbacks/` — feedbacks dos Blocos 01 a 05 preenchidos
 - [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
 ## 7. Blocos Planejados
@@ -45,7 +45,7 @@ Block 01                   APPROVED
 Block 02                    APPROVED
 Block 03                     APPROVED
 Block 04                      APPROVED
-Block 05                       PREPARED — NOT STARTED (NOW)
+Block 05                       APPROVED
 ```
 
 | Bloco | Título | Status |
@@ -54,8 +54,8 @@ Block 05                       PREPARED — NOT STARTED (NOW)
 | 02 | Workspace Discovery | **Aprovado** — `src/workspace/discover.js`, 18 testes novos; Architecture Delta Gate DEFERRED `recent_commits.subject`, REJECTED Stable Host no runtime; `08_feedbacks/feedback_bloco_02_workspace_discovery.md`, `09_validation/validacao_bloco_02_workspace_discovery.md` |
 | 03 | Project Brain Schema, Fingerprint & Compiler | **Aprovado** — `src/schemas/brain-schema.js`, `src/workspace/fingerprint.js`, `src/workspace/compiler.js`; 5 decisões resolvidas antes do código; Discovery ganhou `ddae`/`project.name` (aditivo); `08_feedbacks/feedback_bloco_03_project_brain_schema_fingerprint_compiler.md`, `09_validation/validacao_bloco_03_project_brain_schema_fingerprint_compiler.md` |
 | 04 | Workspace Renderer | **Aprovado** — `src/workspace/renderer.js`, `BRAIN_DIR`/`BRAIN_RENDERER_VIEW_PATHS`, 38 testes novos; bug de codificação (`U+2028`/`U+2029` literais em regex) encontrado e corrigido na retomada, classificado como problema de implementação, não arquitetural; `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md`, `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md` |
-| 05 | Obsidian Navigation Hardening | **Preparado / AGORA — não iniciado.** `05_blocks/bloco_05_obsidian_navigation_hardening.md`, prompt em `06_prompts/`. Escopo revisado contra o estado real pós-Bloco 04/`DT-03`: "wikilinks path-safe" e "ambiguidade por nome-base" (planejamento original de 2026-08-16) ficaram obsoletos; escopo real = testes adversariais de path/link no gerador do Renderer + decisão aberta sobre frontmatter para Graph View (contrato, Seção D.1), pendente de aprovação do usuário antes do código. |
-| 06 | Context Compiler Integration | Pendente |
+| 05 | Obsidian Navigation Hardening | **Aprovado** — 16 testes adversariais novos em `test/workspace-renderer.test.js` (traversal, encoding, esquema, Unicode/bidi); **zero alteração em `src/workspace/renderer.js`** (o mecanismo do Bloco 04 já classificava corretamente todos os casos); frontmatter decidido como **não usado no v1** (contrato, Seção D.1); `08_feedbacks/feedback_bloco_05_obsidian_navigation_hardening.md`, `09_validation/validacao_bloco_05_obsidian_navigation_hardening.md` |
+| 06 | Context Compiler Integration | Próximo candidato (paralelizável com o 05, ambos dependem só do Bloco 04) — não criado nesta execução |
 | 07 | Workspace Validator | Pendente |
 | 08 | CLI | Pendente |
 | 09 | Security Hardening | Pendente |
@@ -106,8 +106,8 @@ Bloco 03 (Schema, Fingerprint & Compiler) executado e **aprovado**, em TDD: Brai
 
 Bloco 04 (Workspace Renderer) executado e **aprovado**: `renderBrainWorkspace(manifest)` puro (`src/workspace/renderer.js`), gerando as 7 views do contrato (`BRAIN_DIR = 'DDAE-Brain'`, `BRAIN_RENDERER_VIEW_PATHS`) inteiramente em memória, com marcador de arquivo gerado, links Markdown relativos e Markdown safety (inline code com fence dinâmica) conforme o Amendment 1 (`DT-03`). A implementação foi iniciada por uma execução anterior interrompida por limite de uso; esta execução recuperou o working tree (recovery gate somente leitura, sem `reset`/`checkout`/`stash`), confirmou que os arquivos deixados eram coerentes com o bloco planejado e encontrou um bug de codificação — caracteres `U+2028`/`U+2029` inseridos literalmente (em vez de escapados) em duas regex, impedindo o módulo de carregar (`SyntaxError`, falha de parse, não de asserção) — corrigido sem alterar a lógica ou o contrato. 38 testes específicos novos, todos passando; regressão completa 558 testes, 555 pass, 0 fail, 3 skip. `manifest.views` permanece `[]` (dívida transitória deliberada até o Bloco 08); o Renderer nunca o lê, compara ou altera.
 
-Bloco 05 (Obsidian Navigation Hardening) **preparado** (`05_blocks/bloco_05_obsidian_navigation_hardening.md` e prompt correspondente), a partir de auditoria do código real do Bloco 04 — não do planejamento de agosto de 2026, anterior ao Amendment 1 (`DT-03`). Duas descobertas: (1) o escopo original ("wikilinks path-safe", "eliminação de links ambíguos por nome-base") ficou obsoleto porque wikilinks deixaram de ser o mecanismo de navegação; o escopo real que resta é testes adversariais de path/link (traversal, double-encoding, injeção de esquema, Unicode) sobre a lógica de link já existente no Renderer, majoritariamente cobertura de teste, não código de produção novo; (2) uma decisão de contrato deixada explicitamente aberta (Seção D.1: frontmatter para Graph View) segue sem resolução e precisa de aprovação do usuário antes de qualquer implementação. Nenhum código foi alterado nesta preparação; nenhum módulo novo é previsto sem necessidade real comprovada durante a execução.
+Bloco 05 (Obsidian Navigation Hardening) executado e **aprovado**: 16 testes adversariais novos em `test/workspace-renderer.test.js` (39–54, mais um teste de propriedade sobre um corpus de 51 entradas) cobrindo traversal literal e codificado, double-encoding, injeção de esquema (`http:`, `javascript:`, `file:`, `data:`, letra de drive), Unicode look-alike de `.`/`/`/`\`/`:` e RTL override, `%` malformado, caracteres de controle, elegibilidade de link, simetria de navegação Home ⇄ 6 views sob dados adversariais/vazios, determinismo byte a byte e portabilidade Markdown pura. **Zero alteração em `src/workspace/renderer.js`**: o mecanismo de link do Bloco 04 (rejeição por segmento + `encodeURIComponent` de passagem única) já classificava corretamente todo caso investigado — confirmando que "Navigation Hardening" antecipado pelo Amendment 1/Bloco 04 era real, não apenas nominal. A decisão de frontmatter, deixada explicitamente aberta pelo contrato (Seção D.1), foi fechada: **Project Brain v1 não usa frontmatter** — registrado diretamente no contrato, sem nova DT, por ser decisão trivialmente reversível. A lacuna de defesa em profundidade do Schema (`isProjectRelativePath` não rejeita `..`/esquemas isoladamente) permanece registrada como P4 para o Bloco 07, com evidência de que o Renderer já a neutraliza de forma independente. Regressão: 574 testes, 571 pass, 0 fail, 3 skip (558 → 574).
 
 ## 11. Próxima Sessão
 
-Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: implementar o Bloco 05 (Obsidian Navigation Hardening) — primeiro resolvendo a decisão de frontmatter com o usuário, depois TDD dos cenários adversariais de path/link.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: confirmar e, se apropriado, criar formalmente o Bloco 06 (Context Compiler Integration), conforme `04_planning/mapa_dependencias.md`.

@@ -111,7 +111,7 @@ Nenhum arquivo redundante: cada view corresponde a uma entidade da Seção C com
 
   Texto estático, em inglês (idioma do conteúdo gerado, como as seções do `CONTEXT.md`), sem timestamp, sem versão, sem dado volátil.
 - **Links:** links Markdown relativos são o padrão — entre views `[Sessions](./Sessions.md)`; para `Docs/` `[Technical Decisions](../Docs/02_architecture/decisoes_tecnicas.md)`. Destinos são percent-encoded por segmento (espaço, `(`, `)`, `<`, `>`, `[`, `]`, `#`, `?`, `%` e não-ASCII); apenas caminhos presentes em `manifest.sources[].path` (`.md`) ou nas views geradas são linkados; nada é inferido. **Wikilinks não são o mecanismo principal** (não geram lock-in no Obsidian; funcionam no GitHub e em editores Markdown). Paths sempre relativos, com `/`, sem absoluto, sem backslash.
-- **Frontmatter:** não previsto neste contrato (o Bloco 05 pode propô-lo por amendment).
+- **Frontmatter:** decidido (Bloco 05, 2026-09-26) — **não usado no Project Brain v1.** `DDAE-Brain/*.md` é Markdown puro, sem bloco YAML `---...---`. Racional: é Obsidian-específico (GitHub/VS Code renderiam o bloco como texto literal); o marcador de arquivo gerado já exige que a linha logo após o H1 seja fixa (D.1), o que frontmatter (sempre antes do H1) não quebraria, mas não há ganho funcional comprovado hoje — a navegação/Graph View já funciona com os links Markdown relativos definidos acima. Se uma necessidade concreta de metadata/filtering surgir no futuro, entra por nova decisão e nova versão de schema, nunca silenciosamente.
 
 ## E. Ownership Contract
 

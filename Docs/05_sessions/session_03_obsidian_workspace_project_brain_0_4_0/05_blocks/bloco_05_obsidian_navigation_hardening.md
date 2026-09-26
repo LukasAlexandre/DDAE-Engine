@@ -2,7 +2,16 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-26
 
-> **Status: PREPARADO — NÃO INICIADO.** Este documento especifica o bloco para revisão, a partir do estado real do código após o Bloco 04 (não do planejamento original de 2026-08-16, anterior ao Amendment 1 / `DT-03`). Nenhum código foi alterado. Há uma decisão aberta (Seção 10) e uma reclassificação de responsabilidade (Seção 3) que precisam de aprovação do usuário antes da implementação.
+> **Status: CONCLUÍDO / APROVADO** (2026-09-26). 16 testes adversariais novos adicionados a `test/workspace-renderer.test.js` (38 → 54, todos verdes); **zero alteração de produção** — o gerador de link do Bloco 04 já classificava corretamente todo caso investigado (traversal literal e codificado, double-encoding, injeção de esquema, Unicode look-alike/bidi, controles, `%` malformado, ausência em `manifest.sources`). Frontmatter decidido: **não usado no v1** (contrato, Seção D.1, atualizado). Lacuna do Schema (Seção 9.3) permanece registrada como P4, não corrigida. Ver `08_feedbacks/feedback_bloco_05_obsidian_navigation_hardening.md` e `09_validation/validacao_bloco_05_obsidian_navigation_hardening.md`.
+
+## 22. Resultado da Implementação
+
+- **RED confirmado antes do GREEN:** os 16 testes novos (39–54) foram escritos e executados contra a implementação existente do Bloco 04 sem nenhuma alteração em `renderer.js`; todos passaram de imediato (GREEN imediato, Seção 21 do prompt de preparação — aceitável para hardening/regressão). Nenhum gap real de produção foi encontrado; portanto **nenhuma linha de `src/workspace/renderer.js` foi alterada**.
+- **Cenários cobertos** (Seção 13, todos os 10 previstos, mais reforço de propriedade sobre um corpus de 51 entradas adversariais — teste 49): traversal literal (`../`, `Docs/../..`, segmento vazio/`.`); traversal codificado (`%2e%2e` etc., nunca decodificado); double-encoding (`%252e%252e`, `%25`); injeção de esquema (`http:`, `javascript:`, `file:`, `data:`, `mailto:`, letra de drive) — sempre `:` codificado e destino sempre `../`-prefixado, nunca URL externa; Unicode look-alike de `.`/`/`/`\`/`:` (leader dots, ellipsis, fullwidth, division slash) e RTL override — preservados como texto, nunca interpretados como separador; `%`/escapes malformados — nunca lança exceção; caracteres de controle e surrogate solto — nunca linkados, nunca vazam crus na saída; ausência em `manifest.sources`/extensão não-`.md` — nunca linkado; simetria de navegação Home ⇄ 6 views validada também sob dados adversariais (BFS confirma as 7 views alcançáveis, nenhum link para fora do conjunto); determinismo byte a byte sob todo o corpus; guarda de pureza (sem `decodeURI`/`.normalize()`/acoplamento a Obsidian).
+- **Limitação documentada, não corrigida (teste 54):** caracteres de controle bidirecional (RTL override) dentro de um nome de arquivo aparecem verbatim no rótulo do link (dentro de um code span, portanto nunca interpretados como estrutura Markdown) e são percent-encoded corretamente no destino. Neutralizá-los por razão de *visual spoofing* é uma decisão de segurança de apresentação, registrada como P4 para o Bloco 09, não corrigida aqui (o valor já é dado inerte, nunca executável).
+- **Frontmatter (Seção 10): decidido — NÃO usado no Project Brain v1.** Registrado no contrato (`Docs/03_contracts/contrato_workspace_project_brain.md`, Seção D.1) diretamente, sem nova DT: a decisão é trivialmente reversível (adicionar frontmatter depois não quebra nada existente), então não atende ao critério de "decisão cara de reverter" que justificaria uma entrada em `decisoes_tecnicas.md` (`metodologia.md`, critério de DT). `DDAE-Brain/*.md` permanece Markdown puro.
+- **Lacuna do Schema (Seção 9.3): registrada, não corrigida.** P4 mantida — `isProjectRelativePath` não rejeita `..`/esquemas isoladamente; o Renderer já revalida e neutraliza (teste 47 confirma que o Schema rejeita esses `source_path` antes mesmo de chegar ao Renderer, e o teste 42/49 confirma que o Renderer também nunca produziria link perigoso se recebesse um). Destino: avaliação do Bloco 07.
+- **Regressão:** `npm test` 574 total, 571 pass, 0 fail, 3 skip (era 558/555/0/3). `package:check` OK, 111 arquivos (sem mudança — nenhum arquivo de produção novo). `smoke` OK. `validate`/`audit` 0 erros.
 
 ## 1. Objetivo
 
@@ -162,13 +171,13 @@ Não cobre (fora de escopo, Seção 6): existência física do arquivo linkado n
 
 ## 15. Critérios de Aceite
 
-- [ ] Todos os cenários adversariais da Seção 13 cobertos por teste, com resultado real documentado (não hipotético).
-- [ ] Nenhuma alteração de comportamento observável nas 38 saídas já existentes do Bloco 04 (regressão idêntica, salvo se um gap real exigir correção pontual, registrada e justificada).
-- [ ] Decisão sobre frontmatter (Seção 10) registrada explicitamente — implementada com escopo formal, ou explicitamente rejeitada/adiada — nunca implementada silenciosamente.
-- [ ] Lacuna do Schema (Seção 9.3) registrada como pendência (P4), não corrigida nesta execução salvo decisão em contrário do usuário.
-- [ ] Nenhum módulo novo criado sem necessidade real comprovada durante a execução.
-- [ ] Nenhuma alteração a `manifest.views`, Compiler, Fingerprint, Discovery ou Schema (salvo Seção 9.3/10 explicitamente aprovadas).
-- [ ] Regressão completa verde.
+- [x] Todos os cenários adversariais da Seção 13 cobertos por teste, com resultado real documentado (não hipotético).
+- [x] Nenhuma alteração de comportamento observável nas 38 saídas já existentes do Bloco 04 (regressão idêntica, salvo se um gap real exigir correção pontual, registrada e justificada).
+- [x] Decisão sobre frontmatter (Seção 10) registrada explicitamente — implementada com escopo formal, ou explicitamente rejeitada/adiada — nunca implementada silenciosamente.
+- [x] Lacuna do Schema (Seção 9.3) registrada como pendência (P4), não corrigida nesta execução salvo decisão em contrário do usuário.
+- [x] Nenhum módulo novo criado sem necessidade real comprovada durante a execução.
+- [x] Nenhuma alteração a `manifest.views`, Compiler, Fingerprint, Discovery ou Schema (salvo Seção 9.3/10 explicitamente aprovadas).
+- [x] Regressão completa verde.
 
 ## 16. Definition of Done
 
