@@ -8,6 +8,15 @@
 
 Use uma entrada por decisão, mais recente primeiro. Nunca edite uma decisão antiga para "corrigi-la" — registre uma nova decisão que a supersede.
 
+### DT-02 — Modelo Knowledge / Memory / Context; Persistent Memory Providers como direção futura
+
+- **Data:** 2026-09-26
+- **Contexto:** Com o Project Brain (`0.4.0`) em implementação e a possibilidade de memória persistente externa (ex.: Claude-Mem), é preciso fixar antes de qualquer código a fronteira entre estado canônico, histórico e contexto compilado.
+- **Decisão:** Knowledge (estado canônico atual: `Docs/`, Git, código) é autoritativo; Memory (histórico episódico) é útil mas nunca autoritativa; Context é o subconjunto relevante de ambos, selecionado exclusivamente pelo Context Compiler. Memória histórica nunca sobrescreve silenciosamente Knowledge. Persistent Memory Provider (`claude-mem` como reference provider inicial, `none` como padrão) fica registrado como **direção futura**, sem interface, adapter, dependência ou CLI nesta release. A `0.4.0` permanece exclusivamente Project Brain / Obsidian Workspace. Detalhe completo, hierarquia de autoridade, Context Budget e roadmap "Future Agentic Environment" em `adr_knowledge_memory_context.md`.
+- **Alternativas consideradas:** memória dentro do Brain/core (rejeitada: segunda fonte de verdade); Claude-Mem como dependência do core (rejeitada: quebra zero-dependency/offline/determinismo); injeção direta de memória no contexto (rejeitada: sem controle de autoridade/frescor/orçamento); interface de provider antecipada (rejeitada: especulação sem segundo uso real). Ver ADR, Seção 10.
+- **Consequências:** Torna mais fácil: vocabulário único e evolução futura sem reabrir o Brain. Torna mais difícil: nada nesta release (decisão apenas conceitual). Complementa DT-01 sem superá-lo; não altera o contrato do Workspace (a entidade "Memory" segue excluída do Brain).
+- **Status:** Vigente.
+
 ### DT-01 — Vault Obsidian = raiz do repositório; `.ddae/brain/` efêmero para views geradas
 
 - **Data:** 2026-08-16

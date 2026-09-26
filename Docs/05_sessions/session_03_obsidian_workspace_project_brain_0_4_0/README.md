@@ -1,6 +1,6 @@
 # Session 03 — obsidian workspace project brain 0 4 0
 
-> Projeto: DDAE · Atualizado em: 2026-08-16
+> Projeto: DDAE · Atualizado em: 2026-09-26
 
 > Este README é o ponto de entrada da sessão. Qualquer pessoa ou agente de IA deve conseguir, lendo só este arquivo, entender o que esta sessão faz, o que já está pronto e qual é o próximo passo — sem precisar abrir todas as subpastas.
 
@@ -32,9 +32,9 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Bloco 01 criado e aprovado
-- [x] `06_prompts/` — prompt do Bloco 01 criado
-- [x] `08_feedbacks/` — feedback do Bloco 01 preenchido (`feedback_bloco_01_workspace_project_brain_contract.md`)
+- [x] `05_blocks/` — Blocos 01 e 02 aprovados; Bloco 03 preparado (não iniciado)
+- [x] `06_prompts/` — prompts dos Blocos 01, 02 e 03 criados
+- [x] `08_feedbacks/` — feedbacks dos Blocos 01 e 02 preenchidos
 - [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
 ## 7. Blocos Planejados
@@ -43,15 +43,14 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 Architecture Bootstrap    COMPLETE
 Block 01                   APPROVED
 Block 02                    APPROVED
-Block 03                     READY — NOT STARTED
+Block 03                     PREPARED — NOT STARTED (awaiting review)
 ```
 
 | Bloco | Título | Status |
 |---|---|---|
 | 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
 | 02 | Workspace Discovery | **Aprovado** — `src/workspace/discover.js`, 18 testes novos; Architecture Delta Gate DEFERRED `recent_commits.subject`, REJECTED Stable Host no runtime; `08_feedbacks/feedback_bloco_02_workspace_discovery.md`, `09_validation/validacao_bloco_02_workspace_discovery.md` |
-| 03 | Project Brain Schema, Fingerprint & Compiler | Pronto para iniciar — não iniciado |
-| 03 | Project Brain Schema, Fingerprint & Compiler | Pendente |
+| 03 | Project Brain Schema, Fingerprint & Compiler | **Preparado, não iniciado** — `05_blocks/bloco_03_project_brain_schema_fingerprint_compiler.md`, prompt em `06_prompts/`; aguardando revisão antes da implementação |
 | 04 | Workspace Renderer | Pendente |
 | 05 | Obsidian Navigation Hardening | Pendente |
 | 06 | Context Compiler Integration | Pendente |
@@ -81,6 +80,10 @@ Os 7 Quality Gates globais (`Docs/06_quality_gates/*.md`) permanecem `Pendente` 
 | `deploy_gate.md` | Sim | Ao fechar o Bloco 13 (Release Preparation), mesmo padrão da `0.3.0`. |
 | `final_audit_gate.md` | Sim | Só no fechamento formal da Session 03, depois de todos os blocos aprovados — não nesta execução de arquitetura. |
 
+## 8.1 Decisão Arquitetural Complementar — Knowledge / Memory / Context
+
+Registrada em `DT-02` (`Docs/02_architecture/decisoes_tecnicas.md`) e `Docs/02_architecture/adr_knowledge_memory_context.md` (2026-09-26). Formaliza Knowledge (estado canônico), Memory (histórico, não autoritativa) e Context (subconjunto compilado), e registra Persistent Memory Providers / Claude-Mem apenas como direção futura. **Não altera o escopo da `0.4.0`**: o Project Brain continua sem qualquer conceito de memória persistente (entidade "Memory" segue excluída — contrato, Seção C).
+
 ## 9. Dependências
 
 Depende de `session_02_context_compiler_0_3_0` (Context Compiler estável e publicado — o Workspace consome `src/context/**` como está, sem modificá-lo) e de `Docs/00_ddae_engine/self_hosting.md` (modelo de Stable Host, convenção de artefato efêmero/gitignored que o Workspace estende).
@@ -95,4 +98,4 @@ Bloco 02 (Workspace Discovery) executado e **aprovado** — primeiro código rea
 
 ## 11. Próxima Sessão
 
-Nenhuma — a implementação do Bloco 01 continua dentro desta mesma Session 03, na próxima execução.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: implementar o Bloco 03, após revisão do bloco preparado.
