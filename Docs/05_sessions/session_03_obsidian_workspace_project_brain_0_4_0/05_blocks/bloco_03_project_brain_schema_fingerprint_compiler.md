@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-26
 
-> **Status: PREPARADO — NÃO INICIADO.** Este documento define o bloco para revisão. Nenhum código foi escrito. A implementação só começa após aprovação explícita deste bloco.
+> **Status: CONCLUÍDO / APROVADO** (2026-09-26). As 5 Decisões (Seção 15) foram resolvidas antes de qualquer código; implementação em TDD. Ver `08_feedbacks/feedback_bloco_03_…md` e `09_validation/validacao_bloco_03_…md`.
 
 ## 1. Objetivo
 
@@ -37,13 +37,14 @@ O Discovery entrega dados em memória sem forma contratual, sem validação e se
 
 Nomes a confirmar contra o contrato na revisão (a Seção B não fixa nomes de arquivo):
 
-- `src/workspace/brain-schema.js` (novo)
+- `src/schemas/brain-schema.js` (novo — segue o padrão existente `src/schemas/context-schema.js`; o rascunho dizia `src/workspace/brain-schema.js`)
 - `src/workspace/fingerprint.js` (novo)
 - `src/workspace/compiler.js` (novo)
-- `test/workspace-brain-schema.test.js`, `test/workspace-brain-fingerprint.test.js`, `test/workspace-brain-compiler.test.js` (novos)
+- `src/workspace/discover.js` (alteração mínima, aditiva — ver Decisão 2)
+- `test/workspace-brain-schema.test.js`, `test/workspace-brain-fingerprint.test.js`, `test/workspace-brain-compiler.test.js` (novos); `test/workspace-discover.test.js` (casos adicionais para `ddae`/`project.name`)
 - `Docs/05_sessions/session_03_obsidian_workspace_project_brain_0_4_0/` — feedback e validação do bloco.
 
-**Não tocar:** `src/context/**`, `src/workspace/discover.js` (salvo evidência registrada, ver Seção 15), `scripts/`, `bin/`, `package.json`, `Docs/03_contracts/**`.
+**Não tocar:** `src/context/**`, `scripts/`, `bin/`, `package.json`, `Docs/03_contracts/**`.
 
 ## 7. Dependências
 
@@ -62,25 +63,25 @@ Nomes a confirmar contra o contrato na revisão (a Seção B não fixa nomes de 
 
 ## 9. Critérios de Aceite
 
-- [ ] `compileBrainManifest` produz um manifesto que passa `validateBrainManifest` para o self-host do DDAE e para um projeto scaffolded vazio.
-- [ ] Todos os campos da Seção B do contrato estão presentes, com `schema_version = "brain-manifest-v1"`.
-- [ ] Duas execuções sobre o mesmo estado produzem manifestos `deepEqual` e o mesmo fingerprint.
-- [ ] O fingerprint muda quando muda qualquer entrada canônica (ex.: risco, decisão, bug aberto, `git.head`) e **não** muda com `generated_at`.
-- [ ] Manifesto malformado (campo ausente, tipo errado, `schema_version` incompatível, path absoluto ou com `\`) é reportado por `validateBrainManifest` e lançado por `assertBrainManifest`.
-- [ ] Nenhuma escrita em disco; nenhuma criação de `.ddae/brain/`; nenhum acesso à rede; nenhum LLM.
-- [ ] Nenhum path absoluto de máquina no manifesto; arrays ordenados de forma independente de filesystem/SO.
-- [ ] Nenhum arquivo de `src/context/**`, `scripts/`, `bin/`, `package.json` ou `Docs/03_contracts/**` alterado.
-- [ ] Nenhuma referência a Claude-Mem, memory provider ou entidade "Memory" no código.
-- [ ] Regressão completa verde (466+ testes, `package:check`, `smoke`).
+- [x] `compileBrainManifest` produz um manifesto que passa `validateBrainManifest` para o self-host do DDAE e para um projeto scaffolded vazio.
+- [x] Todos os campos da Seção B do contrato estão presentes, com `schema_version = "brain-manifest-v1"`.
+- [x] Duas execuções sobre o mesmo estado produzem manifestos `deepEqual` e o mesmo fingerprint.
+- [x] O fingerprint muda quando muda qualquer entrada canônica (ex.: risco, decisão, bug aberto, `git.head`) e **não** muda com `generated_at`.
+- [x] Manifesto malformado (campo ausente, tipo errado, `schema_version` incompatível, path absoluto ou com `\`) é reportado por `validateBrainManifest` e lançado por `assertBrainManifest`.
+- [x] Nenhuma escrita em disco; nenhuma criação de `.ddae/brain/`; nenhum acesso à rede; nenhum LLM.
+- [x] Nenhum path absoluto de máquina no manifesto; arrays ordenados de forma independente de filesystem/SO.
+- [x] Nenhum arquivo de `src/context/**`, `scripts/`, `bin/`, `package.json` ou `Docs/03_contracts/**` alterado.
+- [x] Nenhuma referência a Claude-Mem, memory provider ou entidade "Memory" no código.
+- [x] Regressão completa verde (520 testes, `package:check`, `smoke`).
 
 ## 10. Validações Obrigatórias
 
-- [ ] `npm test`
-- [ ] `npm run package:check`
-- [ ] `npm run smoke`
-- [ ] `ddae-engine validate`
-- [ ] `ddae-engine audit`
-- [ ] `git diff --check`
+- [x] `npm test`
+- [x] `npm run package:check`
+- [x] `npm run smoke`
+- [x] `ddae-engine validate`
+- [x] `ddae-engine audit`
+- [x] `git diff --check`
 
 ## 11. Segurança
 
@@ -101,18 +102,36 @@ Não aplicável — nenhuma saída visual.
 - **Duplicar a serialização canônica** do Context Compiler: mitigado reutilizando `stableStringify`/`sha256Hex` sem modificá-los.
 - **Manifesto virar segunda fonte de verdade:** mitigado por o compiler ser puro, não persistir e só referenciar (nunca copiar) conteúdo de `Docs/`.
 
-## 15. Decisões Abertas (resolver na revisão, antes de implementar)
+## 15. Decisões Resolvidas (2026-09-26)
 
-Divergências reais entre o contrato e o snapshot atual do Discovery, encontradas na preparação deste bloco. Nenhuma foi decidida aqui.
+Princípios: **Discovery = coleta determinística. Compiler = transformação determinística (função pura do snapshot). Schema = contrato estrutural. Fingerprint = identidade do input/semântica relevante.**
 
-1. **Campo `git`.** O contrato define `{ available, head }`; o Discovery também retorna `repository` e `branch`. *Recomendação:* o manifesto segue o contrato (só `available`/`head`) — `branch` deixa o manifesto mais volátil sem exigência do schema.
-2. **Campo `ddae` (sessão canônica, módulos, contagens).** O snapshot do Discovery não o expõe (só `current_session`, `decisions`, `risks`, `open_bugs`, `recent_changes`, `current_tasks`, `release_state`). *Opções:* (a) o compiler chama `collectDdaeContext` diretamente; (b) estender o Discovery. *Recomendação:* (a), sem tocar `discover.js`; (b) exigiria um novo Architecture Delta Gate.
-3. **Campo `views`.** As views são geradas no Bloco 04. *Recomendação:* neste bloco `views` é emitido como lista fixa e ordenada dos nomes de arquivo previstos no contrato (Seção D) ou vazio até o Renderer existir — decidir e registrar.
-4. **`engine_version` dentro do fingerprint?** Incluí-lo torna todo Brain `STALE` após upgrade do pacote (possivelmente desejável); excluí-lo ignora mudanças de comportamento do engine. *Recomendação:* incluir, e documentar o efeito.
-5. **`entities`** deve conter as entidades DERIVED/GENERATED da Seção C que o Discovery já cobre (`decisions`, `risks`, `open_bugs`, `recent_changes`, `current_tasks`, `release_state`); entidades CANONICAL REFERENCE (link) e as que dependem do Bloco 06 (`Important Files`, `Context Packages`) ficam para blocos posteriores — confirmar a lista exata.
+Todas as 5 decisões abertas foram resolvidas **antes** de escrever código.
+
+1. **D1 — campo `git`: RESOLVIDA.** O Manifest v1 segue estritamente o contrato: `git = { available, head }`. `repository` e `branch` permanecem apenas no snapshot interno do Discovery e **não** entram no manifesto (sem mudança formal de contrato).
+2. **D2 — campo `ddae`: RESOLVIDA.** O Compiler **não** chama `collectDdaeContext`/`collectGitContext` nem faz nenhuma descoberta. Verificado: `discoverWorkspaceState` já chama `collectDdaeContext` internamente, mas só expunha `current_session` e derivados. Correção da fronteira, a menor possível e aditiva, em `discover.js`: expor `ddae` (resumo estrutural: `available`, `docs_root`, `sessions_root`, `sessions[{name,path}]`, e da sessão atual `name`/`path`/`status`/`modules[{name,exists}]`/`counts{blocks,prompts,feedbacks}`) — **sem conteúdo de arquivo e sem path absoluto** — e `project.name` (basename da raiz, já que o contrato exige `project.name` e o Compiler não pode ler o filesystem). Nenhuma lógica duplicada; `src/context/**` intocado.
+3. **D3 — `views`: RESOLVIDA.** Contrato Seção B define `views` como "quais arquivos `.ddae/brain/*.md` foram gerados **nesta build**". Como este bloco não gera nenhuma view (Renderer = Bloco 04), `views: []`. A lista de nomes da Seção D do contrato não é usada aqui, pois incluiria arquivos ainda não gerados (e `Context-Packages.md` depende do Bloco 06).
+4. **D4 — `engine_version`: RESOLVIDA.** Incluído no payload do fingerprint; upgrade do engine invalida o Brain anterior como STALE (invalidação segura). Sem distinção de versões compatíveis. Como o Compiler não lê o filesystem, `engine_version` é um **parâmetro explícito** (`compileBrainManifest(snapshot, { engineVersion })`), fornecido pelo chamador (CLI, Bloco 08).
+5. **D5 — entidades: RESOLVIDA.** Seção B do contrato: "uma chave por entidade da Seção C", cada uma um array de referências `{ id, source_path, summary }`. Interpretação mínima: entram apenas as entidades **DERIVED/GENERATED VIEW que o snapshot do Discovery já fornece**: `decisions`, `risks`, `open_bugs`, `recent_changes`, `current_tasks`, `release_state`. "Active Session" é o campo de topo `current_session`. Entradas CANONICAL REFERENCE (link), `important_files`/`context_packages` (Bloco 06) e `timeline` (Bloco 12) ficam fora; **Memory permanece EXCLUDED**. Evolução por nova versão de schema.
+
+Interpretações adicionais registradas (não alteram o contrato):
+
+- **Forma da referência:** `source_path` é `string` para entradas originadas em arquivo de `Docs/`/`package.json` e `null` para entradas originadas em Git (`recent_changes`, tag de `release_state`), que não têm arquivo-fonte. `summary` é o texto de uma linha extraído verbatim pelo Discovery.
+- **Ordenação:** conforme a Seção B ("alfabética de path ou de id"), por comparação de code points (nunca `localeCompare`): `entities.*` por `(id, source_path)`, `sources` por `(path, entity)`. `recent_changes` fica ordenado por SHA, não por recência — a ordem de recência não é exigida pelo Schema v1.
+- **Campos das entidades:** apenas `id`/`source_path`/`summary` (o contrato não prevê `status`); ver pendência P4.
+- **Fingerprint:** payload = todo o manifesto **exceto** `fingerprint`, `generated_at` e `project.name` (o nome da pasta local depende da máquina). `generated_at`, quando fornecido pelo chamador, é informativo e fica fora do fingerprint.
+- **Pureza:** o Compiler não escreve em disco, não lê o relógio (`generated_at` é parâmetro opcional) e não persiste nada.
+
+## 15.1 Resultado da Implementação
+
+- **Criados:** `src/schemas/brain-schema.js`, `src/workspace/fingerprint.js`, `src/workspace/compiler.js`; testes `workspace-brain-schema/fingerprint/compiler.test.js`, `workspace-discover-ddae.test.js`, `brain-fixtures.js`.
+- **Alterado:** `src/workspace/discover.js` (aditivo, 34 linhas: `ddae`, `project.name`). `src/context/**` intocado.
+- **Evidência:** `npm test` 520 total / 517 pass / 0 fail / 3 skip; `package:check` OK (110 arquivos); `smoke` OK; `validate`/`audit` 0 erros. Self-host compila para manifesto válido e determinístico.
+- **Entrega:** ver feedback e validação do bloco.
 
 ## 16. Pendências Esperadas
 
+- P4 — Entidades sem `status` (riscos/bugs): se o Renderer (Bloco 04) precisar, exige mudança formal de contrato.
 - P3 — Ordenação lexicográfica de tags (herdada do Bloco 02) afeta `release_state`; sem ação neste bloco.
 - P3 — Kernel de freshness compartilhado (`ID-07`) continua para o Bloco 07.
 - P4 — `recent_commits` sem assunto (herdado do Bloco 02, Delta A) — decisão no Bloco 04/05.

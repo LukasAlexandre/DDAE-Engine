@@ -32,9 +32,9 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Blocos 01 e 02 aprovados; Bloco 03 preparado (não iniciado)
+- [x] `05_blocks/` — Blocos 01, 02 e 03 aprovados
 - [x] `06_prompts/` — prompts dos Blocos 01, 02 e 03 criados
-- [x] `08_feedbacks/` — feedbacks dos Blocos 01 e 02 preenchidos
+- [x] `08_feedbacks/` — feedbacks dos Blocos 01, 02 e 03 preenchidos
 - [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
 ## 7. Blocos Planejados
@@ -43,15 +43,16 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 Architecture Bootstrap    COMPLETE
 Block 01                   APPROVED
 Block 02                    APPROVED
-Block 03                     PREPARED — NOT STARTED (awaiting review)
+Block 03                     APPROVED
+Block 04                      NEXT — NOT CREATED YET
 ```
 
 | Bloco | Título | Status |
 |---|---|---|
 | 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
 | 02 | Workspace Discovery | **Aprovado** — `src/workspace/discover.js`, 18 testes novos; Architecture Delta Gate DEFERRED `recent_commits.subject`, REJECTED Stable Host no runtime; `08_feedbacks/feedback_bloco_02_workspace_discovery.md`, `09_validation/validacao_bloco_02_workspace_discovery.md` |
-| 03 | Project Brain Schema, Fingerprint & Compiler | **Preparado, não iniciado** — `05_blocks/bloco_03_project_brain_schema_fingerprint_compiler.md`, prompt em `06_prompts/`; aguardando revisão antes da implementação |
-| 04 | Workspace Renderer | Pendente |
+| 03 | Project Brain Schema, Fingerprint & Compiler | **Aprovado** — `src/schemas/brain-schema.js`, `src/workspace/fingerprint.js`, `src/workspace/compiler.js`; 5 decisões resolvidas antes do código; Discovery ganhou `ddae`/`project.name` (aditivo); `08_feedbacks/feedback_bloco_03_project_brain_schema_fingerprint_compiler.md`, `09_validation/validacao_bloco_03_project_brain_schema_fingerprint_compiler.md` |
+| 04 | Workspace Renderer | **Próximo (AGORA)** — a criar e revisar antes de implementar |
 | 05 | Obsidian Navigation Hardening | Pendente |
 | 06 | Context Compiler Integration | Pendente |
 | 07 | Workspace Validator | Pendente |
@@ -96,6 +97,8 @@ Bloco 01 (Workspace & Project Brain Contract) executado e **aprovado**: requisit
 
 Bloco 02 (Workspace Discovery) executado e **aprovado** — primeiro código real da `0.4.0`: `src/workspace/discover.js` implementado, precedido por um Architecture Delta Gate que reavaliou (e rejeitou/deferiu, com evidência, não por inércia) as duas extensões cogitadas ao planejar o bloco — `recent_commits.subject` (Schema v1 não exige, teste existente trava a forma atual) e extração de `STABLE_HOST_VERSION` para o runtime do produto (infraestrutura de self-hosting deste repositório, ausente do pacote npm distribuído, sem campo correspondente no Schema v1). `src/context/**` permanece inteiramente intocado. 18 testes novos (determinismo, zero escrita, containment de path/symlink, filtro de placeholder), prova direta contra o próprio self-host do DDAE, regressão completa (466 testes, 463 pass, 0 fail, 3 skip — 448 → 466). `npm run package:check` passou a reportar 107 arquivos (era 106) — divergência esperada e documentada em relação ao artefato `npm@0.3.0` publicado, já que este bloco inicia código de produção da próxima versão. `package.json` permanece em `0.3.0`; `0.4.0` não foi versionado.
 
+Bloco 03 (Schema, Fingerprint & Compiler) executado e **aprovado**, em TDD: Brain Manifest v1 com schema fechado (`src/schemas/brain-schema.js`), fingerprint reproduzível reutilizando o serializador do Context Compiler (`src/workspace/fingerprint.js`, incluindo `engine_version`) e Compiler puro `snapshot → manifesto` (`src/workspace/compiler.js`), tudo em memória (zero escrita, zero rede, zero LLM). As 5 decisões abertas foram fechadas antes do código; o único ajuste ao Discovery foi expor `ddae` e `project.name` (aditivo). `src/context/**` intocado. Regressão: 520 testes, 517 pass, 0 fail, 3 skip. Nenhum conceito de memória persistente em runtime (DT-02).
+
 ## 11. Próxima Sessão
 
-Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: implementar o Bloco 03, após revisão do bloco preparado.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: criar e revisar o Bloco 04 (Workspace Renderer) antes de implementar.

@@ -102,6 +102,37 @@ function isPlaceholderRow(cells, contentIndex) {
 // of a bullet/table cell.
 const PLACEHOLDER_TITLE_PATTERN = /^_.*_$/;
 
+/**
+ * Structural summary of the DDAE control plane for the Brain Manifest's
+ * `ddae` field (contract Seção B: canonical session, modules, counts).
+ * Already collected by `collectDdaeContext`; exposed here so the Brain
+ * Compiler never has to collect anything itself. Names, project-relative
+ * paths, flags and counts only — never file content (the collector's
+ * `governance`/`bugs` content stays internal to Discovery).
+ */
+function discoverDdaeSummary(ddaeContext) {
+  const session = ddaeContext.current_session;
+  return Object.freeze({
+    available: ddaeContext.available,
+    docs_root: ddaeContext.docs_root,
+    sessions_root: ddaeContext.sessions_root,
+    sessions: Object.freeze(ddaeContext.sessions.map((s) => Object.freeze({ name: s.name, path: s.path }))),
+    current_session: session
+      ? Object.freeze({
+        name: session.name,
+        path: session.path,
+        status: session.status,
+        modules: Object.freeze(session.modules.map((m) => Object.freeze({ name: m.name, exists: m.exists }))),
+        counts: Object.freeze({
+          blocks: session.blocks.length,
+          prompts: session.prompts.length,
+          feedbacks: session.feedbacks.length,
+        }),
+      })
+      : null,
+  });
+}
+
 function discoverDecisions(ddaeContext) {
   const decisionsFile = ddaeContext.governance?.decisions;
   if (!decisionsFile?.exists || typeof decisionsFile.content !== 'string') {
@@ -253,7 +284,7 @@ export function discoverWorkspaceState(projectRoot, options = {}) {
     : null;
 
   return Object.freeze({
-    project: Object.freeze({ root_relative_path: '.' }),
+    project: Object.freeze({ name: path.basename(root), root_relative_path: '.' }),
     git: Object.freeze({
       available: gitContext.available,
       repository: gitContext.repository,
@@ -261,6 +292,7 @@ export function discoverWorkspaceState(projectRoot, options = {}) {
       head: gitContext.head,
     }),
     current_session: currentSession,
+    ddae: discoverDdaeSummary(ddaeContext),
     decisions: discoverDecisions(ddaeContext),
     risks: discoverRisks(root, ddaeContext),
     open_bugs: discoverOpenBugs(root, ddaeContext),
