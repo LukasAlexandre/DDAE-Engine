@@ -32,8 +32,8 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Blocos 01 a 05 aprovados
-- [x] `06_prompts/` — prompts dos Blocos 01 a 05 criados
+- [x] `05_blocks/` — Blocos 01 a 05 aprovados; Bloco 06 preparado (não iniciado)
+- [x] `06_prompts/` — prompts dos Blocos 01 a 06 criados
 - [x] `08_feedbacks/` — feedbacks dos Blocos 01 a 05 preenchidos
 - [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
@@ -46,6 +46,7 @@ Block 02                    APPROVED
 Block 03                     APPROVED
 Block 04                      APPROVED
 Block 05                       APPROVED
+Block 06                        PREPARED — NOT STARTED (NOW)
 ```
 
 | Bloco | Título | Status |
@@ -55,7 +56,7 @@ Block 05                       APPROVED
 | 03 | Project Brain Schema, Fingerprint & Compiler | **Aprovado** — `src/schemas/brain-schema.js`, `src/workspace/fingerprint.js`, `src/workspace/compiler.js`; 5 decisões resolvidas antes do código; Discovery ganhou `ddae`/`project.name` (aditivo); `08_feedbacks/feedback_bloco_03_project_brain_schema_fingerprint_compiler.md`, `09_validation/validacao_bloco_03_project_brain_schema_fingerprint_compiler.md` |
 | 04 | Workspace Renderer | **Aprovado** — `src/workspace/renderer.js`, `BRAIN_DIR`/`BRAIN_RENDERER_VIEW_PATHS`, 38 testes novos; bug de codificação (`U+2028`/`U+2029` literais em regex) encontrado e corrigido na retomada, classificado como problema de implementação, não arquitetural; `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md`, `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md` |
 | 05 | Obsidian Navigation Hardening | **Aprovado** — 16 testes adversariais novos em `test/workspace-renderer.test.js` (traversal, encoding, esquema, Unicode/bidi); **zero alteração em `src/workspace/renderer.js`** (o mecanismo do Bloco 04 já classificava corretamente todos os casos); frontmatter decidido como **não usado no v1** (contrato, Seção D.1); `08_feedbacks/feedback_bloco_05_obsidian_navigation_hardening.md`, `09_validation/validacao_bloco_05_obsidian_navigation_hardening.md` |
-| 06 | Context Compiler Integration | Próximo candidato (paralelizável com o 05, ambos dependem só do Bloco 04) — não criado nesta execução |
+| 06 | Context Compiler Integration | **Preparado / AGORA — não iniciado.** `05_blocks/bloco_06_context_compiler_integration.md`, prompt em `06_prompts/`. Achado: "Important Files" (contrato, Seção C) é uma seção de `Context-Packages.md`, não uma view própria. 3 decisões pendentes de aprovação do usuário (bloco, Seção 12) antes do código. |
 | 07 | Workspace Validator | Pendente |
 | 08 | CLI | Pendente |
 | 09 | Security Hardening | Pendente |
@@ -108,6 +109,8 @@ Bloco 04 (Workspace Renderer) executado e **aprovado**: `renderBrainWorkspace(ma
 
 Bloco 05 (Obsidian Navigation Hardening) executado e **aprovado**: 16 testes adversariais novos em `test/workspace-renderer.test.js` (39–54, mais um teste de propriedade sobre um corpus de 51 entradas) cobrindo traversal literal e codificado, double-encoding, injeção de esquema (`http:`, `javascript:`, `file:`, `data:`, letra de drive), Unicode look-alike de `.`/`/`/`\`/`:` e RTL override, `%` malformado, caracteres de controle, elegibilidade de link, simetria de navegação Home ⇄ 6 views sob dados adversariais/vazios, determinismo byte a byte e portabilidade Markdown pura. **Zero alteração em `src/workspace/renderer.js`**: o mecanismo de link do Bloco 04 (rejeição por segmento + `encodeURIComponent` de passagem única) já classificava corretamente todo caso investigado — confirmando que "Navigation Hardening" antecipado pelo Amendment 1/Bloco 04 era real, não apenas nominal. A decisão de frontmatter, deixada explicitamente aberta pelo contrato (Seção D.1), foi fechada: **Project Brain v1 não usa frontmatter** — registrado diretamente no contrato, sem nova DT, por ser decisão trivialmente reversível. A lacuna de defesa em profundidade do Schema (`isProjectRelativePath` não rejeita `..`/esquemas isoladamente) permanece registrada como P4 para o Bloco 07, com evidência de que o Renderer já a neutraliza de forma independente. Regressão: 574 testes, 571 pass, 0 fail, 3 skip (558 → 574).
 
+Bloco 06 (Context Compiler Integration) **preparado** (`05_blocks/bloco_06_context_compiler_integration.md` e prompt correspondente), a partir de leitura direta do Context Compiler real (`src/context/compiler.js`, `validator.js`, `manifest.js`) e do Renderer do Bloco 04 — dependência confirmada inalterada pelo Amendment 1/Bloco 05 (`mapa_dependencias.md`). Achados: (1) o contrato (Seção C) classifica duas entidades ("Important Files", "Context Packages") mas a Seção D só define um arquivo (`Context-Packages.md`) — "Important Files" vira uma seção da mesma view, não uma view própria; (2) o Context Compiler já expõe tudo que este bloco precisa por reuso direto (`validateContextState`), sem exigir nenhuma lógica nova de frescor; (3) `.ddae/context/manifest.json` contém conteúdo real de arquivo (`relevant_files[].content`) e texto livre do usuário (`goal.text`) — ambos explicitamente excluídos da view por contrato de segurança deste bloco. Arquitetura proposta: duas cadeias de produção paralelas (Discovery→Compiler→Renderer para o Brain; um novo Collector→Projector independente para o Context Package), unidas só pelo futuro Orchestrator (Bloco 08) — sem alterar o Brain Manifest v1 nem `src/context/**`. 3 decisões abertas aguardam aprovação do usuário (escopo metadata-only, API do módulo novo, e onde adicionar o 8º link de navegação). Nenhum código foi alterado nesta preparação.
+
 ## 11. Próxima Sessão
 
-Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: confirmar e, se apropriado, criar formalmente o Bloco 06 (Context Compiler Integration), conforme `04_planning/mapa_dependencias.md`.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: resolver as 3 decisões abertas do Bloco 06 com o usuário, depois implementar `src/workspace/context-packages.js` em TDD.
