@@ -52,7 +52,7 @@ Block 04                      PREPARED — NOT STARTED (NOW)
 | 01 | Workspace & Project Brain Contract | **Aprovado** — `08_feedbacks/feedback_bloco_01_workspace_project_brain_contract.md`, `09_validation/validacao_bloco_01_workspace_project_brain_contract.md` |
 | 02 | Workspace Discovery | **Aprovado** — `src/workspace/discover.js`, 18 testes novos; Architecture Delta Gate DEFERRED `recent_commits.subject`, REJECTED Stable Host no runtime; `08_feedbacks/feedback_bloco_02_workspace_discovery.md`, `09_validation/validacao_bloco_02_workspace_discovery.md` |
 | 03 | Project Brain Schema, Fingerprint & Compiler | **Aprovado** — `src/schemas/brain-schema.js`, `src/workspace/fingerprint.js`, `src/workspace/compiler.js`; 5 decisões resolvidas antes do código; Discovery ganhou `ddae`/`project.name` (aditivo); `08_feedbacks/feedback_bloco_03_project_brain_schema_fingerprint_compiler.md`, `09_validation/validacao_bloco_03_project_brain_schema_fingerprint_compiler.md` |
-| 04 | Workspace Renderer | **Preparado / AGORA — não iniciado** — `05_blocks/bloco_04_project_brain_workspace_renderer.md`, prompt em `06_prompts/`; 3 decisões pendentes do usuário (Seção 20 do bloco) |
+| 04 | Workspace Renderer | **Preparado / AGORA — não iniciado** — `05_blocks/bloco_04_project_brain_workspace_renderer.md`, prompt em `06_prompts/`; atualizado pelo Amendment 1 (`DT-03`): root `DDAE-Brain/`, links Markdown relativos, marcador de arquivo gerado; sem decisões pendentes |
 | 05 | Obsidian Navigation Hardening | Pendente |
 | 06 | Context Compiler Integration | Pendente |
 | 07 | Workspace Validator | Pendente |
@@ -85,9 +85,9 @@ Os 7 Quality Gates globais (`Docs/06_quality_gates/*.md`) permanecem `Pendente` 
 
 Registrada em `DT-02` (`Docs/02_architecture/decisoes_tecnicas.md`) e `Docs/02_architecture/adr_knowledge_memory_context.md` (2026-09-26). Formaliza Knowledge (estado canônico), Memory (histórico, não autoritativa) e Context (subconjunto compilado), e registra Persistent Memory Providers / Claude-Mem apenas como direção futura. **Não altera o escopo da `0.4.0`**: o Project Brain continua sem qualquer conceito de memória persistente (entidade "Memory" segue excluída — contrato, Seção C).
 
-## 8.2 Achado Pendente de Decisão (Bloco 04)
+## 8.2 Decisão de Localização do Project Brain (DT-03 / Amendment 1)
 
-Obsidian **não indexa nem exibe pastas/arquivos com caminho iniciado por ponto**. As views do Brain em `.ddae/brain/` (DT-01, contrato A/D) ficariam invisíveis no Obsidian vanilla, em conflito com o contrato G (sem plugin community). O Renderer é agnóstico (constante `BRAIN_DIR`); a decisão é necessária antes do Bloco 05 e no máximo antes do Bloco 08. Detalhe e opções: `05_blocks/bloco_04_project_brain_workspace_renderer.md`, Seção 20. Contrato e DT-01 **não foram alterados**.
+Obsidian **não indexa nem exibe pastas com caminho iniciado por ponto**; `.ddae/brain/` (DT-01) era inadequado para as views humanas. Decisão formal em `DT-03` (`Docs/02_architecture/decisoes_tecnicas.md`) e Amendment 1 do contrato (`Docs/03_contracts/contrato_workspace_project_brain.md`): `.ddae/` = estado interno/machine-readable; **`DDAE-Brain/`** = workspace humano gerado (derivado, descartável, recomputável, não autoritativo, visível ao Obsidian vanilla, gitignored); `Docs/` + Git = fonte canônica. Também formalizados: ownership de `manifest.views` (Renderer nunca o altera; Compiler recebe `views` no Bloco 08), links Markdown relativos (sem wikilinks como padrão) e o marcador de arquivo gerado. **Nenhum plugin, symlink ou junction do Obsidian é necessário.** Manifest Schema v1 inalterado. O Bloco 04 continua PREPARADO / não iniciado.
 
 ## 9. Dependências
 
@@ -105,4 +105,4 @@ Bloco 03 (Schema, Fingerprint & Compiler) executado e **aprovado**, em TDD: Brai
 
 ## 11. Próxima Sessão
 
-Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: resolver as 3 decisões pendentes do Bloco 04 (destaque: visibilidade de `.ddae/brain/` no Obsidian) e implementar o Renderer em TDD.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: implementar o Bloco 04 (Renderer) em TDD, já sob o Amendment 1.

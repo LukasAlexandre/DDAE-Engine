@@ -11,7 +11,7 @@
 - [ ] `workspace init` avisa explicitamente sobre o risco de Obsidian Sync/Publish expor todo o Vault (RS-03).
 - [ ] `.obsidian/` é gitignorado por `workspace init` antes de qualquer outra ação (RS-04).
 - [ ] Nenhuma credencial, token ou segredo é introduzido por este trabalho (nenhuma dependência nova, nenhum serviço externo).
-- [ ] `.ddae/brain/` nunca é lido como fonte de verdade por nenhum outro comando DDAE — apenas escrito/lido por `workspace *`.
+- [ ] `.ddae/brain/` e `DDAE-Brain/` nunca são lidos como fonte de verdade por nenhum outro comando DDAE — apenas escritos/lidos por `workspace *` (`DT-03`).
 
 ## 2. Riscos Específicos Desta Sessão
 

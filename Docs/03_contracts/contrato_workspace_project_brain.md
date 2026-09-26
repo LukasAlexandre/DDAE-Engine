@@ -1,8 +1,10 @@
 # Contrato de Workspace / Project Brain
 
-> Projeto: DDAE Engine · Atualizado em: 2026-08-16
+> Projeto: DDAE Engine · Atualizado em: 2026-09-26
 
 > Congelado pelo Bloco 01 (`session_03_obsidian_workspace_project_brain_0_4_0`) a partir da análise arquitetural/funcional/riscos/técnica já aprovada. Blocos 02–13 implementam contra este contrato sem reabri-lo, salvo decisão explícita registrada como nova entrada em `Docs/02_architecture/decisoes_tecnicas.md`.
+
+> **Amendment 1 (2026-09-26, `DT-03`).** Obsidian não indexa nem exibe pastas com caminho iniciado por ponto; `.ddae/brain/` era inadequado como localização das views humanas. Este contrato foi emendado **somente** nos pontos afetados: (1) novo root das views humanas `DDAE-Brain/`, separado do estado interno `.ddae/`; (2) ownership e invariantes de `manifest.views` (Seção B.1); (3) marcador de arquivo gerado e links Markdown relativos (Seção D.1); (4) premissas do Obsidian (Seção G). O Manifest Schema v1, as entidades, `status`, `recent_changes` e a exclusão de Memory **não** foram alterados. O texto original permanece no histórico Git e em `DT-01`.
 
 ## 1. Objetivo
 
@@ -13,7 +15,12 @@ Definir, sem ambiguidade, a fronteira entre o que é fonte de verdade e o que é
 ```text
 Docs/                        CANONICAL — autoritativo, humano + DDAE-autorado
 .ddae/context/                 GENERATED / EPHEMERAL — já existe (0.3.0)
-.ddae/brain/                    GENERATED / EPHEMERAL — novo, nunca ganha autoridade sobre Docs/
+.ddae/                          MACHINE STATE — estado interno/machine-readable do DDAE (não é workspace humano)
+  .ddae/context/                  GENERATED / EPHEMERAL — já existe (0.3.0)
+  .ddae/brain/                    GENERATED / EPHEMERAL — SOMENTE artefatos de máquina do Brain (manifest.json,
+                                  futuros fingerprints/validation/caches); NUNCA views Markdown humanas
+DDAE-Brain/                     GENERATED / DERIVED / DISPOSABLE — workspace humano do Project Brain (views
+                                  Markdown), visível ao Obsidian vanilla, gitignored, nunca autoritativo
 .obsidian/                       LOCAL / EPHEMERAL / OPTIONAL — preferência de máquina
 ```
 
@@ -30,13 +37,35 @@ ddae                     object, obrigatório — sessão canônica, módulos, c
 current_session          object|null — { id, selection_reason } (mesmo conceito de session.selection_reason já usado no Context Manifest, para consistência)
 sources                   array — proveniência de cada entidade agregada (qual arquivo Docs/ originou qual item do índice), nunca conteúdo copiado, só referência
 entities                   object — uma chave por entidade da Seção C abaixo, cada uma um array de referências (id, source path, one-line summary extraído verbatim)
-views                       array — quais arquivos .ddae/brain/*.md foram gerados nesta build (Seção D)
+views                       array — quais arquivos DDAE-Brain/*.md foram gerados nesta build (Seção D); ownership e invariantes na Seção B.1
 fingerprint                 object — { algorithm: "sha256", value: string } sobre um payload canônico determinístico
 ```
 
 Para cada campo: **type** conforme acima; **required/optional** conforme marcado; **source**: `git`/`ddae`/`current_session`/`sources`/`entities` vêm de coletores já existentes (`git-context.js`, `ddae-context.js`) ou de leitura direta de `Docs/`; **authority**: nenhum campo é editável manualmente — o manifesto inteiro é saída de `workspace build`; **canonicalization**: strings sempre UTF-8 normalizadas, paths sempre relativos à raiz do projeto com `/` (nunca `\`, mesmo no Windows, mesma convenção já usada pelo Context Manifest); **ordering**: arrays (`sources`, `entities.*`, `views`) sempre ordenados deterministicamente (ordem alfabética de path ou de id, nunca ordem de filesystem/OS, que não é estável entre plataformas); **security constraints**: nenhum path absoluto de máquina, nenhum conteúdo de arquivo sensível (a Sensitive Data Guard se aplica à descoberta antes de qualquer entrada chegar ao manifesto).
 
 **Explicitamente fora do payload canônico usado no fingerprint** (para preservar determinismo): timestamps de execução (`Date.now()`), qualquer UUID aleatório, qualquer ordenação dependente de filesystem/SO. O manifesto pode ter um campo informativo `generated_at` fora do payload fingerprinted (não afeta VALID/STALE/INVALID), mas nunca dentro dele — mesmo princípio já aplicado pelo Context Compiler (`fingerprint.js`).
+
+### B.1 `manifest.views` — Ownership e Invariantes (Amendment 1)
+
+- `views` faz parte do Manifest **e do fingerprint**. Logo, o conjunto de views precisa estar **definido antes** do fingerprint final. Formato: caminhos relativos à raiz do projeto, com `/`, ordenados por code point (ex.: `DDAE-Brain/Home.md`).
+- **O Renderer nunca modifica `manifest.views`.** Ordem proibida: `Compiler → fingerprint → Renderer adiciona view ao Manifest`. Ordem correta:
+
+```text
+View Producers (Renderer, futuro produtor de Context-Packages, ...)
+        ↓ declaram seus paths de saída (constantes, sem I/O)
+Orchestrator (CLI, Bloco 08)
+        ↓ forma o conjunto final de views
+Compiler(snapshot, { engineVersion, views })     ← parâmetro a implementar no Bloco 08
+        ↓
+Manifest + fingerprint
+        ↓
+Renderers (função pura Manifest → arquivos em memória)
+        ↓
+CLI/Writer → filesystem
+```
+
+- **View producer** = módulo que declara os caminhos das views que gera: o Renderer (Bloco 04) expõe `BRAIN_RENDERER_VIEW_PATHS` (7 caminhos); o produtor de `Context-Packages.md` (Bloco 06) declara o seu. Não há infraestrutura genérica de plugins de view — apenas a responsabilidade congelada.
+- **Orchestrator** = Bloco 08 (CLI `workspace build`), salvo decisão posterior registrada. Até lá o Compiler continua emitindo `views: []` (Bloco 03, sem alteração).
 
 ## C. Project Brain Entities
 
@@ -66,17 +95,29 @@ Nenhuma entidade acima duplica conteúdo — `DERIVED`/`GENERATED VIEW` sempre s
 | Arquivo | Propósito | Fonte | Ownership | Fingerprinted | Regra de validação |
 |---|---|---|---|---|---|
 | `.ddae/brain/manifest.json` | Manifesto canônico v1 | Discovery + Git + DDAE state | MACHINE GENERATED | Sim (é o próprio fingerprint) | Schema válido = pré-requisito para qualquer status ≠ INVALID |
-| `.ddae/brain/Home.md` | Ponto de entrada | Manifest | MACHINE GENERATED | Indiretamente (renderizado do Manifest) | Deve corresponder byte-a-byte à renderização determinística do Manifest atual |
-| `.ddae/brain/Sessions.md`, `Decisions.md`, `Risks.md`, `Bugs.md`, `Releases.md`, `Context-Packages.md`, `Recent-Activity.md` | Índices por entidade | Manifest | MACHINE GENERATED | Indiretamente | Mesma regra do `Home.md` |
-| `.ddae/brain/.gitignore` | Self-ignore | `workspace init`/`build` | MACHINE GENERATED | Não | Sempre presente após `init`; conteúdo fixo (`*`) |
+| `DDAE-Brain/Home.md` | Ponto de entrada | Manifest | MACHINE GENERATED | Indiretamente (renderizado do Manifest) | Deve corresponder byte-a-byte à renderização determinística do Manifest atual |
+| `DDAE-Brain/Sessions.md`, `Decisions.md`, `Risks.md`, `Bugs.md`, `Releases.md`, `Context-Packages.md`, `Recent-Activity.md` | Índices por entidade | Manifest | MACHINE GENERATED | Indiretamente | Mesma regra do `Home.md` |
+| `.ddae/brain/.gitignore` | Self-ignore do estado de máquina | `workspace init`/`build` | MACHINE GENERATED | Não | Sempre presente após `init`; conteúdo fixo (`*`) |
+| `.gitignore` (raiz) — entrada `DDAE-Brain/` | Ignora o workspace humano gerado | `workspace init` (opt-in, append idempotente) | Arquivo HUMAN AUTHORED; entrada acrescentada pelo `init` | Não | Entrada presente após `init`; nunca duplicada |
 
 Nenhum arquivo redundante: cada view corresponde a uma entidade da Seção C com valor operacional distinto (mesma verificação já feita em `analise_funcional.md`, Seção 4).
+
+### D.1 Views humanas — Root, Marcador e Links (Amendment 1)
+
+- **Root:** `DDAE-Brain/` (constante `BRAIN_DIR = 'DDAE-Brain'`), na raiz do repositório, dentro do Vault. Nunca `.ddae/brain/`, nunca outra pasta iniciada por ponto. Propriedades: gerado, derivado, descartável, recomputável, não autoritativo, legível por humanos, visível ao Obsidian vanilla, sem plugin obrigatório, gitignored. Editar `DDAE-Brain/` à mão nunca é mecanismo suportado de atualização do projeto.
+- **Marcador de arquivo gerado:** todo arquivo `DDAE-Brain/*.md` contém, **logo após o H1** (separado por uma linha em branco), exatamente esta linha:
+
+  `_Generated by DDAE. Derived from Docs/ and Git. Do not edit directly._`
+
+  Texto estático, em inglês (idioma do conteúdo gerado, como as seções do `CONTEXT.md`), sem timestamp, sem versão, sem dado volátil.
+- **Links:** links Markdown relativos são o padrão — entre views `[Sessions](./Sessions.md)`; para `Docs/` `[Technical Decisions](../Docs/02_architecture/decisoes_tecnicas.md)`. Destinos são percent-encoded por segmento (espaço, `(`, `)`, `<`, `>`, `[`, `]`, `#`, `?`, `%` e não-ASCII); apenas caminhos presentes em `manifest.sources[].path` (`.md`) ou nas views geradas são linkados; nada é inferido. **Wikilinks não são o mecanismo principal** (não geram lock-in no Obsidian; funcionam no GitHub e em editores Markdown). Paths sempre relativos, com `/`, sem absoluto, sem backslash.
+- **Frontmatter:** não previsto neste contrato (o Bloco 05 pode propô-lo por amendment).
 
 ## E. Ownership Contract
 
 ```text
 HUMAN AUTHORED       Docs/ (exceto onde o próprio DDAE já gera scaffolds, ex. templates de init)
-MACHINE GENERATED     .ddae/context/*, .ddae/brain/* — nunca editados à mão
+MACHINE GENERATED     .ddae/context/*, .ddae/brain/*, DDAE-Brain/* — nunca editados à mão
 DERIVED                Views/índices calculados a partir de HUMAN AUTHORED, nunca a fonte
 EPHEMERAL               node_modules/ddae-engine/, .obsidian/ — locais, recriáveis, gitignored
 IMMUTABLE HISTORY        docs/sessions/ (legacy, minúsculo) — nunca reescrito, nunca gerado
@@ -88,17 +129,17 @@ IMMUTABLE HISTORY        docs/sessions/ (legacy, minúsculo) — nunca reescrito
 
 | Comando | Purpose | Args | Input | Output | Writes | Read-only? | Idempotent? | Deterministic? | Exit codes | Failure modes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `workspace init` | Setup único, opt-in | `--dir` | — | Confirmação textual | `.gitignore` (append se ausente), `.ddae/brain/.gitignore` | Não | Sim | N/A | 0 sucesso | `.gitignore` não gravável → erro explícito, exit ≠ 0 |
-| `workspace build` | Gera o Brain a partir do estado atual | `--dir` | `Docs/`+Git+sessão atual | Resumo do que foi gerado | `.ddae/brain/manifest.json`, `.ddae/brain/*.md` | Não | Sim (mesmo estado → mesma saída) | Sim | 0 sucesso | Docs/ ilegível, permissão negada → erro explícito |
-| `workspace validate` | Verifica frescor | `--dir` | `.ddae/brain/` já construído | Relatório VALID/STALE/INVALID + razões | Nada | **Sim, estrito** | Sim | Sim | 0 = VALID, 1 = STALE/INVALID | `.ddae/brain/` inexistente → erro explícito distinto de INVALID |
-| `workspace show` | Imprime a Home | `--dir` | `.ddae/brain/Home.md` já construído | Conteúdo no stdout | Nada | **Sim, estrito** | Sim | Sim | 0 sucesso, 1 se não construído | Mesma distinção acima |
+| `workspace init` | Setup único, opt-in | `--dir` | — | Confirmação textual | `.gitignore` (append de `DDAE-Brain/` se ausente), `.ddae/brain/.gitignore` | Não | Sim | N/A | 0 sucesso | `.gitignore` não gravável → erro explícito, exit ≠ 0 |
+| `workspace build` | Gera o Brain a partir do estado atual | `--dir` | `Docs/`+Git+sessão atual | Resumo do que foi gerado | `.ddae/brain/manifest.json`, `DDAE-Brain/*.md` | Não | Sim (mesmo estado → mesma saída) | Sim | 0 sucesso | Docs/ ilegível, permissão negada → erro explícito |
+| `workspace validate` | Verifica frescor | `--dir` | `.ddae/brain/manifest.json` + `DDAE-Brain/` já construídos | Relatório VALID/STALE/INVALID + razões | Nada | **Sim, estrito** | Sim | Sim | 0 = VALID, 1 = STALE/INVALID | `.ddae/brain/` ou `DDAE-Brain/` inexistente → erro explícito distinto de INVALID |
+| `workspace show` | Imprime a Home | `--dir` | `DDAE-Brain/Home.md` já construído | Conteúdo no stdout | Nada | **Sim, estrito** | Sim | Sim | 0 sucesso, 1 se não construído | Mesma distinção acima |
 
 **Rejeitados** (não implementar): `workspace sync` (nome sugere bidirecionalidade, modelo é estritamente unidirecional `Docs/` → Brain), `workspace open` (OS-specific, frágil), `brain build`/`brain show` como verbo separado (redundante com `workspace`).
 
 ## G. Obsidian Contract
 
 - `workspace init` **nunca sobrescreve** um `.obsidian/` já existente — apenas garante que está gitignorado; se já estiver, não toca em nada dentro dele.
-- **Nenhum plugin community é exigido.** MVP funciona inteiramente com Obsidian vanilla (wikilinks, backlinks, tags, frontmatter, Graph View).
+- **Nenhum plugin community é exigido.** MVP funciona inteiramente com Obsidian vanilla: `DDAE-Brain/` é uma pasta comum, visível e indexada (o Obsidian ignora pastas iniciadas por ponto, por isso nenhuma view humana vive sob `.ddae/`), com links Markdown relativos. Nenhum plugin community, API do Obsidian, plugin custom, symlink, junction, workaround de filesystem ou MCP do Obsidian é usado ou exigido.
 - Obsidian **nunca é uma dependência de runtime** — nenhum comando DDAE chama, verifica a presença de, ou falha na ausência do aplicativo Obsidian.
 
 ## H. Drift Contract
@@ -118,7 +159,7 @@ Modelo reaproveitado de `src/context/validator.js` (mesmo enum, mesma prioridade
 
 Reaproveita a Sensitive Data Guard existente (`src/context/sensitive-files.js`) para: containment de path (link gerado nunca resolve fora da raiz do projeto), symlink traversal (fail-closed, mesma política já provada), exclusão de `.env`/chaves privadas/tokens/senhas/segredos (mesma heurística já existente), detecção de binário, arquivos grandes. Itens específicos do Brain, sem mecanismo próprio duplicado:
 
-- **Markdown injection / wikilink escaping / frontmatter injection**: o Brain só gera Markdown a partir de dados estruturados que ele mesmo controla (paths, resumos de uma linha extraídos verbatim) — nunca interpreta Markdown arbitrário do usuário como comando. Fences dinâmicos seguem a mesma proteção estrutural já usada pelo Context Renderer.
+- **Markdown injection / link escaping / frontmatter injection**: o Brain só gera Markdown a partir de dados estruturados que ele mesmo controla (paths, resumos de uma linha extraídos verbatim) — nunca interpreta Markdown arbitrário do usuário como comando. Fences dinâmicos seguem a mesma proteção estrutural já usada pelo Context Renderer.
 - **Obsidian Sync exposure / Obsidian Publish exposure**: fora do controle técnico do DDAE — mitigado por aviso explícito impresso por `workspace init` (não por bloqueio, que é impossível de implementar de fora do aplicativo Obsidian).
 
 ## J. Migration Contract
@@ -126,12 +167,12 @@ Reaproveita a Sensitive Data Guard existente (`src/context/sensitive-files.js`) 
 ```text
 npm update (ou promoção de Stable Host)  → nenhum efeito colateral em workspace; nada muda sem opt-in
 workspace init                             → opt-in explícito, não sobrescreve .obsidian/ existente
-workspace build                              → gera .ddae/brain/, nunca toca Docs/
-reversal                                       → apagar .ddae/brain/ e/ou .obsidian/; nenhum estado a recuperar,
+workspace build                              → gera .ddae/brain/ (máquina) e DDAE-Brain/ (humano), nunca toca Docs/
+reversal                                       → apagar .ddae/brain/, DDAE-Brain/ e/ou .obsidian/; nenhum estado a recuperar,
                                                  porque nada em Docs/ foi tocado
 ```
 
-Nenhuma migração destrutiva é possível por construção — `workspace *` nunca escreve fora de `.gitignore`/`.ddae/brain/`.
+Nenhuma migração destrutiva é possível por construção — `workspace *` nunca escreve fora de `.gitignore`/`.ddae/brain/`/`DDAE-Brain/`.
 
 ## 2. Validações
 

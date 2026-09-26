@@ -18,7 +18,7 @@ Para cada requisito, descreva como verificar que ele foi atendido (comportamento
 
 ### RF-01 — Workspace/Project Brain navegável no Obsidian
 - [ ] Abrir a raiz do repositório como Vault no Obsidian permite navegar `Docs/` diretamente, sem nenhuma cópia gerada do conteúdo canônico.
-- [ ] `ddae-engine workspace build` gera, em `.ddae/brain/`, uma view "Home" e índices (sessões, decisões, riscos, bugs, release state) que apontam para os arquivos reais de `Docs/` via wikilink, sem duplicar conteúdo.
+- [ ] `ddae-engine workspace build` gera, em `DDAE-Brain/` (visível ao Obsidian vanilla; `DT-03`), uma view "Home" e índices (sessões, decisões, riscos, bugs, release state) que apontam para os arquivos reais de `Docs/` via links Markdown relativos, sem duplicar conteúdo.
 - [ ] `ddae-engine workspace validate` reporta `VALID`/`STALE`/`INVALID` corretamente quando `Docs/`/Git mudam depois do último build.
 - [ ] Um projeto que nunca roda `workspace init`/`build` continua funcionando de ponta a ponta exatamente como hoje — nenhum comando existente muda de comportamento.
 - [ ] Nenhum arquivo gerado pelo Brain é tratado como fonte de verdade por nenhum outro comando do DDAE.
