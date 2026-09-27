@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-27
 
-> **Status: PREPARADO — NÃO INICIADO.** Este documento especifica o bloco a partir do contrato congelado (Seção H), do código real do Context Validator (`0.3.0`) e do Brain Manifest v1 (Blocos 03–06). Há 3 decisões abertas (Seção 16) que exigem aprovação do usuário antes de qualquer código. Nenhum arquivo de produção foi tocado.
+> **Status: CONCLUÍDO / APROVADO** (2026-09-27). As 3 Decisões Abertas (Seção 16) foram fechadas antes do código (ver Seção 16.1); implementado em TDD (`src/workspace/validator.js`, 43 testes). `src/context/**`, `compiler.js`, `fingerprint.js`, `discover.js`, `renderer.js`, `context-packages.js`, `brain-schema.js` permanecem intocados — inclusive sem nenhum import de `src/context/**`. Ver `08_feedbacks/feedback_bloco_07_workspace_validator.md` e `09_validation/validacao_bloco_07_workspace_validator.md`.
 
 ## 1. Objetivo
 
@@ -187,25 +187,35 @@ Cenários previstos:
 
 O self-host deve provar que um Manifest real e recém-compilado do próprio DDAE passa a validação como `VALID` (prova de que a integridade e o containment de path não têm falso positivo contra dados reais). Para provar `STALE` com evidência real (não hipotética), o teste de integração (Seção 14.26) usa dois snapshots sintéticos do mesmo projeto temporário, sem depender do estado mutável do repositório de desenvolvimento.
 
-## 16. Decisões Abertas — Requerem Aprovação do Usuário
+## 16. Decisões — Fechadas em 2026-09-27
 
-1. **[Importante] Extrair agora um kernel de validação compartilhado com `context/validator.js` (`ID-07`/RS-07)?** Investigado: os dois validadores compartilham só o enum (`VALID`/`STALE`/`INVALID`), a prioridade `INVALID > STALE`, e o padrão de resultado congelado com `reasons[]` — poucas linhas. As checagens de fato (o que torna algo `STALE`/`INVALID`) são estruturalmente diferentes: o Context Validator compara contra snapshots brutos de Git/DDAE/hashes de conteúdo que o caller coletou; este Validator compara contra **outro Manifest já composto**. **Recomendação: NÃO extrair agora.** A superfície comum é pequena e puramente decorativa (um array de 3 strings, uma regra de precedência óbvia); extrair um módulo compartilhado tocaria `src/context/validator.js` — estável, publicado na `0.3.0` — sem ganho real, e recriaria o próprio risco (RS-07) que a extração pretende evitar, se malfeita sob pressão de escopo. Fechar RS-07/ID-07 com esta avaliação registrada (não implementar); reabrir só se um terceiro consumidor real aparecer.
-2. **[Importante] `validateBrainWorkspace` deve aceitar `currentManifest` para frescor já neste bloco, ou toda a detecção de `STALE` deve esperar o Bloco 08 (Orchestrator)?** **Recomendação: implementar agora**, como parâmetro opcional e puro — o contrato (Seção H) define `STALE` como parte explícita do Drift Contract deste bloco, e `mapa_dependencias.md` escopa o Bloco 07 como dependente só do Bloco 03, não do Bloco 08. Adiar deixaria o bloco cujo nome é "Validator" sem nenhuma capacidade de detectar desatualização.
-3. **[Importante] Fechar agora o P4 de defesa em profundidade de path (`PATH_ESCAPES_ROOT`), reatribuindo RS-01 do Bloco 09 para este bloco?** O Renderer (Blocos 04/05) já previne qualquer link perigoso na prática (54 testes adversariais). Esta checagem é puramente semântica sobre o **Manifest**, não sobre links renderizados — uma segunda camada independente, não uma correção de bug. **Recomendação: sim**, implementar aqui — o contrato (Seção H) já assinala esse invariante como uma condição `INVALID` do Drift Contract do Brain (autoridade mais recente que o rascunho de risco original), e um Validator de Manifest é o lugar natural para uma invariante sobre o próprio Manifest.
+**D1 — Kernel de validação compartilhado (`ID-07`/RS-07): NÃO extraído.** Confirmado: os dois validadores compartilham só o enum (`VALID`/`STALE`/`INVALID`), a prioridade `INVALID > STALE`, e o padrão de resultado congelado com `reasons[]`. As checagens de fato são estruturalmente diferentes (Context Validator compara contra snapshots brutos; este Validator compara contra outro Manifest já composto). Registrado como **evaluated / no extraction** — `ID-07`/RS-07 fechados com esta avaliação; nenhum módulo `validation-kernel.js`/`shared-validator.js` foi criado; `src/context/validator.js` não foi alterado. Reabrir só com um terceiro consumidor real.
+
+**D2 — `currentManifest`: IMPLEMENTADO neste bloco.** `validateBrainWorkspace(manifest, { currentManifest, expectedViews })`, opcional e puro — o Validator nunca coleta, nunca lê `package.json`. `currentManifest`, quando fornecido, é validado estruturalmente antes de qualquer comparação (`assertOptions`); se estruturalmente inválido, a função **lança** (é um bug do caller, não um estado operacional a degradar) — nunca produz freshness a partir de dado não confiável. Ausência de `currentManifest` nunca produz `STALE`.
+
+**D3 — Semântica de path (`RS-01`): fechada neste bloco, sem alterar o Brain Schema.** `PATH_ESCAPES_ROOT` rejeita segmentos `..`/`.`/vazios e valores tipo-esquema (qualquer `:` antes da primeira `/`) em `manifest.sources[].path` e em todo `source_path` não-nulo de `manifest.entities.*[]` — puramente lexical, sem `realpath`/`resolve`/`stat`. Um único código (`PATH_ESCAPES_ROOT`) cobre todos os casos, coerente com a redação única do contrato (Seção H: "invariante de segurança de path quebrado"); nenhum código novo foi inventado sem necessidade. Renderer inalterado; Bloco 09 continua dono do hardening de superfícies externas (Obsidian Sync/Publish, `.gitignore`).
 
 ## 17. Critérios de Aceite
 
-- [ ] As 3 Decisões Abertas aprovadas antes do código.
-- [ ] `validateBrainWorkspace(manifest)` sem opções → `VALID`/`INVALID` determinístico, nunca `STALE` (sem `currentManifest`, nada a comparar).
-- [ ] `INVALID` cobre: schema malformado (código genérico, sem eco de conteúdo), `fingerprint` adulterado, `source_path`/`path` escapando a raiz (`..`/`.`/vazio/tipo-esquema), `views` divergente de `expectedViews` (só quando fornecido).
-- [ ] `STALE` cobre, só quando `currentManifest` é fornecido: `engine_version`, `git.head` (quando ambos disponíveis), `current_session`, cada entidade divergente — nunca por omissão de dado.
-- [ ] `manifest.views = []` sem `expectedViews` nunca é motivo de `INVALID`.
-- [ ] `INVALID` sempre tem prioridade sobre `STALE`.
-- [ ] Zero import de `src/context/**`; zero alteração a `brain-schema.js`, `compiler.js`, `fingerprint.js`, `discover.js`, `renderer.js`, `context-packages.js`.
-- [ ] Nenhuma escrita em disco; `.ddae/brain/validation.json` não criado.
-- [ ] `reasons` nunca carrega texto livre/summary — só códigos e paths/nomes já públicos.
-- [ ] Determinístico, puro (guarda de código-fonte), sem mutação de input.
-- [ ] Regressão completa verde.
+- [x] As 3 Decisões fechadas antes do código (Seção 16).
+- [x] `validateBrainWorkspace(manifest)` sem opções → `VALID`/`INVALID` determinístico, nunca `STALE` (sem `currentManifest`, nada a comparar).
+- [x] `INVALID` cobre: schema malformado (código genérico, sem eco de conteúdo), `fingerprint` adulterado, `source_path`/`path` escapando a raiz (`..`/`.`/vazio/tipo-esquema), `views` divergente de `expectedViews` (só quando fornecido).
+- [x] `STALE` cobre, só quando `currentManifest` é fornecido: `engine_version`, `git.head` (quando ambos disponíveis), `current_session`, cada entidade divergente — nunca por omissão de dado.
+- [x] `manifest.views = []` sem `expectedViews` nunca é motivo de `INVALID`.
+- [x] `INVALID` sempre tem prioridade sobre `STALE`.
+- [x] Zero import de `src/context/**`; zero alteração a `brain-schema.js`, `compiler.js`, `fingerprint.js`, `discover.js`, `renderer.js`, `context-packages.js`.
+- [x] Nenhuma escrita em disco; `.ddae/brain/validation.json` não criado.
+- [x] `reasons` nunca carrega texto livre/summary — só códigos e paths/nomes já públicos.
+- [x] Determinístico, puro (guarda de código-fonte), sem mutação de input.
+- [x] Regressão completa verde.
+
+## 17.1 Resultado da Implementação
+
+- **Criado:** `src/workspace/validator.js` (`validateBrainWorkspace`, `WORKSPACE_VALID_STATUSES`); `test/workspace-validator.test.js` (43 testes).
+- **Alterado:** nada em `src/`. Só documentação da Session 03 (este bloco, feedback, validação, README).
+- **Evidência:** `npm test` 641 total / 638 pass / 0 fail / 3 skip (era 598/595/0/3); `package:check` OK (113 arquivos, +1 de produção); `smoke` OK; `validate`/`audit` 0 erros. Self-host: o Manifest real do próprio DDAE valida como `VALID` (teste 27).
+- **`DOCS_CONTENT_CHANGED`:** implementado reutilizando a extração canônica já existente em `buildBrainFingerprintPayload(...).entities` (comparação estrutural exata, nunca heurística textual sobre `summary`) — consistente com D2/Seção 20 do prompt de fechamento ("preferir fingerprint/entity identity já presente, não inventar heurística").
+- **Entrega:** ver `08_feedbacks/feedback_bloco_07_workspace_validator.md` e `09_validation/validacao_bloco_07_workspace_validator.md`.
 
 ## 18. Validações Obrigatórias
 
