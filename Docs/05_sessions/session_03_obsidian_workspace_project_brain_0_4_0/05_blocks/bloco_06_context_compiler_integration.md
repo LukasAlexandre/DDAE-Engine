@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-26
 
-> **Status: PREPARADO — NÃO INICIADO.** Este documento especifica o bloco a partir do código real do Context Compiler (`0.3.0`) e do Renderer (Bloco 04), não do planejamento de 2026-08-16. Há 3 decisões abertas (Seção 12) que exigem aprovação do usuário antes de qualquer código. Nenhum arquivo de produção foi tocado.
+> **Status: CONCLUÍDO / APROVADO** (2026-09-26). As 3 Decisões Abertas (Seção 12) foram resolvidas antes do código (Seção 12.1); implementado em TDD (`src/workspace/context-packages.js`, 24 testes). `src/context/**`, `renderer.js`, `compiler.js`, `brain-schema.js` permanecem intocados. Ver `08_feedbacks/feedback_bloco_06_context_compiler_integration.md` e `09_validation/validacao_bloco_06_context_compiler_integration.md`.
 
 ## 1. Objetivo
 
@@ -123,13 +123,58 @@ Docs / Git ──► Discovery ──► Snapshot ──► Compiler ──► B
 2. **Frescor reutiliza `validateContextState` sem reverificar conteúdo de arquivo** (`currentSourceHashes: null`). Reusa 100% da lógica existente (zero duplicação); quando há `relevant_files`, o resultado nunca é um falso `VALID` — degrada para `STALE`/`SOURCE_FRESHNESS_UNVERIFIED`, o comportamento seguro já embutido no validador. Evita adicionar ao Brain uma segunda passada pela Sensitive Data Guard só para exibir status.
 3. **"Important Files" é uma seção de `Context-Packages.md`, não uma view própria** (Seção 5) — o contrato Seção D não define `Important-Files.md`.
 4. **Nenhum link para `.ddae/context/`** (dotfolder — mesmo problema que motivou `DT-03`). Quando o usuário precisar do conteúdo completo, a view instrui rodar `ddae-engine context show`/`context validate` (texto, não link).
-5. **`Home.md` ganha o 8º link de navegação** para `Context-Packages.md`, e a nova view linka de volta a Home — mudança pontual e prevista em `renderer.js` (a lista estática de navegação, não a lógica de dados), justificada porque o Bloco 04 deixou esse link deliberadamente de fora só até este bloco existir.
+5. **`Context-Packages.md` linka de volta a `Home.md`; `Home.md` não linka `Context-Packages.md` neste bloco** (D3, Seção 12.1) — assimetria transitória deliberada, resolvida no Bloco 08 quando o Orchestrator unir os dois producers.
 
 ## 12. Decisões Abertas — Requerem Aprovação do Usuário
 
 1. **[Importante] Escopo de conteúdo: metadata-only está correto?** Proposta desta preparação: `Context-Packages.md` mostra apenas status/metadados/paths de `relevant_files` (Seção 8.1), nunca `goal.text` nem `content`. Alternativa rejeitada por padrão: incluir um resumo do `goal` (poderia ser útil para navegação, mas é texto livre do usuário, potencialmente sensível a negócio) — se aprovado, entraria como campo adicional explícito, não por inferência.
 2. **[Importante] Congelar `collectContextPackageState`/`renderContextPackagesView` como a API deste bloco?** Nomes e assinatura propostos (Seção 9.1) — confirmar antes de qualquer teste, já que TDD parte deles.
-3. **[Confirmação] Adicionar o link de `Home.md` para `Context-Packages.md` neste bloco** (Seção 11.5), tocando `renderer.js` pontualmente (só a lista estática, sem novo input) — ou adiar essa mudança para o Bloco 08 (Orchestrator), quando todos os 8 paths estiverem unificados. Recomendação: fazer aqui, já que `BRAIN_RENDERER_VIEW_PATHS` continua declarando só as 7 views do Bloco 04 (inalterado) e o link é estático.
+3. ~~Adicionar o link de `Home.md` para `Context-Packages.md` neste bloco~~ — **resolvida: adiada para o Bloco 08 (D3)**.
+
+## 12.1 Decisões Resolvidas (2026-09-26)
+
+**D1 — Metadata-only: APROVADO.** `Context-Packages.md` representa o **estado** do Context Compiler, nunca reproduz seu conteúdo compilado. Permitido: estado (`missing`/`valid`/`stale`/`invalid`/`corrupt`/`partial`), `reasons` estruturados, `schema_version`, `engine_version`, `fingerprint`, `budget.profile`/`max_chars`, contagens, `relevant_files[].path`/`score`/`char_cost`, e `goal.hash` (identificador `sha256:...`, não reversível — nunca `goal.text`/`goal.normalized`). Proibido: `relevant_files[].content`, `goal.text`, `goal.normalized`, conteúdo de `CONTEXT.md`, qualquer excerpt de fonte, segredos/credenciais/`.env`.
+
+**D2 — Collector + Pure Projector: APROVADO.** `collectContextPackageState(projectRoot)` (I/O: lê `.ddae/context/manifest.json`/`validation.json` se existirem; reutiliza `validateContextState`, nunca reimplementa freshness; normaliza para o **Safe State mínimo** da Seção 8.1) e `renderContextPackagesView(state)` (pura: zero filesystem/Git/Docs/rede/LLM/Claude-Mem/relógio/aleatoriedade). Um único arquivo, `src/workspace/context-packages.js` — sem justificativa real para separar em dois módulos.
+
+**D3 — Integração Home ⇄ Context-Packages: ADIADA para o Bloco 08.** `src/workspace/renderer.js` e `test/workspace-renderer.test.js` **não são alterados neste bloco**. `renderBrainWorkspace` continua sendo um producer independente de exatamente 7 views; adicionar o link agora faria o Bloco 04 apontar para um arquivo que ele mesmo não produz, antes da união real dos producers (Bloco 08: `[...renderBrainWorkspace(manifest), renderContextPackagesView(state)]` → Compiler `views` → fingerprint → Writer). `Context-Packages.md` **pode** linkar de volta a `Home.md` (Home é uma view canônica já produzida pelo Bloco 04); o inverso (`Home.md` → `Context-Packages.md`) fica para o Bloco 08. **Assimetria transitória deliberada**, mesma natureza da dívida de `manifest.views = []` (Bloco 03).
+
+### 12.2 Escopo revisado após D3
+
+Como o Renderer não é tocado, o escopo funcional fica limitado a:
+
+- `src/workspace/context-packages.js` (novo, único arquivo de produção).
+- `test/workspace-context-packages.test.js` (novo).
+- Nenhuma alteração a `src/workspace/renderer.js`, `test/workspace-renderer.test.js`, `src/workspace/compiler.js`, `src/schemas/brain-schema.js`, `src/context/**`.
+
+### 12.3 Safe State — forma final
+
+```text
+{
+  availability: 'missing' | 'present',
+  status: 'VALID' | 'STALE' | 'INVALID' | 'CORRUPT' | null,   // null somente quando availability === 'missing'
+  reasons: [{ code, ... }],                                     // subconjunto seguro de validateContextState / próprios códigos de corrupção
+  schema_version: string | null,
+  engine_version: string | null,
+  goal_hash: string | null,                                      // "sha256:<hex>" — nunca text/normalized
+  budget: { profile, max_chars } | null,
+  fingerprint: { algorithm, value } | null,
+  counts: { sources, relevant_files, excluded_sources } | null,
+  relevant_files: [{ path, score, char_cost }],                  // nunca content; ordem preservada de manifest.relevant_files
+}
+```
+
+`CORRUPT` cobre: `manifest.json` presente mas não é JSON válido (`MANIFEST_JSON_INVALID`); `manifest.json` é JSON válido mas **falha o Context Schema por qualquer motivo, inclusive `schema_version` incompatível** (`MANIFEST_SCHEMA_INVALID`); `validation.json` presente mas não é JSON válido (não bloqueia se `manifest.json` for válido — o receipt é informativo); `manifest.json` ausente mas `.ddae/context/` existe com outros arquivos (estado parcial, tratado como `missing` para fins de exibição, já que não há Context Package utilizável).
+
+**Precedência e racional de segurança:** `CORRUPT` (manifest ilegível ou schema-inválido) > resultado de `validateContextState` (`INVALID`/`STALE`/`VALID`) > `missing`. O Collector roda a checagem de schema (`validateContextManifest`) **antes** de chamar `validateContextState` — deliberadamente mais conservador do que reutilizar o motivo `MANIFEST_INVALID` do próprio `validateContextState`, cujo array `errors` pode carregar valores arbitrários do manifesto malformado (ex.: `got ${JSON.stringify(...)}`) montados em string legível. Um único código genérico e sem conteúdo (`MANIFEST_SCHEMA_INVALID`) cobre toda forma de manifesto malformado, inclusive um `schema_version` incompatível — que portanto **nunca chega** ao branch `SCHEMA_VERSION_MISMATCH` de `validateContextState` (é interceptado antes, por design, não por lacuna). Isso é consistente com D1 (metadata mínima e segura, nunca reutilizar cegamente mensagens de erro que podem ecoar dados de entrada).
+
+### 12.4 Resultado da Implementação
+
+- **Criado:** `src/workspace/context-packages.js` (`collectContextPackageState`, `renderContextPackagesView`, `CONTEXT_PACKAGES_VIEW_PATH`); `test/workspace-context-packages.test.js` (24 testes).
+- **Alterado:** nada em `src/`. Só documentação da Session 03 (este bloco, feedback, validação, README).
+- **Evidência:** `npm test` 598 total / 595 pass / 0 fail / 3 skip (era 574/571/0/3); `package:check` OK (112 arquivos, +1 de produção); `smoke` OK; `validate`/`audit` 0 erros. Sentinelas de segurança (`SUPER_SECRET_CONTENT_123`, `PRIVATE_GOAL_TEXT_456`) confirmadas ausentes do estado e da view em 4 testes dedicados.
+- **Refinamento não previsto na preparação:** o Collector classifica qualquer manifesto que falhe o Context Schema (inclusive `schema_version` incompatível) como `CORRUPT`/`MANIFEST_SCHEMA_INVALID` — genérico, sem conteúdo — em vez de propagar o motivo `MANIFEST_INVALID`/`errors` de `validateContextState`, que pode ecoar valores arbitrários do manifesto malformado. Documentado na Seção 12.3.
+- **Entrega:** ver `08_feedbacks/feedback_bloco_06_context_compiler_integration.md` e `09_validation/validacao_bloco_06_context_compiler_integration.md`.
 
 ## 13. Non-Goals (Fora de Escopo)
 
@@ -158,9 +203,9 @@ allViews = [...renderBrainWorkspace(brainManifest), renderContextPackagesView(co
 
 **O que não será antecipado:** o parâmetro `views` do Compiler, o Writer, `workspace build/init`, e qualquer decisão sobre ordem de execução dos vários collectors no Bloco 08 — ficam inteiramente para lá.
 
-## 15. Estratégia de Testes (TDD) — Não Implementado Nesta Preparação
+## 15. Estratégia de Testes (TDD) — Implementado (24 testes, todos verdes)
 
-Estimativa: 18–22 testes, em `test/workspace-context-packages.test.js` (novo arquivo — testa um módulo novo, ao contrário do Bloco 05 que estendeu o arquivo existente).
+Estimativa original: 18–22 testes, em `test/workspace-context-packages.test.js` (novo arquivo — testa um módulo novo, ao contrário do Bloco 05 que estendeu o arquivo existente). Resultado real: **24 testes**, cobrindo todos os cenários abaixo mais 2 adicionais (schema-inválido genérico, distinto de JSON malformado). Desvios em relação ao planejado, todos por decisão consciente durante a implementação: itens 2–4 e 6–7 ajustados à decisão D2 (sem recoleta de Git/DDAE, sem re-hash — ver Seção 12.3/12.4); item 20 removido por D3 (Home não é tocado neste bloco).
 
 Cenários previstos:
 
@@ -196,22 +241,22 @@ O self-host do próprio DDAE pode ou não ter `.ddae/context/` construído local
 - **Vazamento de conteúdo de arquivo:** mitigado por design — o Projector nunca lê/repassa `relevant_files[].content`; teste dedicado (15.14) garante isso mesmo que o manifesto de teste contenha conteúdo de propósito.
 - **Vazamento do texto do goal:** mitigado (Decisão 12.1, teste 15.15).
 - **Duplicar a lógica de frescor:** mitigado — `validateContextState` é importado, não reescrito (teste 15.19 confirma ausência de reimplementação via guarda de código, análogo ao já usado nos Blocos 03–05).
-- **Acoplar `renderer.js` a `.ddae/context/`:** mitigado pela arquitetura de duas cadeias (Seção 9); `renderer.js` só ganha uma linha estática de link, nunca uma leitura nova.
+- **Acoplar `renderer.js` a `.ddae/context/`:** eliminado por construção (D3) — `renderer.js` não é tocado neste bloco.
 - **Link para dotfolder reabrindo o problema do `DT-03`:** mitigado (Decisão 11.4 — nunca linkado).
 
 ## 18. Critérios de Aceite
 
-- [ ] As 3 Decisões Abertas (Seção 12) aprovadas antes do código.
-- [ ] `Context-Packages.md` gerado com as seções Status e Important Files, sempre presentes (mesmo vazias).
-- [ ] `relevant_files[].content` e `goal.text`/`goal.normalized` nunca aparecem na saída, em nenhum estado.
-- [ ] Estado ausente/corrupto/`INVALID`/`STALE`/`VALID` todos determinísticos e sem exceção não tratada.
-- [ ] `validateContextState` reutilizado sem reimplementação; `currentSourceHashes` nunca acionado (Decisão 11.2).
-- [ ] `src/context/**` inalterado.
-- [ ] Brain Manifest v1 (`brain-schema.js`, `compiler.js`, `fingerprint.js`) inalterado.
-- [ ] `renderer.js` alterado apenas na lista estática de navegação de `Home.md` (mais o link de volta na nova view), nunca em lógica de dados.
-- [ ] Nenhum link para `.ddae/context/`; nenhum path absoluto/dotfolder na saída.
-- [ ] Nenhuma referência a Claude-Mem/MemoryProvider/rede/LLM/relógio/aleatoriedade no código novo.
-- [ ] Regressão completa verde.
+- [x] As 3 Decisões Abertas (Seção 12) aprovadas antes do código.
+- [x] `Context-Packages.md` gerado com as seções Status e Important Files, sempre presentes (mesmo vazias).
+- [x] `relevant_files[].content` e `goal.text`/`goal.normalized` nunca aparecem na saída, em nenhum estado.
+- [x] Estado ausente/corrupto/`INVALID`/`STALE`/`VALID` todos determinísticos e sem exceção não tratada.
+- [x] `validateContextState` reutilizado sem reimplementação; `currentSourceHashes` nunca acionado (Decisão 11.2).
+- [x] `src/context/**` inalterado.
+- [x] Brain Manifest v1 (`brain-schema.js`, `compiler.js`, `fingerprint.js`) inalterado.
+- [x] `renderer.js` e `test/workspace-renderer.test.js` **não alterados** (D3).
+- [x] Nenhum link para `.ddae/context/`; nenhum path absoluto/dotfolder na saída.
+- [x] Nenhuma referência a Claude-Mem/MemoryProvider/rede/LLM/relógio/aleatoriedade no código novo.
+- [x] Regressão completa verde.
 
 ## 19. Definition of Done
 
