@@ -1,6 +1,6 @@
 # Session 03 — obsidian workspace project brain 0 4 0
 
-> Projeto: DDAE · Atualizado em: 2026-09-26
+> Projeto: DDAE · Atualizado em: 2026-09-27
 
 > Este README é o ponto de entrada da sessão. Qualquer pessoa ou agente de IA deve conseguir, lendo só este arquivo, entender o que esta sessão faz, o que já está pronto e qual é o próximo passo — sem precisar abrir todas as subpastas.
 
@@ -32,8 +32,8 @@ Plugin oficial do Obsidian, MCP Server, extração semântica/NLP, sistema de "m
 - [x] `01_intake/levantamento_inicial.md`
 - [x] `02_analysis/` (funcional, técnica, arquitetural, riscos)
 - [x] `04_planning/plano_execucao.md`
-- [x] `05_blocks/` — Blocos 01 a 06 aprovados
-- [x] `06_prompts/` — prompts dos Blocos 01 a 06 criados
+- [x] `05_blocks/` — Blocos 01 a 06 aprovados; Bloco 07 preparado (não iniciado)
+- [x] `06_prompts/` — prompts dos Blocos 01 a 07 criados
 - [x] `08_feedbacks/` — feedbacks dos Blocos 01 a 06 preenchidos
 - [ ] `09_validation/fechamento_sessao.md` — sessão ainda em andamento, fechamento formal fica para depois do Bloco 13
 
@@ -47,6 +47,7 @@ Block 03                     APPROVED
 Block 04                      APPROVED
 Block 05                       APPROVED
 Block 06                        APPROVED
+Block 07                         PREPARED — NOT STARTED (NOW)
 ```
 
 | Bloco | Título | Status |
@@ -57,7 +58,7 @@ Block 06                        APPROVED
 | 04 | Workspace Renderer | **Aprovado** — `src/workspace/renderer.js`, `BRAIN_DIR`/`BRAIN_RENDERER_VIEW_PATHS`, 38 testes novos; bug de codificação (`U+2028`/`U+2029` literais em regex) encontrado e corrigido na retomada, classificado como problema de implementação, não arquitetural; `08_feedbacks/feedback_bloco_04_project_brain_workspace_renderer.md`, `09_validation/validacao_bloco_04_project_brain_workspace_renderer.md` |
 | 05 | Obsidian Navigation Hardening | **Aprovado** — 16 testes adversariais novos em `test/workspace-renderer.test.js` (traversal, encoding, esquema, Unicode/bidi); **zero alteração em `src/workspace/renderer.js`** (o mecanismo do Bloco 04 já classificava corretamente todos os casos); frontmatter decidido como **não usado no v1** (contrato, Seção D.1); `08_feedbacks/feedback_bloco_05_obsidian_navigation_hardening.md`, `09_validation/validacao_bloco_05_obsidian_navigation_hardening.md` |
 | 06 | Context Compiler Integration | **Aprovado** — `src/workspace/context-packages.js` (`collectContextPackageState`/`renderContextPackagesView`), 24 testes novos; metadata-only (D1), Collector+Projector puro (D2), integração com `Home.md` adiada para o Bloco 08 (D3); `src/context/**`/`renderer.js`/`compiler.js`/`brain-schema.js` intocados; `08_feedbacks/feedback_bloco_06_context_compiler_integration.md`, `09_validation/validacao_bloco_06_context_compiler_integration.md` |
-| 07 | Workspace Validator | Próximo candidato (depende do Bloco 03, já aprovado) — não criado nesta execução |
+| 07 | Workspace Validator | **Preparado / AGORA — não iniciado.** `05_blocks/bloco_07_workspace_validator.md`, prompt em `06_prompts/`. Fecha RS-07/ID-07 (kernel de validação compartilhado: decidido não extrair) e reatribui RS-01 (path traversal) do Bloco 09 para este bloco, por autoridade do contrato (Seção H). 3 decisões pendentes de aprovação do usuário (bloco, Seção 16) antes do código. |
 | 08 | CLI | Pendente |
 | 09 | Security Hardening | Pendente |
 | 10 | Existing Project Migration | Pendente |
@@ -111,6 +112,8 @@ Bloco 05 (Obsidian Navigation Hardening) executado e **aprovado**: 16 testes adv
 
 Bloco 06 (Context Compiler Integration) executado e **aprovado**: `src/workspace/context-packages.js` implementado em TDD (24 testes novos), a partir de leitura direta do Context Compiler real (`src/context/compiler.js`, `validator.js`, `manifest.js`) e do Renderer do Bloco 04 — dependência confirmada inalterada pelo Amendment 1/Bloco 05 (`mapa_dependencias.md`). Achados da preparação, confirmados na implementação: (1) o contrato (Seção C) classifica duas entidades ("Important Files", "Context Packages") mas a Seção D só define um arquivo (`Context-Packages.md`) — "Important Files" virou uma seção da mesma view, não uma view própria; (2) o Context Compiler já expõe tudo que este bloco precisa por reuso direto (`validateContextState`), sem exigir nenhuma lógica nova de frescor. Três decisões foram aprovadas e aplicadas antes do código: **D1** metadata-only (`Context-Packages.md` nunca reproduz `relevant_files[].content` nem `goal.text`/`goal.normalized` — provado por testes com sentinelas de segurança); **D2** `collectContextPackageState` (I/O) + `renderContextPackagesView` (pura), único módulo; **D3** integração `Home.md` ⇄ `Context-Packages.md` adiada para o Bloco 08 — `src/workspace/renderer.js` permanece intocado, a view nova só linka de volta a `Home.md` (assimetria transitória deliberada). Refinamento de segurança encontrado durante a implementação: manifesto que falha o Context Schema (inclusive `schema_version` incompatível) é classificado como `CORRUPT`/`MANIFEST_SCHEMA_INVALID` genérico, em vez de propagar o array `errors` de `validateContextState`, que poderia ecoar valores arbitrários do manifesto malformado. `src/context/**`, `renderer.js`, `compiler.js` e `brain-schema.js` permanecem inteiramente intocados. Regressão: 598 testes, 595 pass, 0 fail, 3 skip (574 → 598).
 
+Bloco 07 (Workspace Validator) **preparado** (`05_blocks/bloco_07_workspace_validator.md` e prompt correspondente), a partir do Drift Contract já congelado (contrato, Seção H) e de leitura direta de `src/context/validator.js`, `brain-schema.js` e `workspace/fingerprint.js`. Panorama de validação reconstruído: distintos e não confundidos entre si — Context Compiler Validator (A), Brain Manifest Schema (B, só forma estrutural), Workspace Validator (C, ainda não existe — este bloco), e `ddae-engine validate`/`audit` (D, sobre a metodologia DDAE em si, sem relação com o Brain). Arquitetura proposta: `validateBrainWorkspace(manifest, {currentManifest?, expectedViews?})`, pura, **zero import de `src/context/**`** — mais estrita que o próprio Context Validator, pois o domínio Brain já tem schema/fingerprint próprios. `currentManifest` (opcional) permite checar frescor sem I/O interno — o caller recompila e passa um segundo Manifest, mesmo princípio já usado pelo Context Validator. Compatibilidade transicional preservada: `manifest.views = []` (dívida do Bloco 03) nunca é falha, a menos que `expectedViews` seja explicitamente fornecido (Bloco 08). Duas pendências históricas reavaliadas com evidência: **RS-07/ID-07** (kernel de validação compartilhado com o Context Validator) — decisão registrada de **não extrair agora** (superfície comum é trivial; as checagens de fato divergem estruturalmente; extrair tocaria `src/context/validator.js`, estável desde a `0.3.0`, sem ganho real); **RS-01** (path traversal em link gerado, atribuído originalmente ao Bloco 09) — **reatribuído a este bloco** por autoridade do contrato congelado (Seção H, posterior ao rascunho de risco original), como uma checagem semântica nova (`PATH_ESCAPES_ROOT`) sobre o próprio Manifest, formalizando quatro camadas de defesa em profundidade (Schema → Workspace Validator → Renderer → Bloco 09) sem sobreposição. 3 decisões abertas aguardam aprovação do usuário (extrair ou não o kernel compartilhado; incluir `currentManifest` já neste bloco; fechar `PATH_ESCAPES_ROOT` aqui). Nenhum código foi alterado nesta preparação.
+
 ## 11. Próxima Sessão
 
-Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: confirmar e, se apropriado, criar formalmente o Bloco 07 (Workspace Validator), conforme `04_planning/mapa_dependencias.md`.
+Nenhuma — a Session 03 continua até o Bloco 13. Próxima execução: resolver as 3 decisões abertas do Bloco 07 com o usuário, depois implementar `src/workspace/validator.js` em TDD.
