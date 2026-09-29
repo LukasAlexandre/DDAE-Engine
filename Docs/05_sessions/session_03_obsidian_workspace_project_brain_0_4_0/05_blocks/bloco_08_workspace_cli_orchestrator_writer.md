@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-29
 
-> **Status (2026-09-29): FASE A — PURE CORE ✅ (ver Seção 31) · FASE B (Writer) NÃO INICIADA · FASE C (CLI) NÃO INICIADA.** As Decisões D1–D11 (Seção 27) foram **FECHADAS** pelo usuário em 2026-09-29 (Seção 27.1). Nome canônico: o plano (`04_planning/plano_execucao.md`) chama o Bloco 08 de "CLI"; o contrato (Seção B.1) o define como o **Orchestrator** e o Bloco 04 registra que não existe Writer dedicado ("CLI/Bloco 08 = único ponto de escrita"). O nome reflete as três responsabilidades reais: **CLI + Orchestrator + Writer**.
+> **Status (2026-09-29): FASE A — PURE CORE ✅ APPROVED (auditada; Seção 31) · FASE B — WRITER ✅ (Seção 32) · FASE C (CLI) NÃO INICIADA.** As Decisões D1–D11 (Seção 27) foram **FECHADAS** pelo usuário em 2026-09-29 (Seção 27.1). Nome canônico: o plano (`04_planning/plano_execucao.md`) chama o Bloco 08 de "CLI"; o contrato (Seção B.1) o define como o **Orchestrator** e o Bloco 04 registra que não existe Writer dedicado ("CLI/Bloco 08 = único ponto de escrita"). O nome reflete as três responsabilidades reais: **CLI + Orchestrator + Writer**.
 
 ## 1. Objetivo
 
@@ -270,7 +270,7 @@ Ao final da execução: `ddae-engine feedback create --block bloco_08_workspace_
 
 Preparação (esta execução): `docs(workspace): prepare project brain orchestration`. Implementação (futura, por fase, com autorização): `feat(workspace): compile brain views before fingerprint`, `feat(workspace): add brain workspace writer`, `feat(workspace): add workspace cli`.
 
-## 31. Progresso — Fase A (Pure Core) ✅ · Fase B ⏳ NÃO INICIADA · Fase C ⏳ NÃO INICIADA
+## 31. Progresso — Fase A (Pure Core) ✅ APPROVED
 
 > Registrado em 2026-09-29. Evidência intermediária dentro do próprio bloco; **não é o feedback final** do Bloco 08 (esse só existe quando A/B/C estiverem concluídas).
 
@@ -306,3 +306,56 @@ Writer, CLI, `workspace *`, `.gitignore`, `.obsidian/`, Bloco 09, `src/context/*
 - **Fase C:** função de I/O que coleta Discovery + contextos Git/DDAE + Context Package state e chama `planBrainWorkspace`; `workspace validate` recomputa e compara **todas** as 8 views com o disco (D5); `init` conforme D10; o `currentManifest` do `validate` deve ser compilado com as **mesmas** `views` (senão o fallback dispara por diferença de `views`).
 - P3 de freshness: **fechado** pela D3. Comportamento novo a conhecer: mudança de disponibilidade do Git entre snapshots agora é STALE (`CANONICAL_STATE_CHANGED`), não silêncio.
 - P4 mantidos: `currentManifest` inválido lança; Context Packages sem `currentSourceHashes`.
+
+## 32. Progresso — Fase B (Writer) ✅ · Fase C ⏳ NÃO INICIADA
+
+> Registrado em 2026-09-29. Fase A auditada (`APPROVED`, sem P0–P2) e enviada (`fe80ced` no remoto). Evidência intermediária; **não é o feedback final** do Bloco 08.
+
+### 32.1 API real (`src/workspace/writer.js`)
+
+- `writeBrainWorkspace(projectRoot, { manifest, files }, { force = false })` — **síncrona** (mesmo estilo do projeto: `fs` síncrono como em `commands/context.js`), recebe o plano já pronto (`files` = `[{ path, content }]` do Orchestrator, `manifest` = o Manifest final); não depende de nada do Orchestrator além dessa forma.
+- Retorno congelado, ordenado por code point, sem conteúdo, paths relativos com `/`: `{ written, unchanged, stale_generated }` (o manifest aparece em `written`/`unchanged` como `.ddae/brain/manifest.json`).
+- `BrainWriterError` (`code` estável + `details` só com `path`/`index`/`system_code`/`written`; nunca conteúdo, mensagem do sistema nem a raiz absoluta). Códigos: `INPUT_INVALID`, `PROJECT_ROOT_INVALID`, `OUTPUT_PATH_INVALID`, `OUTPUT_CONTENT_INVALID`, `OUTPUT_DUPLICATE`, `OUTPUT_CASE_COLLISION` (separado de duplicata exata; o Orchestrator usa `OUTPUT_DUPLICATE` para os dois), `SYMLINK_REFUSED`, `TARGET_TYPE_INVALID`, `OWNERSHIP_CONFLICT`, `WRITE_FAILED`.
+- Exporta `MANIFEST_OUTPUT_PATH = '.ddae/brain/manifest.json'`. Imports: `node:fs`, `node:path` e `stableStringify` (o serializador canônico já existente — nenhuma segunda implementação).
+
+### 32.2 Decisões do Writer (registradas antes do código)
+
+| ID | Decisão |
+|---|---|
+| W1 | **Raízes permitidas:** somente `DDAE-Brain/<Nome>.md` e `.ddae/brain/manifest.json`. `.gitignore` da raiz, `.ddae/brain/.gitignore`, `.obsidian/` e `validation.json` **não** são escritos (init = Fase C; D10; D9). O allow-list de `.ddae/brain/.gitignore` da Seção 15 fica para a Fase C. |
+| W2 | **Gramática de view:** prefixo exato `DDAE-Brain/`, um único basename terminando em `.md` minúsculo, sem subpasta; sem NUL/CR/LF/qualquer control ASCII (`U+0000–U+001F`), DEL, `\`, `/`; sem lone surrogate; ≤ 200 bytes UTF-8. Nada de regra estética: espaço e Unicode comum são aceitos (teste C3 impede over-hardening). Bidi/apresentação continua no Bloco 09. |
+| W3 | **Basename iniciado por `.`** (`.hidden.md`, `..md`) **rejeitado.** Não é traversal, é política de nomes: views geradas são visíveis (Obsidian ignora dot-files) e `..md` é confuso. O contrato não a congelava; registrada aqui. |
+| W4 | **Caracteres inválidos em nomes Windows** (`: * ? " < > |`) rejeitados em qualquer OS (`:` também barra scheme-like e Alternate Data Streams do NTFS). |
+| W5 | **Nomes de dispositivo reservados** (`CON PRN AUX NUL COM1–9 LPT1–9`, case-insensitive, com ou sem extensões extras e espaços finais no stem) rejeitados em qualquer OS: outputs portáveis. `CONSOLE.md`, `COM10.md`, `NULL.md` continuam válidos. |
+| W6 | **Conteúdo de view deve carregar o marcador canônico** logo após o H1 (`OUTPUT_CONTENT_INVALID` caso contrário). Sem isso o Writer criaria um arquivo que ele próprio não reconheceria como seu na próxima execução (ownership por marcador, D6). Verificado contra o texto real dos Renderers (teste A2/A5/A6 usam planos reais). |
+| W7 | **Ownership:** marcador exatamente em `# Título` / linha em branco / marcador (CRLF tolerado). Marcador em outro lugar não é ownership. `force` (booleano estrito) dispensa **apenas** `OWNERSHIP_CONFLICT`. Nunca dispensa path, duplicata, colisão, conteúdo, symlink, tipo de alvo nem raiz. |
+| W8 | **`manifest.json` existente com JSON corrompido não bloqueia** (estado de máquina recompilável); só symlink/tipo inválido bloqueiam. Sem marcador Markdown no JSON. |
+| W9 | **Symlinks/junctions:** `DDAE-Brain`, `.ddae`, `.ddae/brain` e todo alvo existente são checados com `lstat`; symlink/junction ⇒ `SYMLINK_REFUSED`; arquivo no lugar de diretório (ou o inverso) ⇒ `TARGET_TYPE_INVALID`. A raiz do projeto em si é resolvida com `realpath` (a escolha do usuário; não é criada). Nenhum componente abaixo da raiz pode ser link, então o destino léxico é o destino real. Reverificação de cada diretório imediatamente antes de cada escrita. |
+| W10 | **stale_generated:** `*.md` regular, com marcador (lidos só os primeiros 4 KiB), diretamente em `DDAE-Brain/`, fora do plano (comparação case-insensitive) — reportado, **nunca removido**. Arquivo sem marcador (`My-Notes.md`), subpasta, symlink e não-`.md` são ignorados: não são stale e não são tocados. |
+| W11 | **Atomicidade (D8):** `open(temp, 'wx')` no mesmo diretório → `write` → `fsync` → `close` → `rename`. O alvo nunca é aberto para escrita. Temp de terceiros (`EEXIST`) nunca é apagado/sobrescrito; só o temp que o Writer criou é removido em erro, e uma falha de limpeza não mascara o erro original. Views em ordem de path; **`manifest.json` por último.** |
+| W12 | **Idempotência:** conteúdo byte-idêntico não é reescrito (comparação de Buffer) e vai para `unchanged`. |
+| W13 | **Limites conhecidos (documentados, não escondidos):** (a) TOCTOU residual — preflight + `lstat` + reverificação + temp/rename é defesa v1; um atacante concorrente que troque um diretório por link entre a última checagem e a escrita não é totalmente excluído; (b) sem transação global: falha após algumas views deixa essas views novas e o manifest antigo (nunca escreve o manifest novo); `details.written` lista o que foi escrito e um novo build converge; (c) sem rollback. |
+
+### 32.3 Preflight (tudo antes da primeira modificação; falhou ⇒ zero escritas, nenhum diretório criado)
+
+forma da entrada → raiz → gramática/conteúdo/duplicata/colisão de cada view → cadeia de diretórios (`DDAE-Brain`, `.ddae`, `.ddae/brain`) → estado e ownership de cada alvo → alvo do manifest → varredura de stale_generated (leitura). Só então: criação lazy de diretórios + escritas.
+
+### 32.4 TDD
+
+- **RED:** `test/workspace-writer.test.js` escrito antes do código → `ERR_MODULE_NOT_FOUND`.
+- **GREEN:** 61 testes, 59 pass, 0 fail, **2 skip explícitos** (S4/S5: symlink de *arquivo* exige privilégio que este usuário Windows não tem; a decisão é coberta por S4b/S5b com `lstat` simulado; symlinks de *diretório* — junctions — rodaram de verdade em S1–S3/S6).
+- **Sanidade dos testes (mutação):** desligar a recusa de symlink quebra 4 testes; desligar a checagem de path, 9; manifest antes das views, 31; desligar ownership, 3; reescrever sempre, 5 — restaurado e verde.
+- **Cobertura:** A (API/happy/manifest canônico/round-trip com o Validator/self-host), B/C (grammar, controles, Windows, dot, reservados, tamanho, conteúdo), D (duplicata/colisão), S (symlink/tipo), E/F (ownership/force), G (idempotência com mtime no passado e ausência de rename/open de escrita), H (stale_generated/unmanaged/nenhuma deleção), I/J/K (atomicidade, manifest por último, falhas parciais e reparo, limpeza de temp), Z (zero-write), X (contenção fora da raiz, guarda de imports).
+- **Regressão:** `npm test` 789 total / 784 pass / 0 fail / 5 skip (baseline 728/725/0/3 + 61 novos, 2 skips novos); `package:check` e `smoke` OK; `validate` 0 erros/0 warnings; `audit` 0 erros (8 warnings pré-existentes); `git diff --check` limpo.
+
+### 32.5 P3 da auditoria da Fase A
+
+"Nomes de view sem restrição de caracteres" — **fechado no Writer**: NUL, CR, LF, ESC, controles, DEL, `\`, caracteres inválidos do Windows, lone surrogates, dot-prefix e nomes reservados são rejeitados antes de qualquer escrita (testes C1–C6). O `declareBrainViews` do Orchestrator não foi alterado (Fase A permanece como auditada); com producers padrão o risco nunca existiu, e producers custom agora esbarram no Writer.
+
+### 32.6 Fora do que a Fase B tocou
+
+Orchestrator, Compiler, Validator, Renderer, Context Packages, `src/context/**`, CLI (`cli.js`, `commands/workspace.js`), `.gitignore`, `.obsidian/`, Bloco 09, rede, Claude-Mem: **inalterados**. Somente `src/workspace/writer.js` e `test/workspace-writer.test.js` (mais esta documentação).
+
+### 32.7 Para a Fase C
+
+O comando deve: coletar (Discovery, contextos Git/DDAE, Context Package state) → `planBrainWorkspace` → `writeBrainWorkspace`; imprimir `written`/`unchanged`/`stale_generated` (avisando sobre stale sem apagar); mapear `BrainOrchestrationError`/`BrainWriterError` para mensagens e exit code 1; `workspace init` cria `.ddae/brain/.gitignore` e a entrada `DDAE-Brain/` (D10); `--force` do CLI mapeia para `force` (só ownership).
