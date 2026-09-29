@@ -506,3 +506,95 @@ test('28n. the new path checks never mutate a deep-frozen manifest', () => {
   const manifest = deepFreeze(withRefingerprint((m) => { m.views = ['../x']; }));
   assert.equal(validateBrainWorkspace(manifest).status, 'INVALID');
 });
+
+
+// ───────────── 29. Bloco 08, Fase A — D3: canonical-fingerprint freshness fallback ─────────────
+
+function ddaeWithCounts(counts) {
+  const base = makeSnapshot().ddae;
+  return { ...base, current_session: { ...base.current_session, counts } };
+}
+
+test('29a. D3-A: a target with a wrong internal fingerprint stays INVALID/FINGERPRINT_MISMATCH — never STALE — even against a different currentManifest', () => {
+  const target = clone(compile());
+  target.fingerprint.value = 'd'.repeat(64);
+  const current = compile({}, { engineVersion: '9.9.9' });
+  const result = validateBrainWorkspace(target, { currentManifest: current });
+  assert.equal(result.status, 'INVALID');
+  assert.deepEqual(result.reasons, [{ code: 'FINGERPRINT_MISMATCH' }]);
+});
+
+test('29b. D3-B: a known freshness difference reports its specific reason and does NOT add the fallback', () => {
+  const target = compile({}, { engineVersion: '0.4.0' });
+  const current = compile({}, { engineVersion: '0.4.1' });
+  const result = validateBrainWorkspace(target, { currentManifest: current });
+  assert.equal(result.status, 'STALE');
+  assert.deepEqual(result.reasons.map((r) => r.code), ['ENGINE_VERSION_CHANGED']);
+});
+
+test('29c. D3-C: fingerprints differ and no specific reason explains it → STALE/CANONICAL_STATE_CHANGED (only reason)', () => {
+  const target = compile();
+  const current = compile({ ddae: ddaeWithCounts({ blocks: 9, prompts: 9, feedbacks: 9 }) });
+  assert.notEqual(target.fingerprint.value, current.fingerprint.value);
+  const result = validateBrainWorkspace(target, { currentManifest: current });
+  assert.deepEqual(result, { status: 'STALE', reasons: [{ code: 'CANONICAL_STATE_CHANGED' }] });
+});
+
+test('29d. D3-C: a change in supplied views (canonical state) with everything else equal → the fallback', () => {
+  const target = compile({}, { views: ['DDAE-Brain/Home.md'] });
+  const current = compile({}, { views: ['DDAE-Brain/Home.md', 'DDAE-Brain/Sessions.md'] });
+  assert.deepEqual(validateBrainWorkspace(target, { currentManifest: current }), { status: 'STALE', reasons: [{ code: 'CANONICAL_STATE_CHANGED' }] });
+});
+
+test('29e. D3-C: Git becoming available/unavailable (no GIT_HEAD_CHANGED) is still canonical drift → the fallback', () => {
+  const target = compile({ git: { available: false, repository: false, branch: null, head: null } });
+  const current = compile();
+  const result = validateBrainWorkspace(target, { currentManifest: current });
+  assert.equal(result.status, 'STALE');
+  assert.deepEqual(result.reasons, [{ code: 'CANONICAL_STATE_CHANGED' }]);
+});
+
+test('29f. D3-D: identical canonical state → VALID, no fallback (also when only excluded fields differ)', () => {
+  assert.deepEqual(validateBrainWorkspace(compile(), { currentManifest: compile() }), { status: 'VALID', reasons: [] });
+  const renamed = compile({ project: { name: 'another-clone-folder', root_relative_path: '.' } }, { generatedAt: '2031-01-01T00:00:00Z' });
+  assert.deepEqual(validateBrainWorkspace(compile(), { currentManifest: renamed }), { status: 'VALID', reasons: [] });
+});
+
+test('29g. the fallback is never emitted next to a specific reason, and specific reasons keep their fixed order', () => {
+  const target = compile({}, { engineVersion: '0.4.0' });
+  const current = compile({ current_session: { id: 'session_09_x', selection_reason: 'latest_canonical' } }, { engineVersion: '0.4.1' });
+  const codes = validateBrainWorkspace(target, { currentManifest: current }).reasons.map((r) => r.code);
+  assert.ok(codes.includes('ENGINE_VERSION_CHANGED') && codes.includes('SESSION_SOURCE_CHANGED'));
+  assert.ok(!codes.includes('CANONICAL_STATE_CHANGED'));
+  assert.ok(codes.indexOf('ENGINE_VERSION_CHANGED') < codes.indexOf('SESSION_SOURCE_CHANGED'));
+});
+
+test('29h. the comparison uses the canonical fingerprint recomputed from the payload, not a raw manifest diff', () => {
+  const target = compile();
+  const current = clone(compile());
+  current.generated_at = '2040-01-01T00:00:00Z';
+  current.project.name = 'renamed';
+  assert.deepEqual(validateBrainWorkspace(target, { currentManifest: current }), { status: 'VALID', reasons: [] });
+});
+
+test('29i. a currentManifest whose own stored fingerprint does not match its payload is not a valid reference → throws (input contract)', () => {
+  const current = clone(compile());
+  current.fingerprint.value = 'a'.repeat(64);
+  assert.throws(() => validateBrainWorkspace(compile(), { currentManifest: current }), /currentManifest/);
+});
+
+test('29j. the fallback path is deterministic and never mutates deep-frozen inputs', () => {
+  const target = deepFreeze(clone(compile()));
+  const current = deepFreeze(clone(compile({ ddae: ddaeWithCounts({ blocks: 5, prompts: 5, feedbacks: 5 }) })));
+  const first = validateBrainWorkspace(target, { currentManifest: current });
+  assert.deepEqual(validateBrainWorkspace(target, { currentManifest: current }), first);
+  assert.deepEqual(first.reasons, [{ code: 'CANONICAL_STATE_CHANGED' }]);
+});
+
+test('29k. INVALID still wins over the fallback: a path-escaping target is INVALID even if the states differ', () => {
+  const target = clone(compile());
+  target.views = ['../x'];
+  target.fingerprint = computeBrainFingerprint(buildBrainFingerprintPayload(target));
+  const current = compile({ ddae: ddaeWithCounts({ blocks: 7, prompts: 7, feedbacks: 7 }) });
+  assert.equal(validateBrainWorkspace(target, { currentManifest: current }).status, 'INVALID');
+});

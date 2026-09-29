@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { renderBrainWorkspace, BRAIN_DIR, BRAIN_RENDERER_VIEW_PATHS } from '../src/workspace/renderer.js';
 import { compileBrainManifest } from '../src/workspace/compiler.js';
@@ -400,7 +401,11 @@ test('32. an empty summary is rendered as a valid code span, never dropped', () 
 
 // ───────────────────────── manifest.views (transitional) ─────────────────────────
 
-test('33. manifest.views is never mutated, synchronized or consulted', () => {
+// Bloco 08 (D2) amended the last assertion of this test: the Renderer now derives Home's
+// navigation from manifest.views, so "output does not depend on manifest.views" no longer
+// holds for Home. Everything else it proved (never mutated or synchronized) is unchanged,
+// and the six other views still do not depend on it.
+test('33. manifest.views is never mutated or synchronized; only Home navigation consults it (D2)', () => {
   const emptyViews = clone(compile());
   assert.deepEqual(emptyViews.views, []);
   const filled = clone(emptyViews);
@@ -410,7 +415,10 @@ test('33. manifest.views is never mutated, synchronized or consulted', () => {
   const out2 = renderBrainWorkspace(filled);
   assert.equal(JSON.stringify(filled), before);
   assert.deepEqual(emptyViews.views, []);
-  assert.deepEqual(out1, out2, 'output does not depend on manifest.views');
+  for (const entry of out1) {
+    if (entry.path === 'DDAE-Brain/Home.md') continue;
+    assert.deepEqual(out2.find((f) => f.path === entry.path), entry, 'views other than Home do not depend on manifest.views');
+  }
 });
 
 test('34. TRANSITIONAL: the current Compiler emits views [] while the Renderer declares 7 paths — no runtime equality is required yet (closed in Bloco 08)', () => {
@@ -808,4 +816,99 @@ test('54. KNOWN LIMITATION (P4, documented not fixed): bidi controls are preserv
   assert.ok(decisions.includes(`[\`a${bidi}b.md\`]`), 'the label keeps the bidi controls verbatim, inside a code span');
   const headings = decisions.split('\n').filter((l) => l.startsWith('#'));
   assert.deepEqual(headings, ['# Decisions', '## Index'], 'no structure is created by them');
+});
+
+
+// ───────────── Bloco 08, Fase A — navigation derived from manifest.views (D2) ─────────────
+
+const FULL_VIEWS = [...EXPECTED_PATHS, 'DDAE-Brain/Context-Packages.md'].sort();
+
+test('D2 legacy: manifest.views = [] renders the 7 views byte-identical to the Bloco 04 output', () => {
+  // Captured from the renderer before Bloco 08 (sha256 of every file, and of the whole set).
+  const legacy = {
+    'DDAE-Brain/Bugs.md': '231294b856872087dc0df382f1ea3ec347c8eae9ceb84c4e74cad7b02c3e8b50',
+    'DDAE-Brain/Decisions.md': 'fad28b6c7e2cd36257abf98c5f4eff06480647fc33a13a39bf87a1825a498769',
+    'DDAE-Brain/Home.md': '0ef85e60812d15f37a1ebd5c047391356ac993bbd8497cfb0c9b6ac60699a3ae',
+    'DDAE-Brain/Recent-Activity.md': 'd7396829aac725c08ec2c962a304f236560f7109c952967caff19c33bf1324c8',
+    'DDAE-Brain/Releases.md': 'ef9d3596785285cc519cc465d54a1eea895d1c11a44553bd39547ba1de3b893f',
+    'DDAE-Brain/Risks.md': '19e7aa0c861b21eab1e62b8cd25b0ec21844666417b437c0df5ff335bd98b718',
+    'DDAE-Brain/Sessions.md': 'a80efc8aabb001e847642b8acfcb879cca2e2c10387976677d86443f6440c93d',
+  };
+  const files = render();
+  assert.equal(files.length, 7);
+  for (const entry of files) {
+    assert.equal(createHash('sha256').update(entry.content).digest('hex'), legacy[entry.path], entry.path);
+  }
+});
+
+test('D2: with the 8 declared views, Home links Context Packages after the six legacy links', () => {
+  const home = file(render({}, { views: FULL_VIEWS }), 'Home.md');
+  assert.ok(home.includes('- [Context Packages](./Context-Packages.md)'));
+  const nav = home.split('\n').filter((line) => line.startsWith('- [') && line.includes('](./'));
+  assert.deepEqual(nav, [
+    '- [Sessions](./Sessions.md)',
+    '- [Decisions](./Decisions.md)',
+    '- [Risks](./Risks.md)',
+    '- [Bugs](./Bugs.md)',
+    '- [Releases](./Releases.md)',
+    '- [Recent Activity](./Recent-Activity.md)',
+    '- [Context Packages](./Context-Packages.md)',
+  ]);
+});
+
+test('D2: only Home changes when views are declared — the six other views stay byte-identical', () => {
+  const legacy = render();
+  const full = render({}, { views: FULL_VIEWS });
+  for (const entry of legacy) {
+    if (entry.path === 'DDAE-Brain/Home.md') continue;
+    assert.equal(full.find((f) => f.path === entry.path).content, entry.content, entry.path);
+  }
+});
+
+test('D2: declared views are the canonical navigable set — an undeclared view is not linked', () => {
+  const home = file(render({}, { views: ['DDAE-Brain/Home.md', 'DDAE-Brain/Sessions.md'] }), 'Home.md');
+  assert.ok(home.includes('](./Sessions.md)'));
+  for (const gone of ['Decisions', 'Risks', 'Bugs', 'Releases', 'Recent-Activity', 'Context-Packages']) {
+    assert.ok(!home.includes(`](./${gone}.md)`), gone);
+  }
+});
+
+test('D2: a declared view that is not a plain sibling Markdown file under DDAE-Brain/ is never linked', () => {
+  const unsafe = [
+    'DDAE-Brain/sub/Nested.md',
+    'DDAE-Brain/Weird(Name).md',
+    'DDAE-Brain/with space.md',
+    'DDAE-Brain/not-markdown.txt',
+    'Other/Elsewhere.md',
+    'https://example.com/x.md',
+    'DDAE-Brain/.hidden.md',
+  ];
+  const home = file(render({}, { views: ['DDAE-Brain/Home.md', ...unsafe] }), 'Home.md');
+  for (const link of linkTargets(home)) {
+    assert.ok(!unsafe.some((u) => link.includes(u.replace('DDAE-Brain/', ''))), link);
+  }
+  assert.ok(!home.includes('example.com'));
+});
+
+test('D2: the renderer stays pure and independent of any producer (no import of context-packages, no I/O)', () => {
+  const source = fs.readFileSync(path.join(REPO_ROOT, 'src', 'workspace', 'renderer.js'), 'utf8');
+  const imports = [...source.matchAll(/^import .* from '([^']+)'/gm)].map((m) => m[1]);
+  assert.deepEqual(imports, ['../schemas/brain-schema.js']);
+  assert.ok(!/context-packages/.test(source.replace(/^\s*\/\/.*$/gm, '')));
+});
+
+test('D2: with declared views the output is deterministic, the manifest is not mutated (also deeply frozen)', () => {
+  const manifest = deepFreeze(compile({}, { views: FULL_VIEWS }));
+  const before = JSON.stringify(manifest);
+  const a = renderBrainWorkspace(manifest);
+  const b = renderBrainWorkspace(manifest);
+  assert.deepEqual(a, b);
+  assert.equal(JSON.stringify(manifest), before);
+});
+
+test('D2: every link Home emits for declared views resolves to a declared view path', () => {
+  const home = file(render({}, { views: FULL_VIEWS }), 'Home.md');
+  for (const link of linkTargets(home).filter((l) => l.startsWith('./'))) {
+    assert.ok(FULL_VIEWS.includes(`DDAE-Brain/${link.slice(2)}`), link);
+  }
 });

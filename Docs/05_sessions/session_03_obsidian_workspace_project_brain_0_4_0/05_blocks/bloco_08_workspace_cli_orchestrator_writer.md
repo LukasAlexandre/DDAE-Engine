@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-29
 
-> **Status: PREPARADO — NÃO INICIADO.** Nenhum código de runtime foi escrito. As **Decisões Abertas (Seção 27) exigem aprovação humana antes de qualquer código.** Nome canônico: o plano (`04_planning/plano_execucao.md`) chama o Bloco 08 de "CLI"; o contrato (Seção B.1) o define como o **Orchestrator** e o Bloco 04 registra que não existe Writer dedicado ("CLI/Bloco 08 = único ponto de escrita"). O nome reflete as três responsabilidades reais: **CLI + Orchestrator + Writer**.
+> **Status (2026-09-29): FASE A — PURE CORE ✅ (ver Seção 31) · FASE B (Writer) NÃO INICIADA · FASE C (CLI) NÃO INICIADA.** As Decisões D1–D11 (Seção 27) foram **FECHADAS** pelo usuário em 2026-09-29 (Seção 27.1). Nome canônico: o plano (`04_planning/plano_execucao.md`) chama o Bloco 08 de "CLI"; o contrato (Seção B.1) o define como o **Orchestrator** e o Bloco 04 registra que não existe Writer dedicado ("CLI/Bloco 08 = único ponto de escrita"). O nome reflete as três responsabilidades reais: **CLI + Orchestrator + Writer**.
 
 ## 1. Objetivo
 
@@ -240,6 +240,24 @@ Sempre em diretório temporário: nenhum teste escreve `DDAE-Brain/` ou `.ddae/b
 | D10 | Escopo do `init` vs. Bloco 09 | `init` = `DDAE-Brain/` + `.ddae/brain/.gitignore` (contrato F); `.obsidian/` gitignore + aviso Sync/Publish ficam no Bloco 09 (plano); `build` sem `init` funciona e avisa |
 | D11 | `generated_at` | Não gravar (idempotência byte-a-byte) |
 
+### 27.1 Decisões Fechadas (2026-09-29)
+
+| ID | Resultado | Regra final |
+|---|---|---|
+| D1 | **Aprovada** | Bloco 08 único, três fases internas (A Pure Core, B Writer, C CLI/Integration), cada uma com checkpoint TDD e revisão. Sem renumerar 09–13; sem 08a/08b/08c no tooling. |
+| D2 | **Aprovada com compatibilidade transitória** | Renderer puro; `manifest.views = []` ⇒ as 7 views do Bloco 04 permanecem byte-idênticas. `manifest.views` preenchido ⇒ declaração canônica do conjunto navegável; Home linka as views declaradas sob `DDAE-Brain/` (inclusive `Context-Packages.md`) sem importar `context-packages.js`; o Renderer não descobre producers. |
+| D3 | **Aprovada** | Fallback `CANONICAL_STATE_CHANGED`: target íntegro + `currentManifest` válido; reasons específicos (`ENGINE_VERSION_CHANGED`, `GIT_HEAD_CHANGED`, `SESSION_SOURCE_CHANGED`, `DOCS_CONTENT_CHANGED`) primeiro; se os fingerprints canônicos diferem **e** nenhum reason específico explica ⇒ `STALE`/`CANONICAL_STATE_CHANGED` (só como fallback). Sem comparação manual de `ddae.sessions`/`counts`/`sources`. Fingerprint interno do target errado continua `INVALID`/`FINGERPRINT_MISMATCH`. Única alteração permitida em `validator.js` na Fase A. |
+| D4 | **Aprovada** | Context Packages aceita `currentGitContext`/`currentDdaeContext` opcionais (backward compatible), repassados a `validateContextState`. `src/context/**` intocado; sem collector paralelo; sem `currentSourceHashes` (⇒ `SOURCE_FRESHNESS_UNVERIFIED` segue conservador). |
+| D5 | **Ajustada / aprovada** | `workspace validate` (Fase C) recomputa deterministicamente **todas** as views atuais (7 Brain + Context-Packages) — inputs atuais ⇒ Manifest atual ⇒ Context Package State atual ⇒ render de todos os producers ⇒ arquivos esperados ⇒ comparação com o disco. O marcador prova **ownership**, não integridade. **Substitui** a exceção "só existência + marcador" da Seção 21. Implementação: Fase C. |
+| D6 | **Aprovada** | Writer (Fase B) só sobrescreve automaticamente arquivo com marcador (ownership); sem marcador ⇒ recusa. `--force` ignora **somente** conflito de ownership, nunca containment de path, segurança de symlink ou segurança de filesystem. |
+| D7 | **Aprovada** | Sem deleção automática na v1; Writer detecta/reporta (ex.: `stale_generated`); sem `workspace clean`. |
+| D8 | **Aprovada** | Fase B: tudo em memória, todos os paths validados antes da primeira escrita, temp + rename por arquivo, `manifest.json` por último; sem transação de diretório. |
+| D9 | **Aprovada** | Sem `.ddae/brain/validation.json` na 0.4.0. |
+| D10 | **Aprovada + Amendment 2 do contrato** | `init` (Fase C) = `DDAE-Brain/` no `.gitignore` da raiz + `.ddae/brain/.gitignore` (`*`). Sem `.obsidian/`, Sync/Publish ou avisos específicos do Obsidian ⇒ Bloco 09. Ver Amendment 2 em `Docs/03_contracts/contrato_workspace_project_brain.md`. |
+| D11 | **Aprovada** | `generated_at` não é persistido por padrão; mesmo input ⇒ mesmo Manifest, mesmas views, mesmos bytes. |
+
+Observação de coerência: a Seção 18 ("`build` … avisa") e a Seção 21 (exceção de Context-Packages) foram escritas antes do fechamento; prevalecem D5 e D10 acima. O aviso do `build` quando `DDAE-Brain/` não está ignorado é uma mensagem genérica sobre o `.gitignore` do Brain — não é aviso específico do Obsidian.
+
 ## 28. Pendências Esperadas
 
 Herdadas: P3 freshness (D3), P4 `currentManifest` inválido lança, P4 Context Packages sem `currentSourceHashes`, P4 `validation.json` (D9). Novas possíveis: `workspace clean`/remoção de views antigas (D7), P4 "Important Files" sem link.
@@ -251,3 +269,40 @@ Ao final da execução: `ddae-engine feedback create --block bloco_08_workspace_
 ## 30. Commit Semântico Sugerido
 
 Preparação (esta execução): `docs(workspace): prepare project brain orchestration`. Implementação (futura, por fase, com autorização): `feat(workspace): compile brain views before fingerprint`, `feat(workspace): add brain workspace writer`, `feat(workspace): add workspace cli`.
+
+## 31. Progresso — Fase A (Pure Core) ✅ · Fase B ⏳ NÃO INICIADA · Fase C ⏳ NÃO INICIADA
+
+> Registrado em 2026-09-29. Evidência intermediária dentro do próprio bloco; **não é o feedback final** do Bloco 08 (esse só existe quando A/B/C estiverem concluídas).
+
+### 31.1 O que a Fase A entregou (somente memória; zero escrita em disco)
+
+| Peça | Mudança | API real |
+|---|---|---|
+| Compiler | `views` opcional, **antes do fingerprint** | `compileBrainManifest(snapshot, { engineVersion, views?, generatedAt? })`; `views` copiado, ordenado por code point, duplicata ⇒ erro, default `[]` (fingerprint idêntico ao Bloco 03) |
+| Renderer | navegação do Home derivada de `manifest.views` (D2) | `views: []` ⇒ as 7 views byte-idênticas (sha256 fixado em teste); preenchido ⇒ legados declarados na ordem original + demais views declaradas (ex.: `Context Packages`); só linka `DDAE-Brain/<Nome>.md` irmão com nome seguro; único import continua `brain-schema.js` |
+| Context Packages | contextos atuais opcionais (D4) | `collectContextPackageState(projectRoot, { currentGitContext?, currentDdaeContext? })` repassa a `validateContextState`; sem opções = Bloco 06; `currentSourceHashes` nunca fornecido (`SOURCE_FRESHNESS_UNVERIFIED` segue) |
+| Validator | fallback `CANONICAL_STATE_CHANGED` (D3) | só se **nenhum** reason específico se aplica e os fingerprints canônicos (recomputados dos payloads) diferem; `currentManifest` agora também precisa ter fingerprint coerente com o próprio payload (senão lança, como qualquer `currentManifest` inválido) |
+| Orchestrator (novo, puro) | `src/workspace/orchestrator.js` | `planBrainWorkspace({ snapshot, contextPackageState, engineVersion }, { producers? })` ⇒ `{ manifest, validation, files }` congelado; `declareBrainViews(producers?)` ⇒ `expectedViews`; `DEFAULT_VIEW_PRODUCERS` (`brain-renderer`, `context-packages`); `BrainOrchestrationError` com `code` |
+
+Invariantes do Orchestrator (todas antes de existir qualquer resultado): `VIEW_PATH_INVALID`, `VIEW_PATH_DUPLICATE`, `VIEW_PATH_CASE_COLLISION` (declaração); `MANIFEST_INVALID` (Validator ≠ VALID, com reasons e sem conteúdo); `OUTPUT_MALFORMED`, `OUTPUT_DUPLICATE` (exato e case-insensitive), `OUTPUT_UNEXPECTED` (produtor renderizou o que não declarou / path fora de `manifest.views`), `OUTPUT_MISSING` (declarado e não renderizado). O total (hoje 8) é sempre derivado das declarações dos producers.
+
+Limites de pureza: o Orchestrator recebe o snapshot e o Context Package state já coletados; **não coleta**. A função que reunirá o I/O (Discovery, contextos Git/DDAE, `collectContextPackageState`) é da Fase C. (`context-packages.js` continua exportando o coletor com `fs` junto do renderer puro, por herança do Bloco 06; o Orchestrator só chama o renderer puro e um teste guarda seus imports.)
+
+### 31.2 TDD
+
+- **RED (antes de implementar):** 37 testes novos nos módulos existentes, 15 falharam (Compiler 5, Renderer 2, Context Packages 3, Validator 5); os demais passavam por compatibilidade retroativa (`views: []` / sem opções). Orchestrator: `ERR_MODULE_NOT_FOUND`.
+- **GREEN:** Compiler 33/33, Renderer 62/62, Context Packages 33/33, Validator 68/68, Orchestrator 36/36.
+- **Testes adicionados:** 73 (Compiler 9, Renderer 8, Context Packages 9, Validator 11, Orchestrator 36).
+- **Única edição em teste antigo:** teste 33 do Renderer ("output does not depend on manifest.views") — sua última asserção contradizia a D2 aprovada; mantidas as asserções de não-mutação e acrescentada a de que as 6 views que não são o Home continuam independentes. Um comentário no teste registra a emenda.
+- **Regressão:** `npm test` 728 total / 725 pass / 0 fail / 3 skip (baseline 655/652/0/3); `package:check` e `smoke` OK; `validate` 0 erros/0 warnings; `audit` 0 erros (8 warnings pré-existentes: 7 quality gates + Bloco 08 sem feedback, esperado); `git diff --check` limpo.
+
+### 31.3 O que a Fase A não tocou
+
+Writer, CLI, `workspace *`, `.gitignore`, `.obsidian/`, Bloco 09, `src/context/**`, `brain-schema.js`, `fingerprint.js`, `discover.js`: **inalterados**. Nenhum `DDAE-Brain/` ou `.ddae/brain/` gerado.
+
+### 31.4 Dívidas / observações para as próximas fases
+
+- **Fase B:** Writer conforme D6/D7/D8 (allow-list, ownership por marcador, `--force` só para ownership, sem delete, temp+rename, manifest por último).
+- **Fase C:** função de I/O que coleta Discovery + contextos Git/DDAE + Context Package state e chama `planBrainWorkspace`; `workspace validate` recomputa e compara **todas** as 8 views com o disco (D5); `init` conforme D10; o `currentManifest` do `validate` deve ser compilado com as **mesmas** `views` (senão o fallback dispara por diferença de `views`).
+- P3 de freshness: **fechado** pela D3. Comportamento novo a conhecer: mudança de disponibilidade do Git entre snapshots agora é STALE (`CANONICAL_STATE_CHANGED`), não silêncio.
+- P4 mantidos: `currentManifest` inválido lança; Context Packages sem `currentSourceHashes`.

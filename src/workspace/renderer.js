@@ -23,10 +23,9 @@ import { assertBrainManifest, compareStrings } from '../schemas/brain-schema.js'
 
 export const BRAIN_DIR = 'DDAE-Brain';
 
-// Declared here, sorted by code point, so the future Orchestrator can
-// collect the view set (contract B.1). Deliberately not compared with
-// `manifest.views` at runtime yet: the Compiler still emits `views: []`
-// until Bloco 08 wires the producers' declarations into it.
+// Declared here, sorted by code point, so the Orchestrator can collect the
+// view set (contract B.1). The Renderer never compares them with
+// `manifest.views` — that invariant belongs to the Orchestrator.
 const VIEW_NAMES = ['Bugs', 'Decisions', 'Home', 'Recent-Activity', 'Releases', 'Risks', 'Sessions'];
 export const BRAIN_RENDERER_VIEW_PATHS = Object.freeze(VIEW_NAMES.map((name) => `${BRAIN_DIR}/${name}.md`));
 
@@ -157,19 +156,48 @@ function currentSessionBlock(manifest, { detailed }) {
   return lines.join('\n');
 }
 
+// Home's navigation order for the views this module itself produces (Bloco 04).
+const LEGACY_NAV = Object.freeze([
+  ['Sessions', 'Sessions'],
+  ['Decisions', 'Decisions'],
+  ['Risks', 'Risks'],
+  ['Bugs', 'Bugs'],
+  ['Releases', 'Releases'],
+  ['Recent-Activity', 'Recent Activity'],
+]);
+const SAFE_VIEW_NAME = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+
+/**
+ * Home's navigation entries `[name, label]`. With `manifest.views = []` (the
+ * legacy Bloco 03/04 state) it is exactly the six original links. Once views
+ * are declared, `manifest.views` is the canonical navigable set (Bloco 08,
+ * D2): the legacy entries that are declared come first, in their original
+ * order, then any other declared view (e.g. `Context-Packages`) in manifest
+ * order. Only plain sibling `DDAE-Brain/<Name>.md` files are ever linked; the
+ * Renderer never learns which module produced a view.
+ */
+function navigationEntries(manifest) {
+  if (manifest.views.length === 0) {
+    return LEGACY_NAV;
+  }
+  const prefix = `${BRAIN_DIR}/`;
+  const declared = manifest.views
+    .filter((view) => view.startsWith(prefix) && view.endsWith('.md'))
+    .map((view) => view.slice(prefix.length, -'.md'.length))
+    .filter((name) => SAFE_VIEW_NAME.test(name) && name !== 'Home');
+  const declaredNames = new Set(declared);
+  const legacyNames = new Set(LEGACY_NAV.map(([name]) => name));
+  const legacy = LEGACY_NAV.filter(([name]) => declaredNames.has(name));
+  const extra = declared.filter((name) => !legacyNames.has(name)).map((name) => [name, name.replace(/-/g, ' ')]);
+  return [...legacy, ...extra];
+}
+
 function renderHome(manifest, known) {
   const e = manifest.entities;
   return document(
     'Project Brain',
     { backLink: false },
-    section('Navigation', [
-      viewLink('Sessions', 'Sessions'),
-      viewLink('Decisions', 'Decisions'),
-      viewLink('Risks', 'Risks'),
-      viewLink('Bugs', 'Bugs'),
-      viewLink('Releases', 'Releases'),
-      viewLink('Recent-Activity', 'Recent Activity'),
-    ].map((link) => `- ${link}`).join('\n')),
+    section('Navigation', navigationEntries(manifest).map(([name, label]) => `- ${viewLink(name, label)}`).join('\n')),
     section('Project', `- Name: ${code(manifest.project.name)}\n- Root: ${code(manifest.project.root_relative_path)}`),
     section('Git', gitLines(manifest)),
     section('Current Session', currentSessionBlock(manifest, { detailed: false })),

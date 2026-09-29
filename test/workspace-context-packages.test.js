@@ -454,3 +454,125 @@ test('25. self-host: works against the real repository whether or not .ddae/cont
   assert.ok(!/[A-Za-z]:[\\/]/.test(content));
   assert.ok(!content.includes(REPO_ROOT.split(path.sep).join('/')));
 });
+
+
+// ───────────── Bloco 08, Fase A — optional current Git/DDAE context (D4) ─────────────
+
+function withBuiltPackage(fn) {
+  const dir = makeTempDir();
+  try {
+    writeManifest(dir, buildManifest());
+    return fn(dir);
+  } finally {
+    cleanup(dir);
+  }
+}
+
+const codesOf = (state) => state.reasons.map((r) => r.code);
+
+test('D4: no contexts (or empty options / nulls) → exactly the Bloco 06 result', () => {
+  withBuiltPackage((dir) => {
+    const legacy = collectContextPackageState(dir);
+    assert.deepEqual(collectContextPackageState(dir, {}), legacy);
+    assert.deepEqual(collectContextPackageState(dir, { currentGitContext: null, currentDdaeContext: null }), legacy);
+    assert.deepEqual(collectContextPackageState(dir, undefined), legacy);
+  });
+});
+
+test('D4: a current Git context with a different HEAD → STALE with GIT_HEAD_CHANGED', () => {
+  withBuiltPackage((dir) => {
+    const state = collectContextPackageState(dir, { currentGitContext: gitFixture({ head: 'b'.repeat(40) }) });
+    assert.equal(state.status, 'STALE');
+    assert.ok(codesOf(state).includes('GIT_HEAD_CHANGED'));
+    assert.ok(!codesOf(state).includes('SESSION_SOURCE_CHANGED'));
+  });
+});
+
+test('D4: a current Git context with the same HEAD adds no Git reason', () => {
+  withBuiltPackage((dir) => {
+    const state = collectContextPackageState(dir, { currentGitContext: gitFixture() });
+    assert.ok(!codesOf(state).includes('GIT_HEAD_CHANGED'));
+  });
+});
+
+test('D4: a current DDAE context that no longer has the session → SESSION_SOURCE_CHANGED', () => {
+  withBuiltPackage((dir) => {
+    const current = ddaeFixture({
+      current_session: { name: 'session_07_y', path: 'Docs/05_sessions/session_07_y' },
+      sessions: [{ name: 'session_06_x' }, { name: 'session_07_y' }],
+    });
+    const state = collectContextPackageState(dir, { currentDdaeContext: current });
+    assert.ok(codesOf(state).includes('SESSION_SOURCE_CHANGED'));
+    assert.ok(!codesOf(state).includes('GIT_HEAD_CHANGED'));
+  });
+});
+
+test('D4: both contexts supplied → both reasons surface, in the Context Validator\'s fixed order', () => {
+  withBuiltPackage((dir) => {
+    const state = collectContextPackageState(dir, {
+      currentGitContext: gitFixture({ head: 'c'.repeat(40) }),
+      currentDdaeContext: ddaeFixture({ current_session: { name: 'session_09_z', path: 'p' }, sessions: [{ name: 'session_09_z' }] }),
+    });
+    const codes = codesOf(state);
+    assert.ok(codes.indexOf('GIT_HEAD_CHANGED') < codes.indexOf('SESSION_SOURCE_CHANGED'));
+    assert.equal(state.status, 'STALE');
+  });
+});
+
+test('D4: source hashes are never invented — SOURCE_FRESHNESS_UNVERIFIED stays the conservative result', () => {
+  withBuiltPackage((dir) => {
+    const state = collectContextPackageState(dir, {
+      currentGitContext: gitFixture(),
+      currentDdaeContext: ddaeFixture({ sessions: [{ name: 'session_06_x' }] }),
+    });
+    assert.equal(state.status, 'STALE');
+    assert.deepEqual(codesOf(state), ['SOURCE_FRESHNESS_UNVERIFIED']);
+  });
+});
+
+test('D4: current-context data never leaks into the safe state or the rendered view', () => {
+  withBuiltPackage((dir) => {
+    const state = collectContextPackageState(dir, {
+      currentGitContext: gitFixture({ branch: 'LEAKY_BRANCH_NAME', modified_files: ['LEAKY_MODIFIED_FILE.md'], head: 'b'.repeat(40) }),
+      currentDdaeContext: ddaeFixture({ sessions: [{ name: 'LEAKY_SESSION_NAME' }], current_session: { name: 'LEAKY_SESSION_NAME', path: 'LEAKY_PATH' } }),
+    });
+    const rendered = renderContextPackagesView(state).content;
+    for (const text of [JSON.stringify(state), rendered]) {
+      assert.ok(!text.includes('LEAKY_'));
+      assert.ok(!text.includes(SECRET_CONTENT));
+      assert.ok(!text.includes(SECRET_GOAL_TEXT));
+    }
+  });
+});
+
+test('D4: the supplied contexts are not mutated (also when deeply frozen)', () => {
+  withBuiltPackage((dir) => {
+    const git = deepFreezeCtx(gitFixture({ head: 'b'.repeat(40) }));
+    const ddae = deepFreezeCtx(ddaeFixture({ sessions: [{ name: 'session_06_x' }] }));
+    const before = JSON.stringify([git, ddae]);
+    collectContextPackageState(dir, { currentGitContext: git, currentDdaeContext: ddae });
+    assert.equal(JSON.stringify([git, ddae]), before);
+  });
+});
+
+test('D4: missing and corrupt states are unaffected by supplied contexts', () => {
+  const missing = makeTempDir();
+  const corrupt = makeTempDir();
+  try {
+    const contexts = { currentGitContext: gitFixture({ head: 'b'.repeat(40) }), currentDdaeContext: ddaeFixture() };
+    assert.deepEqual(collectContextPackageState(missing, contexts), collectContextPackageState(missing));
+    write(corrupt, '.ddae/context/manifest.json', '{ not json');
+    assert.deepEqual(collectContextPackageState(corrupt, contexts), collectContextPackageState(corrupt));
+  } finally {
+    cleanup(missing);
+    cleanup(corrupt);
+  }
+});
+
+function deepFreezeCtx(value) {
+  if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const key of Object.keys(value)) deepFreezeCtx(value[key]);
+  }
+  return value;
+}

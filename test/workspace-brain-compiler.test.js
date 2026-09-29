@@ -205,3 +205,70 @@ test('integration: the DDAE self-host compiles to a valid, deterministic manifes
   assert.deepEqual(a, b);
   assert.ok(a.ddae.sessions.length >= 3);
 });
+
+
+// ───────────── Bloco 08, Fase A — `views` supplied BEFORE the fingerprint ─────────────
+
+const VIEWS = ['DDAE-Brain/Home.md', 'DDAE-Brain/Sessions.md', 'DDAE-Brain/Context-Packages.md'];
+const SORTED_VIEWS = ['DDAE-Brain/Context-Packages.md', 'DDAE-Brain/Home.md', 'DDAE-Brain/Sessions.md'];
+
+test('views: omitted or empty → [] (Bloco 03 behaviour preserved, same fingerprint)', () => {
+  const omitted = compile();
+  const empty = compile({}, { views: [] });
+  assert.deepEqual([...omitted.views], []);
+  assert.deepEqual([...empty.views], []);
+  assert.equal(omitted.fingerprint.value, empty.fingerprint.value);
+});
+
+test('views: a provided set is carried into the Manifest in canonical (code-point) order', () => {
+  const manifest = compile({}, { views: VIEWS });
+  assert.deepEqual([...manifest.views], SORTED_VIEWS);
+  assert.ok(Object.isFrozen(manifest.views));
+});
+
+test('views: the fingerprint includes views — different views → different fingerprint, same views → same', () => {
+  const a = compile({}, { views: VIEWS });
+  const b = compile({}, { views: [...VIEWS].reverse() });
+  const c = compile({}, { views: ['DDAE-Brain/Home.md'] });
+  assert.equal(a.fingerprint.value, b.fingerprint.value);
+  assert.notEqual(a.fingerprint.value, c.fingerprint.value);
+  assert.notEqual(a.fingerprint.value, compile().fingerprint.value);
+});
+
+test('views: the stored fingerprint already covers views (recomputed from the final payload, never patched afterwards)', () => {
+  const manifest = compile({}, { views: VIEWS });
+  assert.equal(manifest.fingerprint.value, computeBrainFingerprint(buildBrainFingerprintPayload(manifest)).value);
+  assert.deepEqual(buildBrainFingerprintPayload(manifest).views, SORTED_VIEWS);
+});
+
+test('views: a manifest compiled with views is schema-valid and deterministic', () => {
+  const manifest = compile({}, { views: VIEWS });
+  assert.deepEqual(validateBrainManifest(manifest), { valid: true, errors: [] });
+  assert.deepEqual(manifest, compile({}, { views: VIEWS }));
+});
+
+test('views: the input array is copied, never mutated or sorted in place (also when frozen)', () => {
+  const input = Object.freeze([...VIEWS]);
+  const manifest = compile({}, { views: input });
+  assert.deepEqual([...input], VIEWS);
+  assert.notEqual(manifest.views, input);
+  const mutable = [...VIEWS];
+  compile({}, { views: mutable });
+  assert.deepEqual(mutable, VIEWS);
+});
+
+test('views: duplicates are rejected (a producer bug, never silently merged)', () => {
+  assert.throws(() => compile({}, { views: ['DDAE-Brain/Home.md', 'DDAE-Brain/Home.md'] }), /views/i);
+});
+
+test('views: a non-array, non-string entries, or a non project-relative path are rejected', () => {
+  assert.throws(() => compile({}, { views: 'DDAE-Brain/Home.md' }), /views/i);
+  assert.throws(() => compile({}, { views: [42] }), /views/i);
+  assert.throws(() => compile({}, { views: ['/abs/Home.md'] }), /views|project-relative/i);
+});
+
+test('views: generatedAt is still excluded from the fingerprint when views are supplied', () => {
+  const a = compile({}, { views: VIEWS });
+  const b = compile({}, { views: VIEWS, generatedAt: '2030-01-01T00:00:00Z' });
+  assert.equal(a.fingerprint.value, b.fingerprint.value);
+});

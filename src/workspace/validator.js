@@ -44,6 +44,9 @@ function assertOptions(currentManifest, expectedViews) {
     if (!isPlainObject(currentManifest) || !validateBrainManifest(currentManifest).valid) {
       fail('options.currentManifest must be a schema-valid Brain Manifest v1 when provided');
     }
+    if (canonicalFingerprint(currentManifest) !== currentManifest.fingerprint.value) {
+      fail('options.currentManifest must carry a fingerprint that matches its own payload');
+    }
   }
   if (expectedViews !== null && expectedViews !== undefined) {
     if (!Array.isArray(expectedViews) || expectedViews.some((v) => typeof v !== 'string')) {
@@ -54,9 +57,13 @@ function assertOptions(currentManifest, expectedViews) {
 
 // ─────────────────────── integrity (always evaluated) ───────────────────────
 
+/** The canonical fingerprint value recomputed from a Manifest's own payload. */
+function canonicalFingerprint(manifest) {
+  return computeBrainFingerprint(buildBrainFingerprintPayload(manifest)).value;
+}
+
 function checkFingerprintIntegrity(manifest) {
-  const recomputed = computeBrainFingerprint(buildBrainFingerprintPayload(manifest));
-  if (recomputed.value !== manifest.fingerprint.value) {
+  if (canonicalFingerprint(manifest) !== manifest.fingerprint.value) {
     return [{ code: 'FINGERPRINT_MISMATCH' }];
   }
   return [];
@@ -211,6 +218,22 @@ function checkEntityFreshness(manifest, currentManifest) {
 }
 
 /**
+ * Catch-all for canonical drift no specific check above explains (Bloco 08,
+ * D3): a change in `ddae.sessions`, `ddae.current_session.counts`, `sources`,
+ * `views`, Git availability, ... is by definition a change of the canonical
+ * fingerprint. Both sides were already verified to carry the fingerprint of
+ * their own payload, so comparing the recomputed canonical values is exact —
+ * no manual field-by-field diff, no raw Manifest comparison. Only ever a
+ * fallback: it is reported when, and only when, no specific reason applies.
+ */
+function checkCanonicalFallback(manifest, currentManifest) {
+  if (canonicalFingerprint(manifest) !== canonicalFingerprint(currentManifest)) {
+    return [{ code: 'CANONICAL_STATE_CHANGED' }];
+  }
+  return [];
+}
+
+/**
  * Classifies a Brain Manifest v1 as VALID, STALE, or INVALID (contrato,
  * Seção H). Pure: no filesystem, no Git, no `Docs/`, no network, no clock,
  * no randomness — every comparand is an explicit argument.
@@ -222,6 +245,12 @@ function checkEntityFreshness(manifest, currentManifest) {
  * when given, is the view-path set the caller expects `manifest.views` to
  * equal; its absence preserves compatibility with the Bloco 03 transitional
  * state (`manifest.views = []`) — never a false INVALID.
+ *
+ * When `currentManifest` is given it must itself be a schema-valid Manifest
+ * whose fingerprint matches its own payload (a reference, not a claim). STALE
+ * reasons are the specific ones (engine, Git HEAD, session, entities) and,
+ * only when none applies but the canonical fingerprints still differ,
+ * `CANONICAL_STATE_CHANGED` (Bloco 08, D3).
  *
  * INVALID always takes priority over STALE: when any integrity check
  * fails, freshness is never evaluated (mirrors src/context/validator.js).
@@ -257,6 +286,9 @@ export function validateBrainWorkspace(manifest, options = {}) {
     ...checkSessionFreshness(manifest, currentManifest),
     ...checkEntityFreshness(manifest, currentManifest),
   ];
+  if (staleReasons.length === 0) {
+    staleReasons.push(...checkCanonicalFallback(manifest, currentManifest));
+  }
   if (staleReasons.length > 0) {
     return result('STALE', staleReasons);
   }

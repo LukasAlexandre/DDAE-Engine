@@ -21,9 +21,10 @@ import { BRAIN_DIR } from './renderer.js';
 // `validateContextManifest`), never reimplemented or modified — this
 // module never runs its own freshness algorithm.
 //
-// Bloco 06, Decisão D3: `Home.md` does not yet link here (Bloco 04's
-// renderer is untouched); this view links back to Home. The reverse link
-// is the Orchestrator's job (Bloco 08), once both producers are unioned.
+// Bloco 06, Decisão D3 / Bloco 08, D2: this view links back to Home; Home
+// links here only because the Orchestrator declares this path in
+// `manifest.views` (the Renderer derives its navigation from the Manifest and
+// never imports this module).
 
 export const CONTEXT_PACKAGES_VIEW_PATH = `${BRAIN_DIR}/Context-Packages.md`;
 
@@ -100,8 +101,16 @@ function toSafeState(manifest, status, reasons) {
  * deterministic state for every expected condition (missing, corrupt,
  * partial) — never throws for those; only a genuinely invalid `projectRoot`
  * throws (programmer error, same policy as `discoverWorkspaceState`).
+ *
+ * `options.currentGitContext` / `options.currentDdaeContext` (Bloco 08, D4)
+ * are optional current-state snapshots the caller — the Orchestrator's I/O
+ * boundary — already collected with the existing Context Compiler
+ * collectors. They are only forwarded to `validateContextState`, which
+ * already knows how to use them; omitting them keeps the Bloco 06 behaviour
+ * exactly. No `currentSourceHashes` is ever computed here.
  */
-export function collectContextPackageState(projectRoot) {
+export function collectContextPackageState(projectRoot, options = {}) {
+  const { currentGitContext = null, currentDdaeContext = null } = options ?? {};
   const root = path.resolve(projectRoot);
   if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     throw new Error(`collectContextPackageState: projectRoot does not exist or is not a directory: ${root}`);
@@ -126,15 +135,17 @@ export function collectContextPackageState(projectRoot) {
   const contextMdExists = fs.existsSync(path.join(dir, 'CONTEXT.md'));
 
   // validateContextState is reused as-is (never reimplemented). Git/DDAE
-  // context are not passed here: recomputing full repository/session
-  // freshness would duplicate what discoverWorkspaceState already collects
-  // for the Brain, and is left to a future call site that already holds
-  // that snapshot (documented in the block as a P4, not solved here).
-  // Passing neither still yields a safe, correct result: git/session
-  // staleness checks are skipped (never a false STALE for those), while
-  // `SOURCE_FRESHNESS_UNVERIFIED` still fires whenever there are
+  // context are used only when the caller supplied them (Bloco 08, D4);
+  // without them the git/session staleness checks are skipped (never a false
+  // STALE for those). `currentSourceHashes` is deliberately never supplied,
+  // so `SOURCE_FRESHNESS_UNVERIFIED` still fires whenever there are
   // relevant_files — never a false VALID.
-  const { status, reasons } = validateContextState({ manifest, contextMarkdown: contextMdExists ? undefined : undefined });
+  const { status, reasons } = validateContextState({
+    manifest,
+    contextMarkdown: contextMdExists ? undefined : undefined,
+    currentGitContext,
+    currentDdaeContext,
+  });
   void validationFile; // present only informatively; the receipt is never trusted blindly (Seção 7 of the block)
 
   return toSafeState(manifest, status, reasons);
