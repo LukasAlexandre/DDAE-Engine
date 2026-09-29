@@ -91,21 +91,51 @@ function pathEscapesRoot(value) {
   return value.split('/').some((segment) => UNSAFE_SEGMENT.has(segment));
 }
 
-function checkPathContainment(manifest) {
-  const reasons = [];
-  manifest.sources.forEach((source, index) => {
-    if (pathEscapesRoot(source.path)) {
-      reasons.push({ code: 'PATH_ESCAPES_ROOT', field: 'sources', index });
+/**
+ * Every Brain Manifest v1 field that holds a project-relative path — the one
+ * place to extend when the schema gains a new path field. Each descriptor is
+ * `{ field, value, index?, allowRootMarker? }`: `field`/`index` are the only
+ * things a reason may carry (never `value`). Fields are listed explicitly —
+ * never by walking arbitrary strings (`summary`, `id`, `selection_reason`, ...
+ * are not paths). `allowRootMarker` admits the canonical `'.'` (the project
+ * root itself) and is set only for `project.root_relative_path`, the sole
+ * field whose contract defines it (brain-schema.js, checkProject).
+ */
+function collectPathFields(manifest) {
+  const fields = [{ field: 'project.root_relative_path', value: manifest.project.root_relative_path, allowRootMarker: true }];
+  for (const key of ['docs_root', 'sessions_root']) {
+    if (manifest.ddae[key] !== null) {
+      fields.push({ field: `ddae.${key}`, value: manifest.ddae[key] });
     }
+  }
+  manifest.ddae.sessions.forEach((session, index) => {
+    fields.push({ field: 'ddae.sessions', index, value: session.path });
+  });
+  if (manifest.ddae.current_session !== null && manifest.ddae.current_session !== undefined) {
+    fields.push({ field: 'ddae.current_session.path', value: manifest.ddae.current_session.path });
+  }
+  manifest.sources.forEach((source, index) => {
+    fields.push({ field: 'sources', index, value: source.path });
   });
   for (const key of BRAIN_ENTITY_KEYS) {
     manifest.entities[key].forEach((entry, index) => {
-      if (entry.source_path !== null && pathEscapesRoot(entry.source_path)) {
-        reasons.push({ code: 'PATH_ESCAPES_ROOT', field: `entities.${key}`, index });
+      if (entry.source_path !== null) {
+        fields.push({ field: `entities.${key}`, index, value: entry.source_path });
       }
     });
   }
-  return reasons;
+  manifest.views.forEach((view, index) => {
+    fields.push({ field: 'views', index, value: view });
+  });
+  return fields;
+}
+
+function checkPathContainment(manifest) {
+  return collectPathFields(manifest)
+    .filter(({ value, allowRootMarker }) => !(allowRootMarker && value === '.') && pathEscapesRoot(value))
+    .map(({ field, index }) => (index === undefined
+      ? { code: 'PATH_ESCAPES_ROOT', field }
+      : { code: 'PATH_ESCAPES_ROOT', field, index }));
 }
 
 function checkViewsCoherence(manifest, expectedViews) {

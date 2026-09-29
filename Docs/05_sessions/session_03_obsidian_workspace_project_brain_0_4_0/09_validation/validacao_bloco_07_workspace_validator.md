@@ -11,7 +11,7 @@ Verificar se `validateBrainWorkspace` classifica corretamente um Brain Manifest 
 ```text
 Enum e prioridade INVALID > STALE > VALID (Seção H):            confirmado — teste 16 — PASS
 VALID exige integridade + frescor (Seção H):                       confirmado — testes 2, 10 — PASS
-INVALID: schema/schema_version/fingerprint/path/views (Seção H):    confirmado — testes 3, 4, 5-8, 19 — PASS
+INVALID: schema/schema_version/fingerprint/path/views (Seção H):    confirmado — testes 3, 4, 5-8, 19 — PASS (path: cobertura completa só após a Correção 07b, testes 28a–28n)
 STALE: Docs/DDAE/Git mudaram desde o build (Seção H):                confirmado — testes 11-15, 27b — PASS
 Modelo reaproveitado sem refatorar Context Validator (Seção H):        confirmado — zero import de src/context/** — PASS
 ```
@@ -77,3 +77,31 @@ Nenhuma pendência P1/P2. P3/P4 herdadas e duas novas P4 registradas no feedback
 ## 9. Próximo Passo
 
 Confirmar/criar formalmente o Bloco 08 (CLI) em execução futura, conforme `mapa_dependencias.md` (depende dos Blocos 04, 05, 06 e 07 — todos agora aprovados).
+
+---
+
+## Correção 07b — Validação (2026-09-29)
+
+Origem: auditoria de `3211e8e` (P2: cobertura de path incompleta). Correção em novo commit; `3211e8e` preservado.
+
+| Item | Evidência | Resultado |
+|---|---|---|
+| `views[]` com `../x`, `DDAE-Brain/../../x`, `http://…`, `javascript:` | 28a, 28b (`C:/x` já barrado pelo Schema) | PASS |
+| `ddae.docs_root` / `sessions_root` / `sessions[].path` / `current_session.path` com traversal | 28d–28g | PASS |
+| `project.root_relative_path`: `.` e `packages/app` válidos; `..`, `a/../b`, `./x`, `a//b`, `http://x` inválidos | 28i, 28j | PASS |
+| `.` só é marcador de raiz em `project.root_relative_path` | 28k | PASS |
+| `null` em docs_root/sessions_root/current_session não é erro | 28h | PASS |
+| Não é `FINGERPRINT_MISMATCH` (fingerprint recomputado) | helper `assertPathEscape` | PASS |
+| Reason sem valor bruto (só code/field/index) | 28l | PASS |
+| Ordem determinística; entrada deep-frozen | 28m, 28n | PASS |
+| Cobertura anterior (sources, entities) preservada | testes 5–8e inalterados | PASS |
+
+```text
+workspace-validator: 57 total, 57 pass, 0 fail (14 novos; 12 RED antes da correção)
+npm test: 655 / 652 pass / 0 fail / 3 skip | package:check OK | smoke OK
+validate 0 erros/0 warnings | audit 0 erros/7 warnings pré-existentes | diff --check limpo
+brain-schema, fingerprint, compiler, discover, renderer, context-packages, src/context, CLI touched: NO
+Filesystem/cwd/rede no validator: NO
+```
+
+**Veredito da correção: APROVADO.** Pendências: P3 freshness coverage (não resolvida, Bloco 08); P4 `currentManifest` inválido lança (inalterado).

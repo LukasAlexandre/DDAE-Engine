@@ -141,3 +141,32 @@ feat(workspace): add project brain validator
 ```
 
 _Lembrete: este commit não é executado automaticamente — exige confirmação explícita do usuário._
+
+---
+
+## Correção 07b — Feedback (2026-09-29)
+
+**Origem:** auditoria read-only de `3211e8e` → `NEEDS CORRECTION` (P2). Detalhes, inventário de campos e causa raiz: seção "Correção 07b" de `05_blocks/bloco_07_workspace_validator.md`.
+
+- **O que foi corrigido:** `PATH_ESCAPES_ROOT` agora cobre `views[]`, `project.root_relative_path` (com `'.'` preservado), `ddae.docs_root`, `ddae.sessions_root`, `ddae.sessions[].path` e `ddae.current_session.path`, além de `sources[]`/`entities.*[]`. Implementado por descritores explícitos (`collectPathFields`), sem walk genérico de strings.
+- **TDD:** 14 testes novos (28a–28n); RED = 12 falhas antes da mudança; GREEN = 57/57. Testes antigos intactos (43, diff só de adição).
+- **Decisão de reason:** manter `field`/`index` (sem valor bruto). A documentação que prometia `{path}` foi corrigida.
+- **Lição:** inventariar campos-path a partir do schema antes de escrever a validação; os testes de 3211e8e usavam só os campos mais óbvios.
+
+### Regressão (após a correção)
+
+```text
+test/workspace-validator.test.js: 57 total, 57 pass, 0 fail (43 + 14)
+npm test:       655 total, 652 pass, 0 fail, 3 skip (era 641/638/0/3)
+package:check:  OK
+smoke:          OK
+validate:       0 erros, 0 warnings
+audit:          0 erros, 7 warnings (quality gates pendentes, pré-existentes)
+git diff --check: limpo
+```
+
+### Pendências
+
+- **P3 — semantic freshness coverage (NÃO resolvida):** freshness não compara `ddae.sessions`, `ddae.current_session.counts`, `sources` quando as entidades não mudam. Dono: análise de integração do Bloco 08 (estado atual composto).
+- **P4 — `currentManifest` inválido lança `Error`:** comportamento documentado de input contract; inalterado.
+- `ID-07` continua "evaluated — no extraction"; a semântica de path (RS-01/P4) fica agora **fechada** para todos os campos-path do Manifest v1.

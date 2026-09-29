@@ -2,7 +2,7 @@
 
 > Sessão: 03 (obsidian_workspace_project_brain_0_4_0) · Projeto: DDAE · Atualizado em: 2026-09-27
 
-> **Status: CONCLUÍDO / APROVADO** (2026-09-27). As 3 Decisões Abertas (Seção 16) foram fechadas antes do código (ver Seção 16.1); implementado em TDD (`src/workspace/validator.js`, 43 testes). `src/context/**`, `compiler.js`, `fingerprint.js`, `discover.js`, `renderer.js`, `context-packages.js`, `brain-schema.js` permanecem intocados — inclusive sem nenhum import de `src/context/**`. Ver `08_feedbacks/feedback_bloco_07_workspace_validator.md` e `09_validation/validacao_bloco_07_workspace_validator.md`.
+> **Status: CONCLUÍDO — auditado (`NEEDS CORRECTION`, P2) e corrigido pela Correção 07b (2026-09-29, ver última seção).** Concluído em 2026-09-27. As 3 Decisões Abertas (Seção 16) foram fechadas antes do código (ver Seção 16.1); implementado em TDD (`src/workspace/validator.js`, 43 testes). `src/context/**`, `compiler.js`, `fingerprint.js`, `discover.js`, `renderer.js`, `context-packages.js`, `brain-schema.js` permanecem intocados — inclusive sem nenhum import de `src/context/**`. Ver `08_feedbacks/feedback_bloco_07_workspace_validator.md` e `09_validation/validacao_bloco_07_workspace_validator.md`.
 
 ## 1. Objetivo
 
@@ -86,7 +86,7 @@ compileBrainManifest(snapshot, {engineVersion})  ──►  Brain Manifest v1 (d
 
 1. **Schema:** `validateBrainManifest(manifest)`. Se inválido → `INVALID`/`MANIFEST_SCHEMA_INVALID` — **um único código genérico, sem os `errors[]` textuais do Schema**, mesmo princípio de segurança já aplicado no Bloco 06 (Seção 12.3 do bloco 06): o array de erros do Schema pode ecoar valores arbitrários de um Manifest malformado em texto legível; um código estável e sem conteúdo evita esse vazamento.
 2. **Fingerprint:** recomputar `computeBrainFingerprint(buildBrainFingerprintPayload(manifest))` (reuso de `src/workspace/fingerprint.js`, zero lógica nova) e comparar com `manifest.fingerprint.value`. Divergência → `INVALID`/`FINGERPRINT_MISMATCH` (payload adulterado — exatamente a segunda condição de INVALID do contrato).
-3. **Path containment (novo — fecha o P4 herdado):** cada `source_path` não-nulo em `manifest.entities.*[]` e cada `path` em `manifest.sources[]` é verificado por segmento (`/`-split): nenhum segmento pode ser `''`, `'.'`, `'..'`, e o primeiro segmento não pode conter `:` antes de qualquer `/` (rejeita valores tipo-esquema, ex. `http://…`, `javascript:…`, que o Schema atual não rejeita isoladamente). Qualquer violação → `INVALID`/`PATH_ESCAPES_ROOT` com `{path}` (o path já é dado não-sensível, mesma classe de informação já exibida livremente em `Decisions.md`/`Risks.md`). **Implementação própria, pequena (~10 linhas), não importa `docsDestination` privado do Renderer nem `sensitive-files.js`** (que é I/O-bound, camada errada para um validador puro) — mesma prática de pequena duplicação deliberada já usada em `discover.js`/`renderer.js` (Blocos 02/04), agora funcionando como uma segunda implementação independente da mesma invariante, o que é defesa em profundidade real, não redundância.
+3. **Path containment (novo — fecha o P4 herdado):** cada `source_path` não-nulo em `manifest.entities.*[]` e cada `path` em `manifest.sources[]` é verificado por segmento (`/`-split): nenhum segmento pode ser `''`, `'.'`, `'..'`, e o primeiro segmento não pode conter `:` antes de qualquer `/` (rejeita valores tipo-esquema, ex. `http://…`, `javascript:…`, que o Schema atual não rejeita isoladamente). Qualquer violação → `INVALID`/`PATH_ESCAPES_ROOT` com `field`/`index` (nunca o valor bruto do path; o texto original dizia `{path}` — corrigido na Correção 07b). *Cobertura original: só `sources[]` e `entities.*[]`; ampliada a todos os campos-path pela Correção 07b.* **Implementação própria, pequena (~10 linhas), não importa `docsDestination` privado do Renderer nem `sensitive-files.js`** (que é I/O-bound, camada errada para um validador puro) — mesma prática de pequena duplicação deliberada já usada em `discover.js`/`renderer.js` (Blocos 02/04), agora funcionando como uma segunda implementação independente da mesma invariante, o que é defesa em profundidade real, não redundância.
 4. **Views coerentes com o esperado (só quando `expectedViews` é passado):** `manifest.views` deve corresponder exatamente (mesmo conjunto, contrato exige ordenação canônica já garantida pelo Schema) a `expectedViews`. Divergência → `INVALID`/`VIEWS_MISMATCH`. **Quando `expectedViews` é omitido, esta checagem não roda** — preserva compatibilidade com o estado transicional `manifest.views = []` (Seção 10).
 
 ### 8.2 Frescor (só avaliado quando `currentManifest` é passado)
@@ -159,7 +159,7 @@ Cenários previstos:
 2. Manifest com `schema_version` incompatível → `INVALID`/`MANIFEST_SCHEMA_INVALID`, sem vazar detalhe.
 3. Manifest com campo estranho (ex. `memory`) → mesmo código genérico, sem eco do campo.
 4. `fingerprint.value` adulterado após a compilação → `INVALID`/`FINGERPRINT_MISMATCH`.
-5. `source_path`/`path` com segmento `..` → `INVALID`/`PATH_ESCAPES_ROOT`, com `{path}`.
+5. `source_path`/`path` com segmento `..` → `INVALID`/`PATH_ESCAPES_ROOT`, com `field`/`index`.
 6. `source_path` com segmento `.` ou vazio → idem.
 7. `source_path` tipo-esquema (`http://…`, `javascript:…`) — manifesto construído com essa violação (simulando lacuna futura do Compiler) → `INVALID`/`PATH_ESCAPES_ROOT`.
 8. Múltiplas violações de path → todas reportadas, não só a primeira.
@@ -193,7 +193,7 @@ O self-host deve provar que um Manifest real e recém-compilado do próprio DDAE
 
 **D2 — `currentManifest`: IMPLEMENTADO neste bloco.** `validateBrainWorkspace(manifest, { currentManifest, expectedViews })`, opcional e puro — o Validator nunca coleta, nunca lê `package.json`. `currentManifest`, quando fornecido, é validado estruturalmente antes de qualquer comparação (`assertOptions`); se estruturalmente inválido, a função **lança** (é um bug do caller, não um estado operacional a degradar) — nunca produz freshness a partir de dado não confiável. Ausência de `currentManifest` nunca produz `STALE`.
 
-**D3 — Semântica de path (`RS-01`): fechada neste bloco, sem alterar o Brain Schema.** `PATH_ESCAPES_ROOT` rejeita segmentos `..`/`.`/vazios e valores tipo-esquema (qualquer `:` antes da primeira `/`) em `manifest.sources[].path` e em todo `source_path` não-nulo de `manifest.entities.*[]` — puramente lexical, sem `realpath`/`resolve`/`stat`. Um único código (`PATH_ESCAPES_ROOT`) cobre todos os casos, coerente com a redação única do contrato (Seção H: "invariante de segurança de path quebrado"); nenhum código novo foi inventado sem necessidade. Renderer inalterado; Bloco 09 continua dono do hardening de superfícies externas (Obsidian Sync/Publish, `.gitignore`).
+**D3 — Semântica de path (`RS-01`): fechada neste bloco, sem alterar o Brain Schema.** `PATH_ESCAPES_ROOT` rejeita segmentos `..`/`.`/vazios e valores tipo-esquema (qualquer `:` antes da primeira `/`) em `manifest.sources[].path` e em todo `source_path` não-nulo de `manifest.entities.*[]` *(implementação original; a auditoria do commit `3211e8e` achou `views`, `project.root_relative_path` e `ddae.*` sem cobertura — fechado pela Correção 07b)* — puramente lexical, sem `realpath`/`resolve`/`stat`. Um único código (`PATH_ESCAPES_ROOT`) cobre todos os casos, coerente com a redação única do contrato (Seção H: "invariante de segurança de path quebrado"); nenhum código novo foi inventado sem necessidade. Renderer inalterado; Bloco 09 continua dono do hardening de superfícies externas (Obsidian Sync/Publish, `.gitignore`).
 
 ## 17. Critérios de Aceite
 
@@ -228,7 +228,7 @@ O self-host deve provar que um Manifest real e recém-compilado do próprio DDAE
 
 ## 19. Segurança
 
-`reasons` nunca inclui `summary`/texto livre do Manifest — só códigos estáveis e, quando aplicável, o `path`/`entity` que já é dado público em outras views do Brain (nunca conteúdo de arquivo). `PATH_ESCAPES_ROOT` fecha uma lacuna real de defesa em profundidade sem duplicar a Sensitive Data Guard (que é I/O-bound, camada errada aqui). Nenhum novo ponto de leitura de filesystem.
+`reasons` nunca inclui `summary`/texto livre do Manifest — só códigos estáveis e, quando aplicável, `field`/`index`/`entity` (nunca o valor de um path nem conteúdo de arquivo). `PATH_ESCAPES_ROOT` fecha uma lacuna real de defesa em profundidade sem duplicar a Sensitive Data Guard (que é I/O-bound, camada errada aqui). Nenhum novo ponto de leitura de filesystem.
 
 ## 20. Performance
 
@@ -269,3 +269,20 @@ feat(workspace): add brain workspace validator
 ```
 
 _Nunca executado automaticamente — exige confirmação explícita do usuário. Se o resultado real for majoritariamente testes com pouco código, `test(...)` pode ser mais apropriado, a decidir no fechamento do bloco._
+
+---
+
+## Correção 07b — Workspace Validator Path Semantics (2026-09-29)
+
+> Artefato documental de correção **vinculado ao Bloco 07**, dentro da mesma Session 03 (SESSION = FEATURE). O tooling (`ddae-engine block create`) só numera blocos inteiros (`nextSequence` casa `bloco_(\d+)`; `parseBlockFile`, `ddae-context.js` e `audit.js` também esperam `bloco_NN_`) — por isso não existe arquivo `bloco_07b_*.md`: criar um seria ignorado pelo contexto e geraria feedback "órfão" no audit, e renumerar tomaria o lugar do Bloco 08. O registro fica nesta seção, no feedback e na validação do Bloco 07. Nenhum CLI foi alterado.
+
+- **Origem:** auditoria read-only do commit `3211e8e` (veredito `NEEDS CORRECTION`, severidade máxima P2).
+- **Finding P2:** a cobertura semântica de path estava incompleta. `PATH_ESCAPES_ROOT` só era aplicado a `sources[].path` e `entities.*[].source_path`; o Brain Schema aceita `..` (só rejeita absoluto, drive letter e barra invertida). Um Manifest com `views: ["../x"]` e fingerprint recomputado passava como `VALID`.
+- **Campos afetados (inventário a partir do schema):** `views[]`, `project.root_relative_path`, `ddae.docs_root`, `ddae.sessions_root`, `ddae.sessions[].path`, `ddae.current_session.path`. Já cobertos: `sources[].path`, `entities.*[].source_path`. Não são paths (não validados): `summary`, `id`, `selection_reason`, `engine_version`, `project.name`, `git.head`.
+- **Causa raiz:** a lista de campos-path foi escrita à mão a partir das duas coleções mais óbvias, sem inventariar o schema.
+- **TDD RED:** 14 testes novos (28a–28n), 43 existentes preservados. 12 falharam antes da mudança (todos os campos acima passavam como `VALID`); os 2 positivos (`.` canônico e `null` de docs_root/sessions_root/current_session) já passavam e travam a semântica correta.
+- **Implementação:** `src/workspace/validator.js` — nova `collectPathFields(manifest)` lista explicitamente os descritores `{field, value, index?, allowRootMarker?}`; `checkPathContainment` aplica a `pathEscapesRoot` existente a todos. `'.'` é aceito **só** em `project.root_relative_path` (único campo cujo contrato define o marcador de raiz; o valor canônico real vem de `discover.js`). Ordem dos reasons: project, ddae, sources, entities, views. Reason continua `PATH_ESCAPES_ROOT` com `field`/`index` — sem o valor bruto.
+- **Correção documental:** as seções acima que diziam que `PATH_ESCAPES_ROOT` carrega `{path}` foram corrigidas para `field`/`index` (o runtime seguro sempre foi esse; a doc estava errada). Drive letter (`C:/x`) continua sendo barrada já pelo Brain Schema (`MANIFEST_SCHEMA_INVALID`), nunca chega a `VALID`.
+- **TDD GREEN:** `test/workspace-validator.test.js` 57 testes / 57 pass. Regressão: ver feedback e validação.
+- **Sem expansão de escopo:** `brain-schema.js`, `fingerprint.js`, `compiler.js`, `discover.js`, `renderer.js`, `context-packages.js`, `src/context/**`, CLI: inalterados. `expectedViews` omitido continua aceitando `views: []`. `currentManifest` inválido continua lançando (P4, decisão documentada, inalterada).
+- **Não resolvido — P3 (semantic freshness coverage):** o freshness não compara `ddae.sessions`, `ddae.current_session.counts` nem `sources` quando as entidades não mudam. Definir o que é "freshness" do Project Brain exige o estado atual composto do Bloco 08; comparação genérica de JSON causaria falsos STALE. Dono recomendado: análise de integração do Bloco 08.
